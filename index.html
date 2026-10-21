@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body style="margin:0"><title>動物戰棋</title>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#3b2a24"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="動物戰棋"></head><body style="margin:0"><title>動物戰棋</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
@@ -39,6 +39,8 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .btn.moss { background: var(--moss); color: #f3f0dc; }
 .btn[disabled] { opacity: .45; pointer-events: none; }
 .note { font-size: 12px; color: #fff3dc; }
+.btn.install { background: linear-gradient(135deg,#c8902a,#ffe08a,#c8902a); color: #3a2010; }
+.dex ol { margin: 0 0 8px; padding-left: 22px; line-height: 1.9; }
 
 /* ---------- 戰場 ---------- */
 #game { flex: 1; display: flex; flex-direction: column; }
@@ -4208,6 +4210,7 @@ function featuresBoot() {
   lb.insertAdjacentHTML('beforeend', '<button class="btn" id="btnRules">自訂規則</button><button class="btn" id="btnCollect">收藏與造型</button>');
   $('btnRules').onclick = () => openRules();
   $('btnCollect').onclick = () => openCollection();
+  setupInstall();
   // 開啟聲音（需要使用者點擊）
   document.addEventListener('pointerdown', () => { audInit(); if (G && !$('game').hidden) musicStart(G.arena); }, { once: false, passive: true });
   // 快捷鍵
@@ -4653,6 +4656,27 @@ function openCollection(focus) {
     <div class="coll">${keys.map(k => { const cur = skinOf(k) || 'base'; return `<div class="citem"><img src="${PORT[k]}" alt="" style="filter:${SKIN_CSS[cur]}"><b>${ANIMALS[k].name}</b><div class="cskins">${Object.keys(SKINS).map(id => `<button data-skin="${k}:${id}" class="${cur === id ? 'on' : ''}" ${PROFILE.unlocked[id] ? '' : 'disabled'} title="${SKINS[id].name}" style="background:${SKINS[id].tint}"></button>`).join('')}</div></div>`; }).join('')}</div>`;
   $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
   $('panel').querySelector('.coll').onclick = e => { const b = e.target.closest('[data-skin]'); if (!b || b.disabled) return; const [k, id] = b.dataset.skin.split(':'); PROFILE.skinSel[k] = id === 'base' ? undefined : id; saveProfile(); sfx('click'); openCollection(); };
+}
+
+// ---- 加到主畫面（PWA）----
+let INSTALL_EVT = null;
+function setupInstall() {
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+  const hosted = (location.protocol === 'https:' && !/claude\.ai|claudeusercontent|anthropic/.test(location.hostname)) || location.hostname === 'localhost';
+  if (hosted && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (standalone) return;
+  $$('.lobby-btns').insertAdjacentHTML('afterbegin', '<button class="btn install" id="btnInstall">加到主畫面（像 App 一樣開）</button>');
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); INSTALL_EVT = e; });
+  $('btnInstall').onclick = async () => {
+    if (INSTALL_EVT) { INSTALL_EVT.prompt(); try { const r = await INSTALL_EVT.userChoice; if (r.outcome === 'accepted') { toast('已加到主畫面！'); $('btnInstall').remove(); } } catch (e) {} INSTALL_EVT = null; return; }
+    const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua), line = /Line\//i.test(ua), inApp = line || /FBAN|FBAV|Instagram/i.test(ua);
+    const steps = !hosted ? '<p>這個頁面要用公開網址開才能加到主畫面：<br><b>https://willy110611-collab.github.io/animal-chess/</b></p>'
+      : inApp ? '<p>你現在在 LINE（或其他 App）內建的瀏覽器裡，沒辦法加到主畫面。</p><p>請按右上角「⋯」→「用預設瀏覽器開啟」，再按一次這個按鈕。</p>'
+      : ios ? '<ol><li>用 <b>Safari</b> 開這個網址</li><li>按下方中間的「分享」鈕（方框加向上箭頭）</li><li>往下滑，選「<b>加入主畫面</b>」</li><li>按右上角「新增」</li></ol>'
+      : '<ol><li>用 <b>Chrome</b> 開這個網址</li><li>按右上角「⋮」</li><li>選「<b>加到主畫面</b>」或「<b>安裝應用程式</b>」</li><li>按「安裝」</li></ol>';
+    $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>加到主畫面</h2><div class="dex"><div class="plain" style="display:block">${steps}<p>加好之後，主畫面會出現獅子圖示，點開就是全螢幕、沒有網址列，玩過一次之後沒網路也能開。</p></div></div>`;
+    $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  };
 }
 
 boot();
