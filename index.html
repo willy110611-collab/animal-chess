@@ -458,7 +458,7 @@ const CFG = {
   AUG_TIER_ODDS: [[34, 33, 33], [34, 33, 33], [34, 33, 33]], // 每次選擇時 銀／金／彩 機率（%），目前三者平均隨機
   STAR_MUL: [0, 100, 180, 320],                         // 星級生命與攻擊倍率（%）
   GIFT_GOLD_MAX: 5,
-  MAX_ROUND: 30,
+  MAX_ROUND: 0,           // 0 = 不限回合，打到一隊血量歸零為止
   DMG_BASE: 2, DMG_STAR_PCT: 34, DMG_STAGE: 2, // 輸掉扣血 = 基本 + 存活星數×% + (階段−1)×DMG_STAGE
 };
 
@@ -509,6 +509,37 @@ const ANIMALS = {
   lion: { name: '獅子', cost: 5, traits: ['savanna', 'pack'], role: '領袖',
     hp: 1480, atk: 118, ai: 20, rng: 1, arm: 45, mr: 40, mana: 90, sm: 20, mv: 8,
     skill: '王者咆哮', desc: '全隊攻擊 +25% 持續 6 秒；2 格內敵人恐懼 1.5 秒。' },
+  // ---- v0.5 新增 ----
+  penguin: { name: '企鵝', cost: 2, traits: ['water', 'pack'], role: '戰士',
+    hp: 760, atk: 55, ai: 20, rng: 1, arm: 35, mr: 25, mana: 70, sm: 10, mv: 7,
+    skill: '肚皮滑行', desc: '趴下滑向 3 格內最遠的敵人，撞擊 160 魔法傷害並暈 1 秒，落點周圍敵人受 80 魔法傷害。' },
+  rhino: { name: '犀牛', cost: 3, traits: ['savanna', 'armor'], role: '坦',
+    hp: 900, atk: 60, ai: 24, rng: 1, arm: 40, mr: 30, mana: 100, sm: 20, mv: 8,
+    skill: '犀角衝鋒', desc: '衝向 3 格內最遠的敵人，220 物理傷害並擊飛 1.25 秒，自身獲得 180 護盾。' },
+  chameleon: { name: '變色龍', cost: 3, traits: ['forest', 'night'], role: '刺客',
+    hp: 680, atk: 70, ai: 18, rng: 2, arm: 20, mr: 20, mana: 70, sm: 0, mv: 7,
+    skill: '變色突襲', desc: '被動：開場隱身。技能：重新隱身，長舌彈向 3 格內血最少的敵人 280 物理傷害，下一次普攻必定暴擊。' },
+  fox: { name: '狐狸', cost: 3, traits: ['savanna', 'night'], role: '刺客',
+    hp: 720, atk: 68, ai: 16, rng: 1, arm: 25, mr: 25, mana: 70, sm: 0, mv: 6,
+    skill: '跳躍撲鼠', desc: '高高躍起撲向攻擊最高的遠程敵人，240 物理傷害並偷走 40 能量。' },
+  eagle: { name: '老鷹', cost: 4, traits: ['sky', 'savanna'], role: '遠程',
+    hp: 880, atk: 84, ai: 20, rng: 3, arm: 25, mr: 25, mana: 80, sm: 0, mv: 6,
+    skill: '高空擒拿', desc: '抓起目標飛上高空 1.5 秒（無法行動）再摔下，380 物理傷害，周圍 1 格敵人受 120 物理傷害。' },
+  eel: { name: '電鰻', cost: 4, traits: ['water', 'night'], role: '法師',
+    hp: 880, atk: 55, ai: 20, rng: 3, arm: 25, mr: 40, mana: 80, sm: 20, mv: 8,
+    skill: '連鎖放電', desc: '電擊目標 260 魔法傷害並彈跳 4 次（每次 −15%），被電到的敵人暈 0.5 秒。' },
+  gorilla: { name: '大猩猩', cost: 4, traits: ['forest', 'armor'], role: '坦',
+    hp: 1280, atk: 76, ai: 24, rng: 1, arm: 45, mr: 40, mana: 100, sm: 40, mv: 9,
+    skill: '捶胸震地', desc: '捶胸嘲諷 2 格內敵人 2.5 秒，獲得 18% 生命護盾，再雙拳砸地，周圍 1 格 200 魔法傷害。' },
+  whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor'], role: '坦／法師',
+    hp: 2000, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
+    skill: '潮汐巨浪', desc: '噴出巨浪橫掃自己左右各 1 欄：敵人 260 魔法傷害並暈 1 秒，友軍回復 15% 生命。' },
+  peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest'], role: '輔助',
+    hp: 1350, atk: 95, ai: 20, rng: 3, arm: 30, mr: 40, mana: 100, sm: 30, mv: 8,
+    skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
+  komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor'], role: '戰士',
+    hp: 1520, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
+    skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 20% 生命。' },
 };
 
 // 召喚物與野生動物（不進商店）
@@ -519,13 +550,13 @@ const EXTRA = {
 };
 
 const TRAITS = {
-  forest:  { name: '森林', tiers: [2, 4],    desc: ['森林單位每秒回 2% 生命', '每秒回 4% 生命'] , val: [2, 4] },
-  savanna: { name: '草原', tiers: [2, 4],    desc: ['草原單位攻速 +20%，全隊移動加快', '攻速 +45%'], val: [20, 45] },
-  water:   { name: '水域', tiers: [2, 3],    desc: ['水域單位開場護盾 15% 生命', '護盾 30%；站水格加倍'], val: [15, 30] },
-  sky:     { name: '天空', tiers: [2, 3],    desc: ['天空單位閃避 20%', '閃避 35%'], val: [20, 35] },
+  forest:  { name: '森林', tiers: [2, 4, 6], desc: ['森林單位每秒回 2% 生命', '每秒回 4% 生命', '每秒回 6% 生命'] , val: [2, 4, 6] },
+  savanna: { name: '草原', tiers: [2, 4, 6], desc: ['草原單位攻速 +20%，全隊移動加快', '攻速 +45%', '攻速 +70%'], val: [20, 45, 70] },
+  water:   { name: '水域', tiers: [2, 3, 5], desc: ['水域單位開場護盾 15% 生命', '護盾 30%；站水格加倍', '護盾 45%'], val: [15, 30, 45] },
+  sky:     { name: '天空', tiers: [2, 3, 4], desc: ['天空單位閃避 20%', '閃避 35%', '閃避 45%'], val: [20, 35, 45] },
   pack:    { name: '群居', tiers: [2, 4, 6], desc: ['每個相鄰群居友軍 +8% 傷害', '+12%', '+18%'], val: [8, 12, 18] },
-  armor:   { name: '甲冑', tiers: [2, 3],    desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +10'], val: [30, 60] },
-  night:   { name: '夜行', tiers: [2, 4],    desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +50%'], val: [25, 50] },
+  armor:   { name: '甲冑', tiers: [2, 3, 5], desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +10', '甲冑 +90，全隊 +20'], val: [30, 60, 90] },
+  night:   { name: '夜行', tiers: [2, 4, 6], desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +50%', '暴擊 +80%'], val: [25, 50, 80] },
 };
 const SYNERGY_BONUS = 20; // 默契加成：兩位隊友都有出該羈絆時效果 +20%
 
@@ -534,7 +565,13 @@ const TERRAIN = {
   water: { name: '水池', desc: '非水域單位移動變慢；水域單位攻擊 +20%' },
   tree:  { name: '樹', desc: '遠程射程 +1；森林單位回血加倍' },
   rock:  { name: '岩石', desc: '不可站立，阻擋移動' },
+  bounce:{ name: '彈射', desc: '站滿 2 秒會被彈到對面同款地塊旁，落地震傷周圍敵人 80' },
+  burn:  { name: '灼燒', desc: '站在上面每秒失去 4% 生命，但攻速 +30%' },
+  shadow:{ name: '暗影', desc: '站在上面時隱身，只有貼身的敵人能鎖定你' },
 };
+// 高台：遠程射程 +1；從低處打高台的普攻 25% 落空；爬坡移動變慢
+const HIGH = { RANGE: 1, MISS: 25, CLIMB_PCT: 40 };
+const BOUNCE_TICKS = 40, BURN_PCT = 4, BURN_AS = 30, BOUNCE_DMG = 80;
 
 // 材料
 const MATS = {
@@ -610,16 +647,17 @@ const OWNER_COLORS = ['#3d7fc4', '#e08a2c', '#3d7fc4', '#e08a2c']; // 每隊第�
 
 // 場景：每個階段換一個；weights 為地形抽選權重，max 為每邊上限
 const ARENAS = {
-  jungle: { name: '叢林', weights: { grass: 3, tree: 3, water: 2, rock: 1 }, count: [4, 5], maxRock: 1 },
-  desert: { name: '沙漠', weights: { rock: 3, grass: 2, tree: 1, water: 1 }, count: [3, 4], maxRock: 2 },
-  city:   { name: '都市', weights: { rock: 2, water: 2, tree: 1, grass: 1 }, count: [3, 4], maxRock: 2 },
+  jungle: { name: '叢林', weights: { grass: 3, tree: 2, water: 2, rock: 1, bounce: 2, shadow: 2 }, count: [5, 6], maxRock: 1, hills: [1, 2] },
+  desert: { name: '沙漠', weights: { rock: 2, grass: 1, tree: 1, water: 1, burn: 3, bounce: 2, shadow: 1 }, count: [5, 6], maxRock: 2, hills: [2, 2] },
+  city:   { name: '都市', weights: { rock: 2, water: 1, tree: 1, grass: 1, bounce: 2, burn: 2, shadow: 2 }, count: [5, 6], maxRock: 2, hills: [1, 2] },
 };
+// hills：每邊高台數量 [最少, 最多]，每座 2～3 格
 const ARENA_ORDER = ['jungle', 'desert', 'city'];
 // 地形在各場景的稱呼（畫面也會跟著換）
 const TERRAIN_SKIN = {
-  jungle: { grass: '蕨叢', water: '水塘', tree: '雨林樹', rock: '青苔石' },
-  desert: { grass: '枯草叢', water: '綠洲', tree: '棕櫚樹', rock: '砂岩' },
-  city:   { grass: '樹籬', water: '積水', tree: '行道樹', rock: '路障' },
+  jungle: { grass: '蕨叢', water: '水塘', tree: '雨林樹', rock: '青苔石', bounce: '彈跳蘑菇', burn: '火焰蘭', shadow: '濃蔭', high: '青苔丘' },
+  desert: { grass: '枯草叢', water: '綠洲', tree: '棕櫚樹', rock: '砂岩', bounce: '沙塵旋風', burn: '熔岩裂縫', shadow: '岩縫陰影', high: '平頂岩台' },
+  city:   { grass: '樹籬', water: '積水', tree: '行道樹', rock: '路障', bounce: '蒸氣人孔', burn: '燃燒油桶', shadow: '暗巷', high: '階梯廣場' },
 };
 
 // ===== 海克斯增幅（參考 Gemini 規格書，改寫成自走棋版本）=====
@@ -642,7 +680,7 @@ const AUGMENTS = [
   { id: 'discount', tier: 1, name: '打折狂潮', hook: 'econ', desc: '接下來 4 回合，商店刷新只要 1 金。' },
   { id: 'pounce', tier: 2, name: '猛獸飛撲', hook: 'start', desc: '你的近戰棋子開場撲向 3 格內最近的敵人，第一擊必定暴擊。' },
   { id: 'underdog', tier: 2, name: '以小博大', hook: 'hit', desc: '你的 1～3 費棋子對 4、5 費敵人傷害 +80%。' },
-  { id: 'trample', tier: 2, name: '巨象踐踏', hook: 'tick', desc: '你的坦克（刺蝟、小熊貓、鱷魚、無尾熊、大象）放技能時，周圍 1 格敵人被震暈 1 秒。' },
+  { id: 'trample', tier: 2, name: '巨象踐踏', hook: 'tick', desc: '你的坦克（刺蝟、小熊貓、鱷魚、無尾熊、犀牛、大猩猩、大象、鯨魚）放技能時，周圍 1 格敵人被震暈 1 秒。' },
   { id: 'chainhunt', tier: 2, name: '連環狩獵', hook: 'kill', desc: '你的棋子擊殺後立刻再攻擊一次，並獲得 20 能量。' },
   { id: 'amphibious', tier: 2, name: '兩棲突擊', hook: 'start', desc: '你的所有棋子都享有水池效果，水域羈絆的護盾也套用在你全部棋子身上。' },
   { id: 'shadow', tier: 2, name: '暗影潛行', hook: 'start', desc: '你的棋子開場隱身，第一次攻擊前無法被選為目標。' },
@@ -678,12 +716,15 @@ const AUG_TIER_NAME = ['', '銀色', '金色', '彩色'];
 const EVOLVE = {
   hedgehog: '鋼刺蝟王', squirrel: '松果將軍', wolf: '狼王', frog: '蛙王', bat: '吸血伯爵', redpanda: '小熊貓武尊', skunk: '毒霧公爵',
   croc: '鱷魚霸主', bee: '蜂后', koala: '尤加利神', cheetah: '閃電獵豹', octopus: '深海巫師', owl: '月夜梟王', elephant: '萬象巨神', lion: '百獸之王',
+  penguin: '冰原皇帝', rhino: '鋼角戰車', chameleon: '千面幻影', fox: '九尾狐', eagle: '蒼穹霸鷹', eel: '雷霆鰻神', gorilla: '叢林金剛', whale: '深藍巨鯨', peacock: '鳳凰孔雀', komodo: '龍蜥之王',
 };
 // ===== 食物鏈：天敵對獵物傷害 +25% =====
 const PREY = {
   lion: ['cheetah', 'wolf', 'boar', 'hare'], cheetah: ['hare', 'frog'], wolf: ['hare', 'squirrel', 'boar'],
   owl: ['squirrel', 'frog', 'bat', 'hare'], croc: ['frog', 'wolf', 'boar', 'hare'], bat: ['bee', 'minibee'],
   frog: ['bee', 'minibee'], skunk: ['bee', 'minibee'], hedgehog: ['frog'], bee: ['elephant'], elephant: ['lion'], octopus: ['croc'],
+  eagle: ['squirrel', 'hare', 'fox', 'penguin', 'chameleon'], fox: ['hare', 'squirrel', 'frog'], komodo: ['boar', 'hare', 'wolf', 'rhino'],
+  chameleon: ['bee', 'minibee'], peacock: ['frog', 'chameleon'], eel: ['frog', 'penguin'], whale: ['octopus'], penguin: ['eel'],
 };
 const PREY_BONUS = 25;
 // ===== 天氣（依場地抽，每回合一次）=====
@@ -760,6 +801,7 @@ function createBattle(input) {
     over: false, winner: -1, combos: [], nextId: 0, pve: !!input.pve,
     aug: input.aug || {}, low: input.low || {}, kills: {}, deaths: {}, bigKill: {}, revives: [], necroUsed: {},
     flags: input.flags || {}, weather: input.weather || 'sunny', cmdUsed: {}, loot: [],
+    height: Object.assign({}, input.height || {}), landings: [],
   };
   for (const s of input.units) {
     let c = s.c, r = s.r;
@@ -773,6 +815,7 @@ function createBattle(input) {
     if (tt === 'grass') { u.stealth = true; u.firstHit = true; }
     if (u.waterShieldPct) u.shield += Math.floor(u.maxhp * u.waterShieldPct * (tt === 'water' ? 2 : 1) / 100);
     if (u.key === 'koala') u.asleep = true;
+    if (u.key === 'chameleon') { u.stealth = true; u.firstHit = true; }
   }
   // 天氣、物品開場效果、進化光環
   for (const u of B.units) {
@@ -871,7 +914,7 @@ function applyTraits(B) {
       if (hasTrait(u, 'water')) u.waterShieldPct = v('water');
       if (hasTrait(u, 'sky')) u.dodge += v('sky');
       if (hasTrait(u, 'pack')) u.packPct = v('pack');
-      if (v('armor')) { const add = hasTrait(u, 'armor') ? v('armor') : 10; u.arm += add; u.mr += add; }
+      if (v('armor')) { const add = hasTrait(u, 'armor') ? v('armor') : (tc.armor.tier >= 2 ? 20 : 10); u.arm += add; u.mr += add; }
       if (hasTrait(u, 'night')) u.nightCrit = v('night');
     }
     B['traits' + team] = tc;
@@ -898,6 +941,9 @@ function inZone(B, u, kind, team) {
   for (const z of B.zones) if (z.kind === kind && z.team !== u.team && z.until > B.t && Math.abs(z.c - u.c) <= 1 && Math.abs(z.r - u.r) <= 1) return true;
   return false;
 }
+const isHigh = (B, c, r) => !!(B.height && B.height[idx(c, r)]);
+const onTile = (B, u, type) => terrainAt(B, u.c, u.r) === type;
+function hiddenFrom(B, e, u) { return (e.stealth || e.cloakUntil > B.t || onTile(B, e, 'shadow')) && dist(e, u) > 1; }
 function effAtk(B, u) {
   let p = 100 + u.atkPct + buffSum(B, u, 'atk');
   if ((hasTrait(u, 'water') || u.wave) && terrainAt(B, u.c, u.r) === 'water') p += 20;
@@ -913,9 +959,10 @@ function effInterval(B, u) {
   if (u.key === 'cheetah') p += Math.min(5, u.sameHits) * 8;
   if (u.galeStacks) p += u.galeStacks * 3;
   if (B.weather === 'heat') p += 15 + (hasTrait(u, 'savanna') ? 10 : 0);
+  if (onTile(B, u, 'burn')) p += BURN_AS;
   return Math.max(5, Math.floor(u.ai * 100 / p));
 }
-function effRange(B, u) { return u.rng + (u.rng >= 2 && terrainAt(B, u.c, u.r) === 'tree' ? 1 : 0); }
+function effRange(B, u) { return u.rng + (u.rng >= 2 && terrainAt(B, u.c, u.r) === 'tree' ? 1 : 0) + (u.rng >= 2 && isHigh(B, u.c, u.r) ? HIGH.RANGE : 0); }
 function enemies(B, u) { return B.units.filter(e => e.alive && e.team !== u.team); }
 function allies(B, u) { return B.units.filter(e => e.alive && e.team === u.team); }
 
@@ -940,6 +987,7 @@ function damage(B, src, tgt, raw, type, o) {
   if (o.atk) {
     if (src.blind > B.t) { B.ev.push({ k: 'miss', id: tgt.id, s: '落空' }); return 0; }
     if (tgt.dodge && B.rng(100) < tgt.dodge) { B.ev.push({ k: 'miss', id: tgt.id, s: '閃避' }); return 0; }
+    if (isHigh(B, tgt.c, tgt.r) && !isHigh(B, src.c, src.r) && B.rng(100) < HIGH.MISS) { B.ev.push({ k: 'miss', id: tgt.id, s: '仰攻落空' }); return 0; }
   }
   let amt = raw, crit = !!o.crit;
   if (o.skill && src.skillAmp) amt = Math.floor(amt * 130 / 100);
@@ -950,6 +998,7 @@ function damage(B, src, tgt, raw, type, o) {
   if (o.atk && src.forceCrit) { crit = true; src.forceCrit = false; }
   if (PREY[src.key] && PREY[src.key].indexOf(tgt.key) >= 0) { amt = Math.floor(amt * (100 + PREY_BONUS) / 100); o.prey = true; }
   if (o.skill && src.evo) amt = Math.floor(amt * 130 / 100);
+  if (o.atk && src.key === 'komodo' && tgt.dots.some(d => d.kind === 'poison' && d.until > B.t)) amt = Math.floor(amt * 130 / 100);
   if (hasAug(B, src, 'underdog') && costOf(src) <= 3 && costOf(tgt) >= 4) amt = Math.floor(amt * 180 / 100);
   if (hasAug(B, src, 'gangup')) { let n = 0; for (const a of B.units) if (a.alive && a.team === src.team && a.target === tgt.id) n++; if (n >= 2) amt = Math.floor(amt * 125 / 100); }
   if (!crit && o.atk) { const cc = src.crit + (B.night ? src.nightCrit : 0); if (cc && B.rng(100) < cc) crit = true; }
@@ -1081,7 +1130,7 @@ function clusterCenter(B, u) {
 function pickTarget(B, u) {
   if (u.tauntUntil > B.t) { const tb = U(B, u.tauntBy); if (tb && tb.alive) return tb; }
   const cur = u.target >= 0 ? U(B, u.target) : null;
-  const hidden = e => e.stealth || e.cloakUntil > B.t;
+  const hidden = e => hiddenFrom(B, e, u);
   if (cur && cur.alive && !cur.neutral && !(hidden(cur) && enemies(B, u).some(e => !hidden(e) && !e.neutral))) return cur;
   let best = null, bd = 99;
   const all = enemies(B, u), es = all.filter(e => !e.neutral), vis = es.filter(e => !hidden(e)), pool = vis.length ? vis : es;
@@ -1178,6 +1227,77 @@ function cast(B, u) {
       { const ids = []; for (const a of allies(B, u)) { a.buffs.push({ s: 'atk', v: 25, u: B.t + 120 }); ids.push(a.id); } B.ev.push({ k: 'buff', id: u.id, ids, s: 'atk' }); }
       for (const e of es) if (dist(e, u) <= 2) stun(B, e, 30, '恐懼');
       break;
+    // ---- v0.5 新動物 ----
+    case 'penguin': {
+      let far = null, fd = -1; for (const e of es) { const d = dist(e, u); if (d <= 3 && d > fd) { fd = d; far = e; } }
+      if (!far) far = tgt && tgt.alive ? tgt : null; if (!far) break;
+      if (dist(far, u) > 1) { const spot = freeNear(B, far.c, far.r, u); if (spot) { teleport(B, u, spot[0], spot[1]); u.mvFrom.t1 = B.t + 8; u.mvFrom.slide = true; u.mvFrom.jump = false; } }
+      u.target = far.id; B.ev.push({ k: 'dash', id: u.id, tg: far.id, s: 'slide' });
+      damage(B, u, far, sk(160), 'magic', { skill: 1 }); stun(B, far, 20);
+      for (const e of es) if (e !== far && e.alive && dist(e, u) <= 1) damage(B, u, e, sk(80), 'magic', { skill: 1 });
+      break; }
+    case 'rhino': {
+      let far = null, fd = -1; for (const e of es) { const d = dist(e, u); if (d <= 3 && d > fd) { fd = d; far = e; } }
+      if (!far) far = tgt && tgt.alive ? tgt : null; if (!far) break;
+      if (dist(far, u) > 1) { const spot = freeNear(B, far.c, far.r, u); if (spot) { teleport(B, u, spot[0], spot[1]); u.mvFrom.t1 = B.t + 8; u.mvFrom.slide = true; u.mvFrom.jump = false; } }
+      u.target = far.id; B.ev.push({ k: 'dash', id: u.id, tg: far.id, s: 'charge' });
+      damage(B, u, far, sk(220), 'phys', { skill: 1 }); stun(B, far, 25, '擊飛');
+      u.shield += sk(180);
+      break; }
+    case 'chameleon': {
+      let low = null; for (const e of es) if (dist(e, u) <= 3 && (!low || e.hp < low.hp)) low = e;
+      if (!low) low = tgt && tgt.alive ? tgt : null; if (!low) break;
+      B.ev.push({ k: 'proj', id: u.id, tg: low.id, s: 'tongue' });
+      damage(B, u, low, sk(280), 'phys', { skill: 1 });
+      u.stealth = true; u.forceCrit = true; u.target = low.id;
+      break; }
+    case 'fox': {
+      let best = null; for (const e of es) if (!e.neutral && (!best || (e.rng >= 2) > (best.rng >= 2) || ((e.rng >= 2) === (best.rng >= 2) && e.atk > best.atk))) best = e;
+      if (!best) break;
+      if (dist(best, u) > 1) { const spot = freeNear(B, best.c, best.r, u); if (spot) { teleport(B, u, spot[0], spot[1]); u.mvFrom.t1 = B.t + 10; u.mvFrom.big = true; } }
+      u.target = best.id;
+      damage(B, u, best, sk(240), 'phys', { skill: 1 }); best.mana = Math.max(0, best.mana - 40);
+      break; }
+    case 'eagle': {
+      const t0 = tgt && tgt.alive && !tgt.neutral ? tgt : pickTarget(B, u); if (!t0) break;
+      stun(B, t0, 30, '被抓走');
+      if (t0.alive && t0.invuln <= B.t) { t0.mvFrom = { c: t0.c, r: t0.r, t0: B.t, t1: B.t + 30, jump: true, grab: true }; }
+      B.ev.push({ k: 'grab', id: u.id, tg: t0.id });
+      B.landings.push({ id: t0.id, t: B.t + 30, by: u.id, dmg: sk(380), splash: sk(120) });
+      break; }
+    case 'eel': {
+      let cur = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!cur) break;
+      const hit = [cur.id], chain = [u.id, cur.id]; let amt = sk(260);
+      damage(B, u, cur, amt, 'magic', { skill: 1 }); stun(B, cur, 10, '麻痺');
+      for (let i = 0; i < 4; i++) {
+        let nx = null, nd = 99; for (const e of es) if (e.alive && !hit.includes(e.id)) { const d = dist(e, cur); if (d < nd || (d === nd && e.id < nx.id)) { nd = d; nx = e; } }
+        if (!nx || nd > 3) break;
+        amt = Math.floor(amt * 85 / 100); hit.push(nx.id); chain.push(nx.id);
+        damage(B, u, nx, amt, 'magic', { skill: 1 }); stun(B, nx, 10, '麻痺'); cur = nx;
+      }
+      B.ev.push({ k: 'chain', id: u.id, ids: chain });
+      break; }
+    case 'gorilla': {
+      const ids = []; for (const e of es) if (dist(e, u) <= 2) { e.tauntBy = u.id; e.tauntUntil = B.t + 50; e.target = u.id; ids.push(e.id); } B.ev.push({ k: 'taunt', id: u.id, ids });
+      u.shield += Math.floor(u.maxhp * 18 / 100);
+      for (const e of es) if (dist(e, u) <= 1) damage(B, u, e, sk(200), 'magic', { skill: 1 });
+      break; }
+    case 'whale': {
+      for (const e of es) if (Math.abs(e.c - u.c) <= 1) { damage(B, u, e, sk(260), 'magic', { skill: 1 }); stun(B, e, 20); }
+      for (const a of allies(B, u)) if (Math.abs(a.c - u.c) <= 1) heal(B, a, Math.floor(a.maxhp * 15 / 100));
+      B.ev.push({ k: 'wave', id: u.id, c: u.c });
+      break; }
+    case 'peacock': {
+      for (const e of es) if (dist(e, u) <= 3) stun(B, e, 30, '魅惑');
+      const ids = []; for (const a of allies(B, u)) if (dist(a, u) <= 3) { a.buffs.push({ s: 'as', v: 30, u: B.t + 80 }); a.buffs.push({ s: 'dr', v: 20, u: B.t + 80 }); ids.push(a.id); }
+      B.ev.push({ k: 'buff', id: u.id, ids, s: 'as' });
+      break; }
+    case 'komodo': {
+      const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
+      damage(B, u, t0, sk(260), 'phys', { skill: 1 });
+      if (t0.alive) addDot(B, u, t0, Math.max(1, Math.floor(t0.maxhp * 6 / 100 * m / 100)), 100, 'poison');
+      heal(B, u, Math.floor(u.maxhp * 20 / 100));
+      break; }
   }
   u.castCount++;
   if (u.honeyHeal) heal(B, u, Math.floor(u.maxhp * 12 / 100));
@@ -1240,6 +1360,7 @@ function step(B) {
     const src = U(B, z.src);
     for (const e of B.units) if (e.alive && e.team !== z.team && Math.abs(e.c - z.c) <= 1 && Math.abs(e.r - z.r) <= 1) damage(B, src, e, z.per, 'magic', {});
   }
+  envTick(B);
   const order = (t & 1) ? B.units.slice().reverse() : B.units; // 每 tick 交替行動順序，避免先手優勢
   for (const u of order) {
     if (!u.alive || u.neutral) continue;
@@ -1280,6 +1401,7 @@ function step(B) {
       if (nx) {
         let mt = u.mv;
         if (!hasTrait(u, 'water') && terrainAt(B, nx[0], nx[1]) === 'water') mt = Math.floor(mt * 13 / 10);
+        if (isHigh(B, nx[0], nx[1]) && !isHigh(B, u.c, u.r)) mt = Math.floor(mt * (100 + HIGH.CLIMB_PCT) / 100);
         moveTo(B, u, nx[0], nx[1], mt);
       } else u.target = -1;
     }
@@ -1295,6 +1417,55 @@ function step(B) {
   else if (t >= CFG.COMBAT_MAX_TICK) { B.over = true; B.winner = -1; }
 }
 
+// ===== 地形互動：彈射、灼燒（v0.5）=====
+function envDamage(B, u, amt, kind) {
+  if (!u.alive || u.invuln > B.t || amt <= 0) return;
+  let left = amt; if (u.shield > 0) { const ab = Math.min(u.shield, left); u.shield -= ab; left -= ab; }
+  u.hp -= left; u.dmgTaken = (u.dmgTaken || 0) + amt;
+  B.ev.push({ k: 'dmg', id: u.id, a: amt, c: false, ty: 'true', src: -1, env: kind });
+  if (u.hp <= 0) kill(B, u, null);
+}
+function envTick(B) {
+  const t = B.t, sec = t % 20 === 0;
+  for (const u of B.units) {
+    if (!u.alive || u.neutral) continue;
+    const tt = terrainAt(B, u.c, u.r), moving = u.mvFrom && u.mvFrom.t1 > t;
+    // 彈射：站滿 2 秒，彈到對面同款地塊旁
+    if (tt === 'bounce' && !moving && !(u.bounceCd > t)) {
+      u.bounceT = (u.bounceT || 0) + 1;
+      if (u.bounceT >= BOUNCE_TICKS) {
+        u.bounceT = 0; u.bounceCd = t + 100;
+        const pc = CFG.COLS - 1 - u.c, pr = CFG.ROWS - 1 - u.r;
+        const spot = passable(B, pc, pr, -2) ? [pc, pr] : freeNear(B, pc, pr, u);
+        if (spot) {
+          const fc = u.c, fr = u.r;
+          B.grid[idx(u.c, u.r)] = -1; u.c = spot[0]; u.r = spot[1]; B.grid[idx(u.c, u.r)] = u.id;
+          u.mvFrom = { c: fc, r: fr, t0: t, t1: t + 18, jump: true, big: true };
+          u.target = -1; u.busy = t + 18;
+          B.landings.push({ id: u.id, t: t + 18 });
+          B.ev.push({ k: 'launch', id: u.id, fc, fr, c: u.c, r: u.r });
+        }
+      }
+    } else if (!moving) u.bounceT = 0;
+    // 灼燒：每秒失去 4% 生命
+    if (sec && tt === 'burn') envDamage(B, u, Math.max(1, Math.floor(u.maxhp * BURN_PCT / 100)), 'burn');
+  }
+  B.landings = B.landings.filter(L => {
+    if (L.t > t) return true;
+    const u = B.units[L.id]; if (!u || !u.alive) return false;
+    if (L.by !== undefined) { // 老鷹摔下
+      const src = B.units[L.by];
+      B.ev.push({ k: 'land', id: u.id, drop: true });
+      damage(B, src, u, L.dmg, 'phys', { skill: 1 });
+      for (const e of B.units) if (e.alive && e !== u && e.team === u.team && dist(e, u) <= 1) damage(B, src, e, L.splash, 'phys', { skill: 1 });
+      return false;
+    }
+    B.ev.push({ k: 'land', id: u.id });
+    for (const e of enemies(B, u)) if (dist(e, u) <= 1 && !e.neutral) damage(B, u, e, BOUNCE_DMG, 'magic', {});
+    return false;
+  });
+}
+
 function runBattle(input) {
   const B = createBattle(input);
   while (!B.over) { step(B); B.ev.length = 0; }
@@ -1305,7 +1476,7 @@ function survivorStars(B, team) {
 }
 
 // ===== 海克斯增幅：戰鬥內效果 =====
-const TANKS = ['hedgehog', 'redpanda', 'croc', 'koala', 'elephant'];
+const TANKS = ['hedgehog', 'redpanda', 'croc', 'koala', 'rhino', 'gorilla', 'elephant', 'whale'];
 const costOf = u => (ANIMALS[u.key] || { cost: 0 }).cost;
 function hasAug(B, u, id) { const a = u && u.owner >= 0 && B.aug[u.owner]; return !!(a && a.indexOf(id) >= 0); }
 function ownersWith(B, id) { const r = []; for (const k in B.aug) if (B.aug[k].indexOf(id) >= 0) r.push(+k); return r; }
@@ -1442,7 +1613,7 @@ function createGame(opt) {
       items: [], ready: false, giftedGold: 0, lastIncome: null, shop: [], locked: false,
       augs: [], augChoice: null, augRolled: [], popBonus: 0, discount: 0, freeRoll: 0, killGold: 0, reserved: {}, avoidCells: {}, vote: null, firstRollFree: false,
     })),
-    board: {}, pool: {}, terrain: {}, arena: 'jungle', arenaStart: 0, uid: 1, battles: [], log: [], winner: -1, lastResult: null, acc: 0,
+    board: {}, pool: {}, terrain: {}, height: {}, arena: 'jungle', arenaStart: 0, uid: 1, battles: [], log: [], winner: -1, lastResult: null, acc: 0,
   };
   for (const k in ANIMALS) G.pool[k] = rules.bans.includes(k) ? 0 : CFG.POOL[ANIMALS[k].cost];
   return G;
@@ -1672,13 +1843,26 @@ function rollTerrain(G) {
     if (t === 'rock' && rock >= A.maxRock) continue;
     if (t === 'rock') rock++; chosen.push(t);
   }
-  const used = {}; G.terrain = {};
+  const used = {}; G.terrain = {}; G.height = {};
+  // 高台：每座 2～3 格相連，雙方鏡像對稱；不放在已被岩石佔的位置
+  const nh = (A.hills || [0, 0])[0] + G.rng(((A.hills || [0, 0])[1] - (A.hills || [0, 0])[0]) + 1);
+  for (let h = 0; h < nh; h++) {
+    for (let tries = 0; tries < 30; tries++) {
+      const c = G.rng(CFG.COLS), r = G.rng(CFG.ROWS_HALF), size = 2 + G.rng(2), cells = [[c, r]];
+      const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+      for (let g = 0; cells.length < size && g < 12; g++) { const b = cells[G.rng(cells.length)], d = dirs[G.rng(4)], nc = b[0] + d[0], nr = b[1] + d[1]; if (nc >= 0 && nc < CFG.COLS && nr >= 0 && nr < CFG.ROWS_HALF && !cells.some(x => x[0] === nc && x[1] === nr)) cells.push([nc, nr]); }
+      if (cells.some(([cc, rr]) => G.height[rr * CFG.COLS + cc])) continue;
+      for (const [cc, rr] of cells) { const k = rr * CFG.COLS + cc, [gc, gr] = toGlobal(1, cc, rr); G.height[k] = 1; G.height[gr * CFG.COLS + gc] = 1; }
+      break;
+    }
+  }
   for (const t of chosen) {
     for (let tries = 0; tries < 40; tries++) {
       const c = G.rng(CFG.COLS), r = G.rng(CFG.ROWS_HALF), k = r * CFG.COLS + c;
       if (used[k]) continue;
       const [gc, gr] = toGlobal(1, c, r), k2 = gr * CFG.COLS + gc;
       if (t === 'rock' && (G.board[k] || G.board[k2])) continue;
+      if (G.height[k] && (t === 'water' || t === 'rock' || t === 'bounce')) continue; // 高台上不放水、岩石、彈射
       used[k] = 1; G.terrain[k] = t; G.terrain[k2] = t; break;
     }
   }
@@ -1752,6 +1936,12 @@ function battleUnitsForTeam(G, team, asTeam) {
   }
   return out;
 }
+function heightFor(G, team) {
+  const h = G.height || {};
+  if (team === 0) return Object.assign({}, h);
+  const t = {}; for (const k in h) { const c = +k % CFG.COLS, r = Math.floor(+k / CFG.COLS); const [gc, gr] = toGlobal(1, c, r); t[gr * CFG.COLS + gc] = h[k]; }
+  return t;
+}
 function terrainFor(G, team) {
   // team 作為戰鬥 team0 時的地形（team1 視角需翻轉）
   if (team === 0) return Object.assign({}, G.terrain);
@@ -1766,12 +1956,12 @@ function startCombat(G) {
     for (const team of [0, 1]) {
       const units = battleUnitsForTeam(G, team, 0);
       for (const [key, c, r] of pveOf(R)) { const [gc, gr] = toGlobal(1, c, r); units.push({ key, star: PVE_STAR[R] || 3, owner: -1, team: 1, c: gc, r: gr, items: [] }); }
-      const input = { seed: seed + team, terrain: terrainFor(G, team), units, pve: true, aug: augMap(G), low: lowMap(G), flags: battleFlags(G), weather: G.weather };
+      const input = { seed: seed + team, terrain: terrainFor(G, team), height: heightFor(G, team), units, pve: true, aug: augMap(G), low: lowMap(G), flags: battleFlags(G), weather: G.weather };
       G.battles.push({ teams: [team, -1], input: JSON.parse(JSON.stringify(input)), B: createBattle(input) });
     }
   } else {
     const units = battleUnitsForTeam(G, 0, 0).concat(battleUnitsForTeam(G, 1, 1));
-    const input = { seed, terrain: Object.assign({}, G.terrain), units, aug: augMap(G), low: lowMap(G), flags: battleFlags(G), weather: G.weather, neutrals: rollNeutrals(G) };
+    const input = { seed, terrain: Object.assign({}, G.terrain), height: Object.assign({}, G.height || {}), units, aug: augMap(G), low: lowMap(G), flags: battleFlags(G), weather: G.weather, neutrals: rollNeutrals(G) };
     G.battles.push({ teams: [0, 1], input: JSON.parse(JSON.stringify(input)), B: createBattle(input) });
   }
   G.phase = 'combat'; G.acc = 0;
@@ -1813,7 +2003,7 @@ function endCombat(G) {
   }
   G.lastResult = res;
   const dead = G.teams.map(t => t.hp <= 0);
-  if (dead[0] || dead[1] || R >= G.rules.maxRound) {
+  if (dead[0] || dead[1] || (G.rules.maxRound > 0 && R >= G.rules.maxRound)) {
     G.phase = 'over';
     G.winner = dead[0] && dead[1] ? (G.teams[0].hp >= G.teams[1].hp ? 0 : 1) : dead[0] ? 1 : dead[1] ? 0 : (G.teams[0].hp >= G.teams[1].hp ? 0 : 1);
   } else { G.phase = 'result'; G.timer = 3000; }
@@ -1929,7 +2119,11 @@ function aiPlace(G, pid) {
     }
     if (!spot) {
       const front = A.rng === 1 && o.u.key !== 'bat';
-      const cand = free.slice().sort((a, b) => (front ? b.r - a.r : a.r - b.r) || centerScore(a) - centerScore(b) || a.c - b.c);
+      // 地形加權：遠程愛高台／暗影，近戰刺客愛彈射，大家都避開灼燒
+      const tScore = f => { const tt = G.terrain[f.k], hi = (G.height || {})[f.k]; let s = 0;
+        if (tt === 'burn') s += 1.5; if (A.rng >= 2 && (hi || tt === 'shadow' || tt === 'tree')) s -= 1.2; if (tt === 'bounce') s += A.rng >= 2 || A.role === '坦' ? 2 : -0.8; return s; };
+      const rowS = f => front ? (CFG.ROWS_HALF - 1 - f.r) : f.r;
+      const cand = free.slice().sort((a, b) => (rowS(a) + tScore(a)) - (rowS(b) + tScore(b)) || centerScore(a) - centerScore(b) || a.c - b.c);
       if (A.rng === 1 && (o.u.key === 'bat' || o.u.key === 'cheetah')) cand.sort((a, b) => b.r - a.r || Math.abs(a.c - 3) - Math.abs(b.c - 3));
       spot = cand[0];
     }
@@ -2465,6 +2659,161 @@ const BUILD = {
     for (let i = 0; i < 6; i++) R.head.add(mesh(GEO.cone, R.M('#4e3628'), [0, 0.43 - i * 0.03, -0.05 - i * 0.06], [0.03, 0.09, 0.03], [-0.5 - i * 0.2, 0, 0]));
   },
 };
+// ---- v0.5 新動物 ----
+Object.assign(BUILD, {
+  penguin(R) {
+    plush(R, { fur: '#2f3440', belly: '#f4f1ea', headR: 0.28, limb: '#2f3440', bodyW: 0.27, bodyH: 0.29 });
+    const M = R.M, hr = 0.28;
+    R.head.add(mesh(GEO.sph, M('#f4f1ea'), [0, hr * 0.62, hr * 0.5], [0.22, 0.17, 0.14]));
+    R.head.add(mesh(GEO.cone, M('#f0a030'), [0, hr * 0.55, hr * 1.02], [0.045, 0.09, 0.035], [Math.PI / 2, 0, 0]));
+    for (const a of [R.armL, R.armR]) { a.children[0].scale.set(0.035, 0.15, 0.085); a.children[0].position.y = -0.12; }
+    for (const l of [R.legL, R.legR]) { l.children[0].material = M('#f0a030'); l.children[0].scale.set(0.08, 0.03, 0.12); }
+    R.body.add(mesh(GEO.sph, M('#f2c14e'), [0, 0.47, 0.17], [0.09, 0.03, 0.05]));
+    R.headTop = 0.98;
+  },
+  rhino(R) {
+    plush(R, { fur: '#8e8a86', belly: '#aaa49d', headR: 0.29, bodyW: 0.31, bodyH: 0.29, limb: '#7a7672', blush: false });
+    const M = R.M;
+    R.head.add(mesh(GEO.sph, M('#9c9893'), [0, 0.13, 0.22], [0.17, 0.13, 0.17]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#5a5450'), [s * 0.05, 0.12, 0.38], [0.015, 0.02, 0.01]));
+    R.horn = saveBase(grp(R.head, [0, 0.2, 0.3], [0.35, 0, 0]));
+    R.horn.add(mesh(GEO.cone, M('#e8dcc0'), [0, 0.1, 0], [0.065, 0.22, 0.065]));
+    R.horn.add(mesh(GEO.cone, M('#e8dcc0'), [0, 0.03, -0.12], [0.04, 0.1, 0.04]));
+    triEar(R, R.head, -0.17, 0.4, -0.04, '#7a7672', '#d9b0a8', 0.13, 0.5); triEar(R, R.head, 0.17, 0.4, -0.04, '#7a7672', '#d9b0a8', 0.13, 0.5);
+    for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.sph, M('#7f7b77'), [0, 0.42 - i * 0.08, -0.22], [0.2, 0.03, 0.06]));
+    const t = saveBase(grp(R.body, [0, 0.16, -0.26])); R.tail = t; t.add(mesh(GEO.cyl, M('#7a7672'), [0, -0.04, -0.03], [0.015, 0.12, 0.015], [-0.4, 0, 0])); t.add(mesh(GEO.sph, M('#4a4542'), [0, -0.1, -0.05], 0.025));
+    R.headTop = 1.0;
+  },
+  chameleon(R) {
+    plush(R, { fur: '#6cbf5c', belly: '#d8ef9a', headR: 0.27, limb: '#58a84a', blush: true });
+    const M = R.M;
+    R.head.add(mesh(GEO.cone, M('#58a84a'), [0, 0.42, -0.08], [0.16, 0.2, 0.08], [-0.5, 0, 0]));
+    for (const s of [-1, 1]) {
+      R.head.add(mesh(GEO.sph, M('#6cbf5c'), [s * 0.2, 0.24, 0.12], [0.1, 0.1, 0.1]));
+      R.head.add(mesh(GEO.sph, M('#f7f2df'), [s * 0.24, 0.25, 0.16], [0.045, 0.05, 0.04]));
+    }
+    for (let i = 0; i < 5; i++) R.body.add(mesh(GEO.cone, M('#4f9a40'), [0, 0.5 - i * 0.07, -0.2 - i * 0.02], [0.025, 0.05, 0.025], [-0.6, 0, 0]));
+    [[0.12, 0.3, 0.2], [-0.15, 0.24, 0.17], [0.18, 0.2, 0.05]].forEach(p => R.body.add(mesh(GEO.sph, M('#f2b84a'), p, [0.03, 0.03, 0.015])));
+    const t = saveBase(grp(R.body, [0, 0.12, -0.24])); R.tail = t;
+    t.add(mesh(new THREE.TorusGeometry(0.1, 0.035, 8, 20, Math.PI * 1.6), M('#58a84a'), [0, 0.04, -0.08], 1, [0, Math.PI / 2, 0]));
+    R.tongue = mesh(GEO.cap, M('#e98a9a'), [0, 0, 0], [0.05, 1, 0.05]); R.tongue.visible = false; R.yaw.add(R.tongue);
+    R.headTop = 1.02;
+  },
+  fox(R) {
+    plush(R, { fur: '#e07a34', belly: '#fbeedd', muzzle: '#fbeedd', nose: '#2e221d', headR: 0.28, limb: '#4a2e22', bodyW: 0.23 });
+    R.head.children[1].scale.set(0.13, 0.09, 0.17); R.head.children[1].position.z = 0.25;
+    triEar(R, R.head, -0.16, 0.4, -0.03, '#d06a28', '#3a2620', 0.24, 0.22); triEar(R, R.head, 0.16, 0.4, -0.03, '#d06a28', '#3a2620', 0.24, 0.22);
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, R.M('#fbeedd'), [s * 0.14, 0.12, 0.17], [0.09, 0.07, 0.07]));
+    R.jaw = saveBase(grp(R.head, [0, 0.1, 0.2])); R.jaw.add(mesh(GEO.sph, R.M('#f2dcc4'), [0, 0, 0.03], [0.07, 0.025, 0.07]));
+    bushyTail(R, R.body, [[0, 0, 0], [0.06, 0.08, -0.12], [0.12, 0.2, -0.2], [0.15, 0.34, -0.22], [0.14, 0.46, -0.18]], '#e07a34', '#fbeedd', 0.15);
+  },
+  eagle(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#6b4a32'), [0, 0.3, 0], [0.25, 0.3, 0.24])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#8a6444'), [0, 0.26, 0.11], [0.16, 0.2, 0.14]));
+    R.head = saveBase(grp(R.body, [0, 0.5, 0.02]));
+    R.head.add(mesh(GEO.sph, M('#f4efe6'), [0, 0.14, 0], [0.25, 0.23, 0.24]));
+    R.head.add(mesh(GEO.sph, M('#f4efe6'), [0, 0.0, -0.04], [0.2, 0.1, 0.2]));
+    R.beak = saveBase(grp(R.head, [0, 0.1, 0.22]));
+    R.beak.add(mesh(GEO.sph, M('#f2c14e'), [0, 0.0, 0.02], [0.07, 0.055, 0.08]));
+    R.beak.add(mesh(GEO.cone, M('#e0a020'), [0, -0.03, 0.08], [0.035, 0.07, 0.03], [Math.PI * 0.75, 0, 0]));
+    addEyes(R, R.head, 0.19, 0.1, 0.2, 0.032); addBlush(R, R.head, 0.09, 0.15, 0.19);
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#3a2620'), [s * 0.1, 0.25, 0.19], [0.06, 0.015, 0.02], [0, 0, s * -0.35]));
+    for (const s of [-1, 1]) {
+      const w = saveBase(grp(R.body, [s * 0.22, 0.44, -0.02]));
+      w.add(mesh(GEO.sph, M('#5a3c28'), [s * 0.04, -0.12, -0.02], [0.08, 0.2, 0.15]));
+      for (let i = 0; i < 3; i++) w.add(mesh(GEO.sph, M(i % 2 ? '#3f2a1c' : '#4a3222'), [s * 0.05, -0.28 - i * 0.04, -0.06 - i * 0.04], [0.05, 0.08, 0.06]));
+      s < 0 ? (R.wingL = w) : (R.wingR = w);
+      const l = saveBase(grp(R.body, [s * 0.09, 0.05, 0.06])); l.add(mesh(GEO.sph, M('#f2c14e'), [0, -0.02, 0.03], [0.05, 0.03, 0.06]));
+      for (let i = -1; i <= 1; i++) l.add(mesh(GEO.cone, M('#2e221d'), [i * 0.025, -0.03, 0.09], [0.012, 0.035, 0.012], [Math.PI / 2, 0, 0]));
+      s < 0 ? (R.legL = l) : (R.legR = l);
+    }
+    R.armL = R.wingL; R.armR = R.wingR;
+    const t = saveBase(grp(R.body, [0, 0.14, -0.2])); R.tail = t; t.add(mesh(GEO.sph, M('#f4efe6'), [0, 0, -0.08], [0.13, 0.03, 0.12], [-0.4, 0, 0]));
+    R.headR = 0.25; R.headTop = 0.98;
+  },
+  eel(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.torus, M('#3c6e8f'), [0, 0.1, 0], [0.22, 0.22, 0.4], [Math.PI / 2, 0, 0])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#3c6e8f'), [0, 0.08, 0], [0.17, 0.08, 0.17]));
+    R.segs = []; let parent = saveBase(grp(R.body, [0, 0.14, 0.12]));
+    R.segs.push(parent);
+    for (let i = 0; i < 4; i++) { parent.add(mesh(GEO.sph, M(i % 2 ? '#356585' : '#3c6e8f'), [0, 0.06, 0], [0.11 - i * 0.004, 0.09, 0.11 - i * 0.004])); parent.add(mesh(GEO.sph, M('#f2d24a'), [0.06, 0.06, 0.07], 0.022)); const n = saveBase(grp(parent, [0, 0.11, -0.005])); R.segs.push(n); parent = n; }
+    R.head = saveBase(grp(parent, [0, 0.02, 0]));
+    R.head.add(mesh(GEO.sph, M('#4a82a6'), [0, 0.12, 0.02], [0.2, 0.17, 0.2]));
+    R.head.add(mesh(GEO.sph, M('#d8e8c0'), [0, 0.05, 0.12], [0.12, 0.06, 0.1]));
+    addEyes(R, R.head, 0.15, 0.09, 0.17, 0.035, '#ffef6a'); addBlush(R, R.head, 0.07, 0.14, 0.16);
+    R.head.add(mesh(GEO.cone, M('#2f5a76'), [0, 0.3, -0.05], [0.07, 0.14, 0.03], [-0.4, 0, 0]));
+    for (const s of [-1, 1]) { const f = saveBase(grp(R.head, [s * 0.18, 0.08, 0])); f.add(mesh(GEO.sph, M('#2f5a76'), [s * 0.04, 0, 0], [0.06, 0.03, 0.05])); s < 0 ? (R.earL = f) : (R.earR = f); }
+    R.headR = 0.2; R.headTop = 0.95;
+  },
+  gorilla(R) {
+    plush(R, { fur: '#3a3536', belly: '#6a5e58', headR: 0.29, bodyW: 0.33, bodyH: 0.3, limb: '#2f2a2b', paw: '#5a4e48', blush: false });
+    const M = R.M;
+    R.head.add(mesh(GEO.sph, M('#7a6a62'), [0, 0.17, 0.17], [0.19, 0.15, 0.15]));
+    R.head.add(mesh(GEO.sph, M('#2f2a2b'), [0, 0.27, 0.19], [0.2, 0.045, 0.08]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#2e221d'), [s * 0.035, 0.13, 0.31], [0.018, 0.012, 0.01]));
+    roundEar(R, R.head, -0.27, 0.22, 0, '#3a3536', '#6a5e58', 0.06); roundEar(R, R.head, 0.27, 0.22, 0, '#3a3536', '#6a5e58', 0.06);
+    for (const a of [R.armL, R.armR]) { a.children[0].scale.set(0.1, 0.17, 0.1); a.children[0].position.y = -0.14; if (a.children[1]) { a.children[1].scale.set(0.08, 0.06, 0.08); a.children[1].position.y = -0.3; } }
+    R.body.add(mesh(GEO.sph, M('#9aa0a8'), [0, 0.32, -0.22], [0.2, 0.15, 0.06]));
+    R.headTop = 1.02;
+  },
+  whale(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#4a78a8'), [0, 0.34, 0], [0.4, 0.34, 0.44])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#e9eef2'), [0, 0.22, 0.12], [0.3, 0.2, 0.33]));
+    for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#c8d4de'), [0, 0.12 + i * 0.05, 0.36 - i * 0.02], [0.22 - i * 0.03, 0.008, 0.04]));
+    R.head = saveBase(grp(R.body, [0, 0.36, 0.2]));
+    addEyes(R, R.head, 0.06, 0.17, 0.17, 0.045); addBlush(R, R.head, -0.03, 0.24, 0.15);
+    R.head.add(mesh(GEO.torus, M('#2f4f72'), [0, -0.1, 0.25], [0.08, 0.04, 0.05], [0, 0, Math.PI]));
+    R.blow = saveBase(grp(R.head, [0, 0.32, -0.12])); R.blow.add(mesh(GEO.sph, M('#2f4f72'), [0, 0, 0], [0.04, 0.015, 0.03]));
+    for (const s of [-1, 1]) { const f = saveBase(grp(R.body, [s * 0.36, 0.2, 0.08], [0, 0, s * 0.6])); f.add(mesh(GEO.sph, M('#3f6a96'), [s * 0.1, -0.04, 0], [0.14, 0.04, 0.09])); s < 0 ? (R.armL = f) : (R.armR = f); }
+    const t = saveBase(grp(R.body, [0, 0.3, -0.42])); R.tail = t;
+    t.add(mesh(GEO.sph, M('#4a78a8'), [0, 0.05, -0.08], [0.14, 0.12, 0.16]));
+    for (const s of [-1, 1]) t.add(mesh(GEO.sph, M('#3f6a96'), [s * 0.13, 0.2, -0.16], [0.16, 0.04, 0.09], [0.5, 0, -s * 0.5]));
+    R.headR = 0.4; R.headTop = 0.85;
+  },
+  peacock(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.fan = saveBase(grp(R.body, [0, 0.25, -0.2]));
+    for (let i = 0; i < 11; i++) {
+      const a = (i / 10 - 0.5) * 2.6, f = grp(R.fan, [0, 0, 0], [0, 0, a]);
+      f.add(mesh(GEO.sph, M('#3f8a5a'), [0, 0.42, 0], [0.09, 0.32, 0.02]));
+      f.add(mesh(GEO.sph, M('#d8b54a'), [0, 0.62, 0.012], [0.06, 0.07, 0.01]));
+      f.add(mesh(GEO.sph, M('#2a5aa8'), [0, 0.62, 0.02], [0.035, 0.04, 0.01]));
+    }
+    R.torso = saveBase(mesh(GEO.sph, M('#2f6fb0'), [0, 0.25, 0], [0.2, 0.22, 0.2])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#3f84c4'), [0, 0.24, 0.09], [0.13, 0.15, 0.12]));
+    R.head = saveBase(grp(R.body, [0, 0.42, 0.04]));
+    R.head.add(mesh(GEO.sph, M('#2f6fb0'), [0, 0.13, 0], [0.22, 0.2, 0.2]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#f4f1ea'), [s * 0.09, 0.14, 0.15], [0.07, 0.035, 0.03]));
+    addEyes(R, R.head, 0.14, 0.09, 0.18, 0.028); addBlush(R, R.head, 0.07, 0.14, 0.17);
+    R.head.add(mesh(GEO.cone, M('#d8b090'), [0, 0.08, 0.21], [0.03, 0.06, 0.025], [Math.PI / 2, 0, 0]));
+    for (let i = -1; i <= 1; i++) { R.head.add(mesh(GEO.cyl, M('#2a4f80'), [i * 0.04, 0.38, -0.02], [0.006, 0.14, 0.006], [0, 0, i * 0.3])); R.head.add(mesh(GEO.sph, M('#2a5aa8'), [i * 0.06, 0.46, -0.02], 0.025)); }
+    for (const s of [-1, 1]) { const w = saveBase(grp(R.body, [s * 0.18, 0.32, -0.02])); w.add(mesh(GEO.sph, M('#a88a5a'), [s * 0.02, -0.08, 0], [0.06, 0.13, 0.1])); s < 0 ? (R.wingL = w) : (R.wingR = w);
+      const l = saveBase(grp(R.body, [s * 0.07, 0.06, 0.04])); l.add(mesh(GEO.cyl, M('#8a7a6a'), [0, -0.01, 0], [0.012, 0.1, 0.012])); l.add(mesh(GEO.sph, M('#8a7a6a'), [0, -0.05, 0.03], [0.04, 0.015, 0.05])); s < 0 ? (R.legL = l) : (R.legR = l); }
+    R.armL = R.wingL; R.armR = R.wingR;
+    R.headR = 0.22; R.headTop = 1.05;
+  },
+  komodo(R) {
+    plush(R, { fur: '#7b7356', belly: '#a39a76', headR: 0.27, bodyW: 0.3, bodyH: 0.25, limb: '#6a6248', blush: false });
+    const M = R.M;
+    R.head.children[0].scale.set(0.26, 0.2, 0.3); R.head.children[0].position.y = 0.17;
+    R.jawU = saveBase(grp(R.head, [0, 0.16, 0.14])); R.jawU.add(mesh(GEO.sph, M('#857c5e'), [0, 0.01, 0.12], [0.17, 0.08, 0.17]));
+    for (const s of [-1, 1]) R.jawU.add(mesh(GEO.sph, M('#2e221d'), [s * 0.04, 0.04, 0.28], 0.012));
+    R.jaw = saveBase(grp(R.head, [0, 0.1, 0.13])); R.jaw.add(mesh(GEO.sph, M('#b0a682'), [0, 0, 0.1], [0.14, 0.04, 0.15]));
+    R.eyeMat = M('#241914'); R.glow = '#ffe27a';
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, M('#7b7356'), [s * 0.12, 0.29, 0.06], 0.07)); R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.13, 0.3, 0.12], [0.03, 0.035, 0.02])); }
+    R.tongue = mesh(GEO.cap, M('#e8c24a'), [0, 0, 0], [0.03, 1, 0.03]); R.tongue.visible = false; R.yaw.add(R.tongue);
+    [[0.12, 0.3, 0.15], [-0.14, 0.26, 0.12], [0.18, 0.2, 0.0], [-0.1, 0.38, -0.12], [0.08, 0.34, -0.18]].forEach(p => R.body.add(mesh(GEO.sph, M('#5e573f'), p, [0.035, 0.035, 0.015])));
+    const t = saveBase(grp(R.body, [0, 0.12, -0.22])); R.tail = t; t.add(mesh(GEO.cone, M('#7b7356'), [0, 0, -0.22], [0.14, 0.48, 0.1], [-1.45, 0, 0]));
+    R.headTop = 0.95;
+  },
+});
 BUILD.minibee = R => BUILD.bee(R);
 // 中立物件
 BUILD.chest = R => {
@@ -2501,7 +2850,7 @@ function buildAnimal(key) {
   const R = { key, M: Mats(), root: new THREE.Group(), fly: 0 };
   R.yaw = saveBase(grp(R.root));
   (BUILD[key] || BUILD.hare)(R);
-  for (const k of ['armL', 'armR', 'legL', 'legR', 'head', 'body', 'tail', 'earL', 'earR', 'wingL', 'wingR', 'jaw', 'jawU', 'mane', 'spikes', 'torso', 'mouth']) if (R[k]) saveBase(R[k]);
+  for (const k of ['armL', 'armR', 'legL', 'legR', 'head', 'body', 'tail', 'earL', 'earR', 'wingL', 'wingR', 'jaw', 'jawU', 'mane', 'spikes', 'torso', 'mouth', 'horn', 'beak', 'fan', 'blow']) if (R[k]) saveBase(R[k]);
   R.root.traverse(o => { if (o.isMesh) { o.castShadow = false; o.userData.unit = true; } });
   if (key === 'minibee') R.root.scale.setScalar(0.55);
   mergeRig(R);
@@ -2629,6 +2978,49 @@ const ACT = {
   boar: { atk: { dur: 0.5, hit: 0.6, fx: 'bump', fn(R, p) { R.body.position.z -= 0.12 * bell(p, 0, 0.45); lunge(R, p, 0.45, 0.4); R.head.rotation.x += 0.4 * bell(p, 0.45, 0.85); } } },
 };
 
+// ---- v0.5 新動物動作 ----
+Object.assign(ACT, {
+  penguin: {
+    atk: { dur: 0.42, hit: 0.55, fx: 'flipper', fn(R, p) { clawSwing(R, p, 1); R.body.rotation.z += 0.12 * bell(p, 0.3, 0.8); } },
+    skill: { dur: 0.9, hit: 0.55, fx: 'slideHit', fn(R, p) { const k = bell(p, 0, 1), lay = Math.min(1, k * 2.2); R.body.rotation.x += 1.35 * lay; R.body.position.y += 0.05 * lay - 0.02; R.armL.rotation.z -= 1.2 * lay; R.armR.rotation.z += 1.2 * lay; R.body.position.z += 0.35 * bell(p, 0.3, 0.8); R.body.rotation.z += 0.12 * Math.sin(p * 30) * lay; } },
+  },
+  rhino: {
+    atk: { dur: 0.5, hit: 0.58, fx: 'headbutt', fn(R, p) { R.body.position.z -= 0.1 * bell(p, 0, 0.4); lunge(R, p, 0.42, 0.38); R.head.rotation.x += 0.5 * bell(p, 0.35, 0.8); R.horn.rotation.x -= 0.2 * bell(p, 0.4, 0.7); } },
+    skill: { dur: 0.95, hit: 0.5, fx: 'rhinoCharge', fn(R, p) { const pre = bell(p, 0, 0.35), run = bell(p, 0.25, 0.85); R.body.rotation.x += 0.35 * run - 0.15 * pre; R.head.rotation.x += 0.45 * run; R.legL.rotation.x += 1.0 * Math.sin(p * 40) * run; R.legR.rotation.x -= 1.0 * Math.sin(p * 40) * run; R.body.position.z += 0.5 * bell(p, 0.35, 0.75); R.body.position.y += 0.06 * Math.abs(Math.sin(p * 40)) * run; } },
+  },
+  chameleon: {
+    atk: { dur: 0.45, hit: 0.5, fx: 'tongue', fn(R, p) { R.head.position.z += 0.05 * bell(p, 0.2, 0.7); R.body.rotation.x += 0.15 * bell(p, 0.1, 0.6); R.tail.rotation.x += 0.4 * bell(p, 0, 0.8); } },
+    skill: { dur: 1.0, hit: 0.55, fx: 'chamStrike', fn(R, p) { R.body.scale.y *= 1 - 0.18 * bell(p, 0, 0.4); R.head.rotation.x -= 0.25 * bell(p, 0.2, 0.5); R.head.position.z += 0.08 * bell(p, 0.45, 0.8); R.tail.rotation.x += 0.8 * bell(p, 0, 1); } },
+  },
+  fox: {
+    atk: { dur: 0.38, hit: 0.55, fx: 'bite', fn(R, p) { lunge(R, p, 0.38, 0.22); R.jaw.rotation.x += 0.6 * bell(p, 0.3, 0.6); R.tail.rotation.x += 0.3 * bell(p, 0.2, 0.8); } },
+    skill: { dur: 1.0, hit: 0.72, fx: 'pounce', fn(R, p) { R.body.scale.y *= 1 - 0.25 * bell(p, 0, 0.25); const air = ramp(p, 0.18, 0.75); hopUp(R, air, 0.9); R.body.rotation.x += -0.6 * bell(p, 0.18, 0.45) + 1.4 * bell(p, 0.5, 0.82); R.armL.rotation.x -= 2.0 * bell(p, 0.45, 0.8); R.armR.rotation.x -= 2.0 * bell(p, 0.45, 0.8); R.tail.rotation.x -= 0.8 * bell(p, 0.2, 0.8); } },
+  },
+  eagle: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'talonShot', fn(R, p) { const f = bell(p, 0, 0.6); R.wingL.rotation.z -= 1.4 * f; R.wingR.rotation.z += 1.4 * f; R.body.position.y += 0.12 * f; R.head.rotation.x += 0.35 * bell(p, 0.4, 0.8); R.beak.rotation.x += 0.3 * bell(p, 0.4, 0.7); } },
+    skill: { dur: 1.5, hit: 0.3, fx: 'grabLift', fn(R, p) { const up = bell(p, 0, 1); R.body.position.y += 1.2 * Math.min(1, up * 1.4); R.body.position.z += 0.4 * bell(p, 0.1, 0.5); const fl = Math.abs(Math.sin(p * 26)); R.wingL.rotation.z -= (0.6 + 1.2 * fl) * up; R.wingR.rotation.z += (0.6 + 1.2 * fl) * up; R.legL.rotation.x -= 1.0 * up; R.legR.rotation.x -= 1.0 * up; R.body.rotation.x += 0.5 * bell(p, 0.75, 1); } },
+  },
+  eel: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'zap', fn(R, p) { const k = bell(p, 0, 0.7); R.segs.forEach((s, i) => { s.rotation.x += (i % 2 ? -0.2 : 0.25) * k; s.rotation.z += 0.15 * Math.sin(p * 40 + i) * k; }); R.head.rotation.x += 0.3 * bell(p, 0.4, 0.8); } },
+    skill: { dur: 1.1, hit: 0.5, fx: 'chainZap', fn(R, p) { const k = bell(p, 0, 1); R.segs.forEach((s, i) => { s.rotation.z += 0.35 * Math.sin(p * 55 + i * 1.3) * k; s.rotation.x -= 0.12 * k; }); R.head.scale.setScalar(1 + 0.15 * bell(p, 0.35, 0.6)); R.earL.rotation.z += 0.6 * k; R.earR.rotation.z -= 0.6 * k; } },
+  },
+  gorilla: {
+    atk: { dur: 0.6, hit: 0.62, fx: 'fistSlam', fn(R, p) { const up = bell(p, 0, 0.6), dn = bell(p, 0.5, 0.85); R.armL.rotation.x -= 2.9 * up - 0.7 * dn; R.armR.rotation.x -= 2.9 * up - 0.7 * dn; R.body.rotation.x += 0.45 * dn - 0.2 * up; R.body.position.z += 0.15 * dn; R.body.position.y += 0.08 * up; } },
+    skill: { dur: 1.5, hit: 0.75, fx: 'chestBeat', fn(R, p) { const beat = bell(p, 0, 0.62); R.body.rotation.x -= 0.25 * beat; R.armL.rotation.x -= (1.4 + 0.5 * Math.sin(p * 40)) * beat; R.armR.rotation.x -= (1.4 - 0.5 * Math.sin(p * 40)) * beat; R.armL.rotation.z += 0.6 * beat; R.armR.rotation.z -= 0.6 * beat; R.head.rotation.x -= 0.4 * beat; const sl = bell(p, 0.6, 0.95); R.armL.rotation.x -= 2.6 * bell(p, 0.55, 0.72) - 0.6 * sl; R.armR.rotation.x -= 2.6 * bell(p, 0.55, 0.72) - 0.6 * sl; R.body.rotation.x += 0.5 * sl; R.body.scale.y *= 1 - 0.12 * bell(p, 0.72, 0.85); } },
+  },
+  whale: {
+    atk: { dur: 0.6, hit: 0.55, fx: 'spout', fn(R, p) { R.body.rotation.x -= 0.18 * bell(p, 0, 0.5); R.body.scale.y *= 1 + 0.08 * bell(p, 0.3, 0.6); R.tail.rotation.x += 0.4 * bell(p, 0, 0.7); } },
+    skill: { dur: 1.5, hit: 0.55, fx: 'tidal', fn(R, p) { const rear = bell(p, 0, 0.6); R.body.rotation.x -= 0.55 * rear; R.body.position.y += 0.35 * rear; R.armL.rotation.z -= 0.8 * rear; R.armR.rotation.z += 0.8 * rear; R.tail.rotation.x += 0.9 * bell(p, 0.1, 0.7); R.body.scale.y *= 1 - 0.15 * bell(p, 0.55, 0.7); } },
+  },
+  peacock: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'feather', fn(R, p) { R.fan.scale.y *= 1 + 0.3 * bell(p, 0, 0.6); R.body.rotation.y += 0.5 * bell(p, 0, 0.5) - 0.3 * bell(p, 0.45, 0.8); R.head.rotation.x += 0.2 * bell(p, 0.4, 0.8); } },
+    skill: { dur: 1.6, hit: 0.45, fx: 'fanOpen', fn(R, p) { const o = Math.min(1, bell(p, 0, 1) * 1.8); R.fan.scale.setScalar(1 + 0.8 * o); R.fan.rotation.x -= 0.5 * o; R.fan.position.y += 0.15 * o; R.fan.rotation.z += 0.06 * Math.sin(p * 40) * o; R.body.position.y += 0.06 * o; R.head.rotation.x -= 0.2 * o; } },
+  },
+  komodo: {
+    atk: { dur: 0.48, hit: 0.58, fx: 'bite', fn(R, p) { R.jawU.rotation.x -= 0.7 * bell(p, 0, 0.55); R.jaw.rotation.x += 0.35 * bell(p, 0, 0.55); lunge(R, p, 0.32, 0.35); R.tail.rotation.y += 0.4 * bell(p, 0.2, 0.9); } },
+    skill: { dur: 1.1, hit: 0.5, fx: 'venomBite', fn(R, p) { R.jawU.rotation.x -= 1.0 * bell(p, 0, 0.5); R.jaw.rotation.x += 0.5 * bell(p, 0, 0.5); R.body.position.z -= 0.12 * bell(p, 0, 0.35); lunge(R, p, 0.5, 0.35); R.body.rotation.y += 0.4 * Math.sin(p * 30) * bell(p, 0.5, 0.9); R.tail.rotation.y += 0.6 * Math.sin(p * 20) * bell(p, 0.3, 1); } },
+  },
+});
 // 每幀姿勢：st = {t 秒, moving, sleep, stun, act:{kind,p}, dead:p, hit:p, night, face}
 function poseRig(R, st) {
   for (const g of R.groups) resetG(g);
@@ -2642,6 +3034,8 @@ function poseRig(R, st) {
   if (R.earL) { const tw = Math.max(0, Math.sin(t * 0.9) - 0.92) * 6; R.earL.rotation.z += 0.3 * tw; R.earR.rotation.z -= 0.2 * tw; }
   if (R.tents) R.tents.forEach((seg, i) => seg.forEach((s, k) => { s.rotation.x += 0.25 * Math.sin(t * 2.2 + i + k * 0.8); }));
   if (R.trunk) R.trunk.forEach((s, k) => { s.rotation.z += 0.08 * Math.sin(t * 1.6 + k * 0.6); });
+  if (R.segs) R.segs.forEach((s, k) => { s.rotation.z += 0.12 * Math.sin(t * 2.4 + k * 0.9); s.rotation.x += 0.05 * Math.sin(t * 1.7 + k); });
+  if (R.fan) { R.fan.rotation.z += 0.03 * Math.sin(t * 1.3); R.fan.scale.y *= 1 + 0.03 * Math.sin(t * 2.1); }
   if (R.earL && R.key === 'elephant') { R.earL.rotation.y += 0.15 * Math.sin(t * 2); R.earR.rotation.y -= 0.15 * Math.sin(t * 2); }
   if (R.fly) {
     R.body.position.y += R.fly + 0.05 * Math.sin(t * 4);
@@ -2755,6 +3149,8 @@ function tex(name) {
     case 'heal': { g.fillStyle = '#8fe07a'; g.shadowColor = '#5fbf4a'; g.shadowBlur = 10; g.fillRect(M - 12, 24, 24, 80); g.fillRect(24, M - 12, 80, 24); break; }
     case 'beam': { const gr = g.createLinearGradient(0, 0, 0, SPR_SIZE); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.35, 'rgba(255,255,255,.75)'); gr.addColorStop(1, 'rgba(255,255,255,.95)'); g.fillStyle = gr; g.fillRect(0, 0, SPR_SIZE, SPR_SIZE); break; }
     case 'shard': { g.fillStyle = '#fff'; g.beginPath(); g.moveTo(M, 8); g.lineTo(M + 14, M); g.lineTo(M, 120); g.lineTo(M - 14, M); g.fill(); break; }
+    case 'cell': { const rr = 18, m = 10, w = SPR_SIZE - m * 2; g.beginPath(); g.moveTo(m + rr, m); g.arcTo(m + w, m, m + w, m + w, rr); g.arcTo(m + w, m + w, m, m + w, rr); g.arcTo(m, m + w, m, m, rr); g.arcTo(m, m, m + w, m, rr); g.closePath(); g.fillStyle = 'rgba(255,255,255,.28)'; g.fill(); g.lineWidth = 6; g.strokeStyle = 'rgba(255,255,255,.95)'; g.stroke(); break; }
+    case 'flame': { const gr = g.createRadialGradient(M, M + 18, 4, M, M + 10, 50); gr.addColorStop(0, 'rgba(255,250,200,1)'); gr.addColorStop(.35, 'rgba(255,190,60,.95)'); gr.addColorStop(.7, 'rgba(240,90,30,.6)'); gr.addColorStop(1, 'rgba(200,40,20,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(M, 6); g.bezierCurveTo(M + 40, 50, M + 42, 100, M, 118); g.bezierCurveTo(M - 42, 100, M - 40, 50, M, 6); g.fill(); break; }
     case 'splat': { g.fillStyle = '#fff'; g.beginPath(); for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, r = 30 + (i * 37 % 19); g.lineTo(M + Math.cos(a) * r, M + Math.sin(a) * r); } g.fill(); for (const [x, y, r] of [[18, 30, 8], [110, 40, 7], [100, 104, 9], [26, 98, 6]]) { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); } break; }
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
@@ -2797,9 +3193,9 @@ const benchWorld = i => [(i - 3.5) * 0.8, 4.4];
 
 // ---- 場地 ----
 const ARENA_LOOK = {
-  jungle: { sky: 'linear-gradient(#bcd59a 0%, #e9d9a0 45%, #7e9c58 100%)', ground: '#6b8b46', tileA: '#c4a46a', tileB: '#b8955a', tileE: '#a98652', tileF: '#9d7a48', slab: '#6e4a30', hemi: [0xfff3d6, 0x5a6a3a, 1.25], sun: [0xfff0c8, 2.0], fog: 0xa9c487 },
-  desert: { sky: 'linear-gradient(#f6c27a 0%, #f7dca6 45%, #e3b07a 100%)', ground: '#e2b97a', tileA: '#efd29e', tileB: '#e6c38a', tileE: '#d9b07a', tileF: '#cfa36e', slab: '#b0683e', hemi: [0xfff1dc, 0xb07040, 1.35], sun: [0xffd9a0, 2.5], fog: 0xf0cf98 },
-  city: { sky: 'linear-gradient(#7b6ea6 0%, #e89a7a 55%, #f2c48a 100%)', ground: '#5b5a62', tileA: '#d6cfc3', tileB: '#c9c1b4', tileE: '#bdb3a6', tileF: '#b2a89a', slab: '#3f3e45', hemi: [0xffe2d0, 0x4a4560, 1.15], sun: [0xffc9a0, 1.8], fog: 0xb898a8 },
+  jungle: { sky: 'linear-gradient(#bcd59a 0%, #e9d9a0 45%, #7e9c58 100%)', ground: '#6b8b46', tileA: '#c4a46a', tileB: '#b8955a', tileE: '#a98652', tileF: '#9d7a48', slab: '#6e4a30', board: ['#7fa052', '#93b25c', '#6c8f45'], cliff: '#8a6a48', top: '#a3c46a', rim: '#5a4630', hemi: [0xfff3d6, 0x5a6a3a, 1.25], sun: [0xfff0c8, 2.0], fog: 0xa9c487 },
+  desert: { sky: 'linear-gradient(#f6c27a 0%, #f7dca6 45%, #e3b07a 100%)', ground: '#e2b97a', tileA: '#efd29e', tileB: '#e6c38a', tileE: '#d9b07a', tileF: '#cfa36e', slab: '#b0683e', board: ['#e8c590', '#f0d3a2', '#dcb47c'], cliff: '#c06e40', top: '#e9a868', rim: '#a65a34', hemi: [0xfff1dc, 0xb07040, 1.35], sun: [0xffd9a0, 2.5], fog: 0xf0cf98 },
+  city: { sky: 'linear-gradient(#7b6ea6 0%, #e89a7a 55%, #f2c48a 100%)', ground: '#5b5a62', tileA: '#d6cfc3', tileB: '#c9c1b4', tileE: '#bdb3a6', tileF: '#b2a89a', slab: '#3f3e45', board: ['#a9a49c', '#bdb6aa', '#97928b'], cliff: '#77706a', top: '#c9b79a', rim: '#4a4850', hemi: [0xffe2d0, 0x4a4560, 1.15], sun: [0xffc9a0, 1.8], fog: 0xb898a8 },
 };
 function disposeGroup(g) { if (!g) return; g.traverse(o => { if (o.isMesh && o.geometry && !Object.values(GEO).includes(o.geometry)) o.geometry.dispose(); }); g.parent && g.parent.remove(g); }
 function rnd(seed) { let x = seed >>> 0 || 1; return () => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 10000) / 10000; }; }
@@ -2824,24 +3220,21 @@ function s3SetArena(key) {
   const ground = new THREE.Mesh(new THREE.CircleGeometry(40, 48), T(L.ground)); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.32; S3.arena.add(ground);
   ARENA_DECO[key](S3.arena, r);
   // 棋盤底座
-  const slab = new THREE.Mesh(GEO.box, T(L.slab)); slab.scale.set(7.6, 0.4, 8.6); slab.position.set(0, -0.36, -0.5); S3.board.add(slab);
-  if (key === 'city') { for (const s of [-1, 1]) { const ln = new THREE.Mesh(GEO.box, MB(0xf2c14e)); ln.scale.set(0.08, 0.02, 8.5); ln.position.set(s * 3.72, -0.15, -0.5); S3.board.add(ln); } }
-  if (key === 'jungle') { for (let i = 0; i < 18; i++) { const v = new THREE.Mesh(GEO.sph, T(i % 2 ? '#4f7a35' : '#6b9a45')); const side = i % 2 ? 1 : -1; v.scale.set(0.22, 0.12, 0.35); v.position.set(side * 3.8, -0.15, -4.6 + i * 0.5); v.rotation.y = r() * 3; S3.board.add(v); } }
+  // 棋盤是一塊有機形狀的島（地面網格在 s3SetTerrain 依高台重建），這裡只放邊緣點綴
+  if (key === 'jungle') { for (let i = 0; i < 22; i++) { const v = new THREE.Mesh(GEO.sph, T(i % 2 ? '#4f7a35' : '#6b9a45')); const a = i / 22 * Math.PI * 2; v.scale.set(0.3 + r() * 0.2, 0.18 + r() * 0.1, 0.35); v.position.set(Math.cos(a) * 4.45, -0.25, -0.5 + Math.sin(a) * 4.95); v.rotation.y = r() * 3; S3.board.add(v); } }
+  if (key === 'desert') { for (let i = 0; i < 16; i++) { const v = new THREE.Mesh(GEO.box, T(['#c98a5a', '#b87a4c', '#d9a070'][i % 3])); const a = i / 16 * Math.PI * 2 + r() * 0.2; v.scale.set(0.3 + r() * 0.3, 0.2 + r() * 0.2, 0.3 + r() * 0.3); v.rotation.y = r() * 3; v.position.set(Math.cos(a) * 4.5, -0.25, -0.5 + Math.sin(a) * 5.0); S3.board.add(v); } }
+  if (key === 'city') { for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2; const v = new THREE.Mesh(GEO.box, T(i % 2 ? '#c8c0b4' : '#b0a89c')); v.scale.set(0.5, 0.16, 0.25); v.rotation.y = -a + Math.PI / 2; v.position.set(Math.cos(a) * 4.42, -0.24, -0.5 + Math.sin(a) * 4.92); S3.board.add(v); } }
   // 格子
   S3.tiles = [];
+  // 格子：平常完全透明，只在拖曳／選取時淡淡浮現（像聯盟戰棋）
+  if (!GEO.cellPlane) { GEO.cellPlane = new THREE.PlaneGeometry(0.92, 0.92); GEO.cellPlane.rotateX(-Math.PI / 2); }
   for (let vr = 0; vr < CFG.ROWS; vr++) for (let vc = 0; vc < CFG.COLS; vc++) {
-    const mine = vr < CFG.ROWS_HALF, alt = (vc + vr) % 2;
-    const col = new THREE.Color(mine ? (alt ? L.tileA : L.tileB) : (alt ? L.tileE : L.tileF));
-    col.offsetHSL(0, 0, (r() - 0.5) * 0.04);
-    const m = new THREE.MeshToonMaterial({ color: col, gradientMap: toonGrad(), emissive: 0x000000 });
-    const t = new THREE.Mesh(GEO.box, m); t.scale.set(0.93, 0.18, 0.93);
-    const [x, z] = cellWorld(vc, vr); t.position.set(x, -0.09, z);
-    t.userData = { tile: true, vc, vr, base: col.clone() };
-    if (key === 'city' && (vc + vr) % 3 === 0) { const crack = new THREE.Mesh(GEO.box, MB(0x9a9286)); crack.scale.set(0.5, 0.005, 0.02); crack.position.set(x + 0.1, 0.005, z + 0.1); crack.rotation.y = 0.6; S3.board.add(crack); }
+    const m = new THREE.MeshBasicMaterial({ map: tex('cell'), color: 0xffffff, transparent: true, opacity: 0, depthWrite: false });
+    const t = new THREE.Mesh(GEO.cellPlane, m); t.renderOrder = 2;
+    const [x, z] = cellWorld(vc, vr); t.position.set(x, 0.02, z);
+    t.userData = { tile: true, vc, vr, op: 0 };
     S3.board.add(t); S3.tiles.push(t);
   }
-  // 中線
-  const mid = new THREE.Mesh(GEO.box, MB(key === 'city' ? 0xf2c14e : 0x7a4a30, 0.55)); mid.scale.set(7, 0.01, 0.05); mid.position.set(0, 0.005, -0.5); S3.board.add(mid);
   // 備戰席
   S3.bench = [];
   for (let i = 0; i < CFG.BENCH; i++) {
@@ -2929,7 +3322,7 @@ function mergeStatic(root) {
   const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
   const buckets = {}, kill = [];
   root.traverse(o => {
-    if (!o.isMesh || o.userData.tile || o.userData.benchPad) return;
+    if (!o.isMesh || o.userData.tile || o.userData.benchPad || o.userData.noMerge) return;
     for (let p = o; p && p !== root; p = p.parent) if (skip.has(p)) return;
     const m = o.material; if (m.map || m.transparent || m.side === THREE.DoubleSide) return;
     const key = m.type + m.color.getHexString();
@@ -2972,25 +3365,138 @@ function terrainProp(arena, type, r) {
     if (arena === 'desert') { add(GEO.box, T('#c98a5a'), [0, 0.12, 0], [0.75, 0.25, 0.65], [0, 0.2, 0]); add(GEO.box, T('#d9a070'), [0.05, 0.34, 0], [0.55, 0.2, 0.5], [0, -0.1, 0]); add(GEO.box, T('#b87a4c'), [-0.03, 0.5, 0.02], [0.35, 0.14, 0.3], [0, 0.3, 0]); }
     else if (arena === 'city') { add(GEO.box, T('#d8d2c8'), [0, 0.18, 0], [0.82, 0.36, 0.3]); for (let i = 0; i < 3; i++) add(GEO.box, MB(i % 2 ? 0xffffff : 0xd9483a), [-0.27 + i * 0.27, 0.22, 0.16], [0.26, 0.14, 0.01]); }
     else { add(GEO.sph, T('#8a8580'), [0, 0.2, 0], [0.4, 0.3, 0.36]); add(GEO.sph, T('#9d9890'), [0.18, 0.12, 0.15], [0.2, 0.16, 0.18]); add(GEO.sph, T('#6b9a45'), [-0.05, 0.42, -0.02], [0.28, 0.08, 0.24]); }
+  } else if (type === 'bounce') {
+    if (arena === 'jungle') { // 彈跳蘑菇：扁平大傘，站上去會被彈飛
+      const cap = new THREE.Group(); g.add(cap);
+      cap.add(mesh(GEO.cyl, T('#f2e6cf'), [0, 0.05, 0], [0.12, 0.1, 0.12]));
+      cap.add(mesh(GEO.sph, T('#d9483a'), [0, 0.11, 0], [0.42, 0.07, 0.42]));
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + 0.3; cap.add(mesh(GEO.sph, T('#fff3e0'), [Math.cos(a) * 0.26, 0.16, Math.sin(a) * 0.26], [0.06, 0.02, 0.06])); }
+      for (let i = 0; i < 3; i++) { const a = i * 2.1 + 1; add(GEO.sph, T('#e8a04a'), [Math.cos(a) * 0.42, 0.04, Math.sin(a) * 0.42], [0.06, 0.06, 0.06]); }
+      S3.ambient.push({ o: cap, k: 'bob', ph: r() * 6 });
+    } else if (arena === 'desert') { // 沙塵旋風
+      add(GEO.cyl, T('#d9b07a'), [0, 0.005, 0], [0.44, 0.01, 0.44]);
+      const sp = new THREE.Group(); g.add(sp);
+      for (let i = 0; i < 4; i++) { const ring = mesh(GEO.torus, MB(0xf4dcae, 0.55 - i * 0.08), [0, 0.1 + i * 0.16, 0], [0.18 + i * 0.07, 0.18 + i * 0.07, 0.25], [Math.PI / 2, 0, 0]); ring.material.depthWrite = false; sp.add(ring); }
+      S3.ambient.push({ o: sp, k: 'spin', ph: r() * 6 });
+    } else { // 蒸氣人孔
+      add(GEO.cyl, T('#3a3a42'), [0, 0.01, 0], [0.36, 0.02, 0.36]);
+      add(GEO.cyl, T('#5a5a62'), [0, 0.025, 0], [0.3, 0.02, 0.3]);
+      for (let i = -2; i <= 2; i++) add(GEO.box, T('#3a3a42'), [i * 0.1, 0.04, 0], [0.03, 0.01, 0.42]);
+      S3.ambient.push({ o: g, k: 'steam', ph: r() * 6 });
+    }
+  } else if (type === 'burn') {
+    if (arena === 'desert') { // 熔岩裂縫
+      add(GEO.cyl, T('#5a3a30'), [0, 0.005, 0], [0.44, 0.01, 0.4]);
+      for (let i = 0; i < 4; i++) add(GEO.box, MB(0xff7a2a), [(i - 1.5) * 0.12, 0.014, (i % 2 ? 0.08 : -0.06)], [0.05, 0.005, 0.5], [0, 0.4 + i * 0.5, 0]);
+    } else if (arena === 'city') { // 燃燒油桶
+      add(GEO.cyl, T('#4a4e58'), [0, 0.005, 0], [0.42, 0.01, 0.42]);
+      add(GEO.cyl, T('#b0503a'), [0.3, 0.17, -0.28], [0.12, 0.34, 0.12]); add(GEO.cyl, T('#8a3a2a'), [0.3, 0.2, -0.28], [0.125, 0.04, 0.125]);
+    } else { // 火焰蘭
+      add(GEO.cyl, T('#6a4a30'), [0, 0.005, 0], [0.4, 0.01, 0.4]);
+      for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; add(GEO.cone, T('#e8603a'), [Math.cos(a) * 0.3, 0.08, Math.sin(a) * 0.3], [0.05, 0.14, 0.05]); }
+    }
+    const fl = new THREE.Group(); g.add(fl);
+    for (let i = 0; i < 3; i++) { const f = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('flame'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); f.position.set((i - 1) * 0.2 + (arena === 'city' ? 0.3 : 0), arena === 'city' ? 0.45 : 0.15, (i % 2 ? 0.1 : -0.1) + (arena === 'city' ? -0.28 : 0)); f.scale.set(0.3, 0.42, 1); fl.add(f); }
+    S3.ambient.push({ o: fl, k: 'flame', ph: r() * 6 });
+  } else if (type === 'shadow') {
+    const sh = add(GEO.cyl, MB(0x1a1024, 0.42), [0, 0.012, 0], [0.48, 0.01, 0.48]); sh.material.depthWrite = false;
+    if (arena === 'jungle') { const leafShape = new THREE.Shape(); leafShape.moveTo(0, 0); leafShape.bezierCurveTo(0.3, 0.15, 0.35, 0.55, 0, 0.8); leafShape.bezierCurveTo(-0.35, 0.55, -0.3, 0.15, 0, 0); const lg = new THREE.ShapeGeometry(leafShape, 6); for (let i = 0; i < 4; i++) { const l = new THREE.Mesh(lg, T(i % 2 ? '#2f5a2a' : '#3f6e35')); l.material.side = THREE.DoubleSide; l.position.set(i < 2 ? -0.4 : 0.4, 0.02, (i % 2 ? 0.25 : -0.25)); l.rotation.set(-1.1, i < 2 ? -0.9 : 0.9, 0); l.scale.setScalar(0.65); g.add(l); } }
+    else if (arena === 'desert') { add(GEO.box, T('#a8603a'), [-0.4, 0.3, 0], [0.12, 0.6, 0.7]); add(GEO.box, T('#b8703e'), [-0.25, 0.62, 0], [0.45, 0.1, 0.72], [0, 0, -0.15]); }
+    else { add(GEO.box, T('#4a4550'), [-0.42, 0.3, 0], [0.08, 0.6, 0.8]); add(GEO.box, T('#8a6a48'), [-0.3, 0.1, -0.3], [0.18, 0.18, 0.18]); add(GEO.box, T('#7a5a3a'), [-0.3, 0.1, 0.25], [0.16, 0.2, 0.16], [0, 0.4, 0]); }
+    const eyes = new THREE.Group(); g.add(eyes); for (const s of [-1, 1]) eyes.add(mesh(GEO.sph, MB(0xfff3a0, 0.85), [s * 0.05, 0.1, -0.2], [0.02, 0.012, 0.01]));
+    S3.ambient.push({ o: eyes, k: 'blink', ph: r() * 6 });
   }
   return g;
 }
-function s3SetTerrain(terrain, vt, temp) {
-  const key = S3.arenaKey + JSON.stringify(terrain) + vt + JSON.stringify((temp || []).map(z => [z.c, z.r]));
+function s3SetTerrain(terrain, vt, temp, height) {
+  const key = S3.arenaKey + JSON.stringify(terrain) + vt + JSON.stringify((temp || []).map(z => [z.c, z.r])) + JSON.stringify(height || {});
   if (key === S3.terrainKey) return;
   S3.terrainKey = key;
-  disposeGroup(S3.props);
+  disposeGroup(S3.props); if (S3.groundMesh) { S3.scene.remove(S3.groundMesh); S3.groundMesh.geometry.dispose(); }
   S3.ambient = S3.ambient.filter(a => !a.prop);
   S3.props = new THREE.Group(); S3.scene.add(S3.props);
   const r = rnd(7), all = Object.assign({}, terrain);
   for (const z of temp || []) for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const c = z.c + dc, rr = z.r + dr; if (c >= 0 && c < CFG.COLS && rr >= 0 && rr < CFG.ROWS && all[rr * CFG.COLS + c] !== 'rock') all[rr * CFG.COLS + c] = z.type; }
+  // 高度場：高台與水窪（視角座標）
+  S3.hcells = []; S3.wcells = [];
+  for (const k in height || {}) if (height[k]) { const c = +k % CFG.COLS, rr = Math.floor(+k / CFG.COLS), [vc, vr] = vview(c, rr, vt); S3.hcells.push(cellWorld(vc, vr)); }
+  for (const k in all) if (all[k] === 'water') { const c = +k % CFG.COLS, rr = Math.floor(+k / CFG.COLS), [vc, vr] = vview(c, rr, vt); S3.wcells.push(cellWorld(vc, vr)); }
+  S3.groundMesh = buildGround(S3.arenaKey); S3.scene.add(S3.groundMesh);
+  for (const t of S3.tiles) t.position.y = groundH(t.position.x, t.position.z) + 0.025;
   const before = S3.ambient.length;
+  const occupied = {};
   for (const k in all) {
     const c = +k % CFG.COLS, rr = Math.floor(+k / CFG.COLS), [vc, vr] = vview(c, rr, vt), [x, z] = cellWorld(vc, vr);
-    const p = terrainProp(S3.arenaKey, all[k], r); p.position.set(x, 0, z); S3.props.add(p);
+    occupied[vc + ',' + vr] = 1;
+    const p = terrainProp(S3.arenaKey, all[k], r); p.position.set(x, groundH(x, z), z); S3.props.add(p);
   }
+  for (const [x, z] of S3.hcells) S3.props.add(hillDeco(S3.arenaKey, x, z, r));
+  groundDeco(S3.arenaKey, S3.props, occupied, rnd(31 + S3.arenaKey.length));
   for (let i = before; i < S3.ambient.length; i++) S3.ambient[i].prop = true;
   mergeStatic(S3.props);
+}
+// ---- 高度：高台（含斜坡）與水窪 ----
+const HILL_H = 0.42;
+const sstep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+function groundH(x, z) {
+  let h = 0, w = 0;
+  for (const [cx, cz] of S3.hcells || []) { const dx = Math.max(0, Math.abs(x - cx) - 0.5), dz = Math.max(0, Math.abs(z - cz) - 0.5); const d = Math.hypot(dx, dz); if (d < 0.3) h = Math.max(h, HILL_H * (1 - sstep(0, 0.3, d))); }
+  for (const [cx, cz] of S3.wcells || []) { const d = Math.hypot(x - cx, z - cz); if (d < 0.5) w = Math.min(w, -0.1 * (1 - sstep(0.22, 0.5, d))); }
+  return h + w;
+}
+function vnoise(x, z) { // 簡單平滑雜訊 0..1
+  const h = (i, j) => { let n = Math.imul(i * 374761393 + j * 668265263, 1274126177); n ^= n >>> 13; return ((n >>> 0) % 1000) / 1000; };
+  const i = Math.floor(x), j = Math.floor(z), fx = x - i, fz = z - j, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
+  return (h(i, j) * (1 - u) + h(i + 1, j) * u) * (1 - v) + (h(i, j + 1) * (1 - u) + h(i + 1, j + 1) * u) * v;
+}
+function buildGround(key) {
+  const L = ARENA_LOOK[key], W = 9.6, D = 10.6, geo = new THREE.PlaneGeometry(W, D, 96, 106); geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position, n = pos.count, cols = new Float32Array(n * 3), edge = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = pos.getX(i), z = pos.getZ(i) - 0.5; pos.setZ(i, z);
+    const u = Math.abs(x) / 4.2, w = Math.abs(z + 0.5) / 4.7, d = Math.pow(Math.pow(u, 5) + Math.pow(w, 5), 0.2) + (vnoise(x * 1.7 + 9, z * 1.7) - 0.5) * 0.05;
+    edge[i] = d;
+    let y = groundH(x, z);
+    if (d > 0.985) y = -0.12 - (d - 0.985) * 9; // 島邊緣往下收
+    pos.setY(i, Math.max(-0.42, y));
+  }
+  geo.computeVertexNormals();
+  const nor = geo.attributes.normal, b0 = new THREE.Color(L.board[0]), b1 = new THREE.Color(L.board[1]), b2 = new THREE.Color(L.board[2]), cliff = new THREE.Color(L.cliff), top = new THREE.Color(L.top), rim = new THREE.Color(L.rim), c = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    const x = pos.getX(i), z = pos.getZ(i), y = pos.getY(i);
+    const n1 = vnoise(x * 1.1, z * 1.1), n2 = vnoise(x * 3.3 + 40, z * 3.3);
+    c.copy(b0).lerp(b1, sstep(0.35, 0.75, n1)).lerp(b2, sstep(0.55, 0.9, n2) * 0.7);
+    c.offsetHSL(0, 0, (sstep(-0.9, -0.1, z) - 0.5) * 0.035); // 我方半場略亮，不畫中線
+    if (y > 0.05) c.lerp(top, Math.min(1, y / HILL_H) * 0.75);
+    if (y < -0.03 && edge[i] < 0.98) c.lerp(new THREE.Color('#5e8ea8'), 0.35);
+    const ny = nor.getY(i); if (ny < 0.8 && edge[i] < 0.98) c.lerp(cliff, sstep(0.8, 0.45, ny));
+    if (edge[i] > 0.94) c.lerp(rim, sstep(0.94, 1.0, edge[i]));
+    cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  const m = new THREE.Mesh(geo, new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: toonGrad() }));
+  m.userData.noMerge = true; return m;
+}
+// 高台頂部點綴（只在高台格中心附近，不擋棋子）
+function hillDeco(key, x, z, r) {
+  const g = new THREE.Group(), y = groundH(x, z);
+  if (key === 'jungle') { for (let i = 0; i < 3; i++) { const a = r() * 6.28; g.add(mesh(GEO.sph, T(i % 2 ? '#5f8f3e' : '#7fae55'), [x + Math.cos(a) * 0.38, y + 0.03, z + Math.sin(a) * 0.38], [0.1, 0.05, 0.1])); } }
+  else if (key === 'desert') { for (let i = 0; i < 2; i++) { const a = r() * 6.28; g.add(mesh(GEO.box, T('#b8653a'), [x + Math.cos(a) * 0.4, y + 0.04, z + Math.sin(a) * 0.4], [0.12, 0.08, 0.1], [0, r() * 3, 0])); } }
+  else { for (const s of [-1, 1]) g.add(mesh(GEO.box, T('#d8d0c4'), [x + s * 0.42, y + 0.03, z], [0.06, 0.06, 0.8])); }
+  return g;
+}
+// 地面零碎點綴：草叢、碎石、磁磚，避開有地形的格子並偏離格心
+function groundDeco(key, root, occupied, r) {
+  for (let vr = 0; vr < CFG.ROWS; vr++) for (let vc = 0; vc < CFG.COLS; vc++) {
+    if (occupied[vc + ',' + vr]) continue;
+    const [cx, cz] = cellWorld(vc, vr), k = 1 + Math.floor(r() * 2);
+    for (let i = 0; i < k; i++) {
+      const a = r() * 6.28, rad = 0.32 + r() * 0.14, x = cx + Math.cos(a) * rad, z = cz + Math.sin(a) * rad, y = groundH(x, z);
+      if (key === 'jungle') { const t = r(); if (t < 0.6) for (let j = 0; j < 3; j++) root.add(mesh(GEO.cone, T(j % 2 ? '#5f8f3e' : '#79a84e'), [x + (j - 1) * 0.04, y + 0.05, z], [0.02, 0.12, 0.02], [0, 0, (j - 1) * 0.35])); else root.add(mesh(GEO.sph, T(['#f29bb0', '#ffffff', '#f2c14e'][Math.floor(r() * 3)]), [x, y + 0.03, z], 0.035)); }
+      else if (key === 'desert') { const t = r(); if (t < 0.6) root.add(mesh(GEO.sph, T(['#c9a070', '#b08a5e', '#d9b88a'][Math.floor(r() * 3)]), [x, y + 0.01, z], [0.05 + r() * 0.05, 0.03, 0.05 + r() * 0.04])); else root.add(mesh(GEO.box, T('#d4b07c'), [x, y + 0.004, z], [0.3, 0.008, 0.03], [0, r() * 3, 0])); }
+      else { const t = r(); if (t < 0.5) root.add(mesh(GEO.box, T(['#b3ada2', '#9d978e'][Math.floor(r() * 2)]), [x, y + 0.005, z], [0.18 + r() * 0.1, 0.01, 0.14 + r() * 0.08], [0, r() * 0.4, 0])); else if (t < 0.75) root.add(mesh(GEO.cone, T('#6f9a5a'), [x, y + 0.04, z], [0.025, 0.08, 0.025])); }
+    }
+  }
 }
 
 // ===== 單位、頭頂血條、特效、點選拖放 =====
@@ -3049,7 +3555,7 @@ function s3Sync(list, mode) {
   }
   for (const k in S3.V) if (!seen[k]) s3Remove(k);
 }
-function v3top(v) { return v.pos.clone().add(V3(0, (v.R.headTop || 1) * (v.scale || 1) + 0.12 + v.lift, 0)); }
+function v3top(v) { return v.pos.clone().add(V3(0, (v.R.headTop || 1) * (v.scale || 1) + 0.12 + v.lift + groundH(v.pos.x, v.pos.z), 0)); }
 function toScreen(p) { const q = p.clone().project(S3.cam); return [(q.x + 1) / 2 * S3.W, (1 - q.y) / 2 * S3.H, q.z]; }
 
 // ---- 每幀更新 ----
@@ -3075,6 +3581,11 @@ function s3Frame(dt, ctx) {
     else if (a.k === 'tumble') { o.position.x += dt * 1.6; o.rotation.z -= dt * 3; o.position.y = 0.05 + Math.abs(Math.sin(t * 3)) * 0.25; if (o.position.x > 13) o.position.x = -13 - Math.random() * 10; }
     else if (a.k === 'sand') { o.position.x += dt * a.sp; if (o.position.x > 10) o.position.x = -10; }
     else if (a.k === 'peck') o.rotation.x = Math.max(0, Math.sin(t * 3 + a.ph)) * 0.6;
+    else if (a.k === 'bob') { const q = Math.sin(t * 3 + a.ph); o.scale.set(1 + 0.04 * q, 1 - 0.08 * q, 1 + 0.04 * q); }
+    else if (a.k === 'spin') { o.rotation.y += dt * 4; o.children.forEach((c, i) => { c.position.x = Math.sin(t * 3 + i + a.ph) * 0.04; }); }
+    else if (a.k === 'flame') o.children.forEach((f, i) => { const q = Math.sin(t * 9 + i * 2.1 + a.ph); f.scale.set(0.28 + 0.04 * q, 0.4 + 0.1 * q, 1); f.material.opacity = 0.75 + 0.25 * q; });
+    else if (a.k === 'blink') o.visible = S3.night > 0.3 && (Math.sin(t * 0.7 + a.ph) > -0.6) && ((t * 1.3 + a.ph) % 4 > 0.15);
+    else if (a.k === 'steam') { a.acc = (a.acc || 0) + dt; if (a.acc > 0.35) { a.acc = 0; const wp = new THREE.Vector3(); o.getWorldPosition(wp); sprite('puff', wp.add(V3((Math.random() - .5) * 0.3, 0.1, (Math.random() - .5) * 0.3)), { color: 0xf2f2f2, scale: 0.25, scale1: 0.7, life: 1.4, opacity: 0.45, vel: V3(0.1, 0.6, 0) }); } }
   }
   if (S3.cityWin) S3.cityWin.color.setHSL(0.11, 0.9, 0.65 + 0.15 * S3.night);
   // 單位
@@ -3091,11 +3602,14 @@ function s3Frame(dt, ctx) {
     } else if (v.mode !== 'prep') { v.moving = false; if (it.moveP !== undefined && it.moveP !== null) moveP = it.moveP; if (it.landed) v.land = t; }
     if (v.dragging) v.moving = true;
     // 面向
-    let ty = 0;
-    if (it.face) { ty = Math.atan2(it.face[0] - v.pos.x, it.face[1] - v.pos.z); ty = Math.max(-1.95, Math.min(1.95, ty)); }
+    // 出手時鎖定攻擊對象（技能目標可能跟平常鎖定的不同），戰鬥中可以完全轉身背對鏡頭
+    let ty = v.yaw === undefined ? 0 : (v.mode === 'prep' ? 0 : v.yaw), face = it.face;
+    if (v.faceK && v.faceUntil > t && S3.V[v.faceK]) { const fv = S3.V[v.faceK]; face = [fv.pos.x, fv.pos.z]; }
+    if (face && Math.hypot(face[0] - v.pos.x, face[1] - v.pos.z) > 0.05) { ty = Math.atan2(face[0] - v.pos.x, face[1] - v.pos.z); if (v.mode === 'prep') ty = Math.max(-1.95, Math.min(1.95, ty)); }
+    else if (!face) ty = 0;
     let dy = ty - v.yaw; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
-    v.yaw += dy * Math.min(1, dt * 10);
-    v.R.root.position.copy(v.pos); v.R.root.position.y += v.lift;
+    v.yaw += dy * Math.min(1, dt * (v.act ? 22 : 10));
+    v.R.root.position.copy(v.pos); v.R.root.position.y += v.lift + groundH(v.pos.x, v.pos.z);
     if (v.pop) { const k = Math.max(0, Math.min(1, (t - v.pop) / 0.4)); v.R.root.scale.setScalar((v.scale || 1) * Math.max(0.01, ease.back(k))); if (k >= 1) v.pop = 0; }
     v.R.yaw.rotation.y = v.yaw;
     // 動作
@@ -3117,8 +3631,9 @@ function s3Frame(dt, ctx) {
     if (ghost !== v.ghost) { v.ghost = ghost; for (const m of v.R.mats) { m.transparent = !!ghost || m.userData.op < 1; m.opacity = ghost || m.userData.op; m.needsUpdate = true; } }
     // 影子與圈
     const gone = dead !== undefined && dead > 0.8;
-    v.blob.position.set(v.pos.x, 0.012, v.pos.z); v.blob.scale.setScalar(0.38 * (v.scale || 1) * (1 + 0.5 * v.lift - 0.25 * Math.min(1, v.R.fly || 0))); v.blob.material.opacity = 0.25 * (1 - 0.8 * v.lift); v.blob.visible = !gone;
-    v.ring.position.set(v.pos.x, 0.016, v.pos.z); v.ring.visible = (!!it.color || S3.selK === k) && !gone;
+    const gh = groundH(v.pos.x, v.pos.z);
+    v.blob.position.set(v.pos.x, 0.012 + gh, v.pos.z); v.blob.scale.setScalar(0.38 * (v.scale || 1) * (1 + 0.5 * v.lift - 0.25 * Math.min(1, v.R.fly || 0))); v.blob.material.opacity = 0.25 * (1 - 0.8 * v.lift); v.blob.visible = !gone;
+    v.ring.position.set(v.pos.x, 0.016 + gh, v.pos.z); v.ring.visible = (!!it.color || S3.selK === k) && !gone;
     if (S3.selK === k) { v.ring.material.color.set('#ffd34d'); v.ring.scale.setScalar((v.scale || 1) * (1.05 + 0.08 * Math.sin(t * 6))); } else { v.ring.material.color.set(it.color || '#ffffff'); v.ring.scale.setScalar(v.scale || 1); }
     // 暈眩星星
     if (it.stun && !v.stunG && !gone) { v.stunG = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('star'), transparent: true, depthWrite: false })); s.scale.setScalar(0.16); v.stunG.add(s); } S3.unitRoot.add(v.stunG); }
@@ -3130,12 +3645,12 @@ function s3Frame(dt, ctx) {
     // 增益光環
     const aura = gone ? null : it.buffAtk ? 0xffc94a : it.buffAs ? 0x7cc8ff : null;
     if (aura !== v.auraCol) { if (v.aura) S3.unitRoot.remove(v.aura); v.aura = null; v.auraCol = aura; if (aura) { v.aura = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.9, 20, 1, true), new THREE.MeshBasicMaterial({ map: tex('beam'), color: aura, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); S3.unitRoot.add(v.aura); } }
-    if (v.aura) { v.aura.position.set(v.pos.x, 0.45, v.pos.z); v.aura.rotation.y = t; v.aura.material.opacity = 0.25 + 0.12 * Math.sin(t * 5); }
+    if (v.aura) { v.aura.position.set(v.pos.x, 0.45 + gh, v.pos.z); v.aura.rotation.y = t; v.aura.material.opacity = 0.25 + 0.12 * Math.sin(t * 5); }
     // 護盾
     const sh = !gone && it.shield > 0;
     if (sh && !v.bubble) { v.bubble = new THREE.Mesh(GEO.sph, new THREE.MeshBasicMaterial({ color: 0xcfeaff, transparent: true, opacity: 0.22, depthWrite: false })); S3.unitRoot.add(v.bubble); }
     if (!sh && v.bubble) { S3.unitRoot.remove(v.bubble); v.bubble = null; }
-    if (v.bubble) { v.bubble.position.copy(v.pos).add(V3(0, 0.5 * (v.scale || 1) + (v.R.fly || 0), 0)); v.bubble.scale.setScalar(0.62 * (v.scale || 1)); }
+    if (v.bubble) { v.bubble.position.copy(v.pos).add(V3(0, 0.5 * (v.scale || 1) + (v.R.fly || 0) + gh, 0)); v.bubble.scale.setScalar(0.62 * (v.scale || 1)); }
     // 血條
     const top = toScreen(v3top(v));
     const show = !gone && top[2] < 1;
@@ -3154,9 +3669,10 @@ function s3Frame(dt, ctx) {
     // 死亡後移除（戰鬥中）
     if (dead !== undefined && dead > 1.2 && v.mode === 'combat') { v.R.root.visible = false; }
   }
-  // 格子呼吸光暈
+  // 格子：淡入淡出，高亮的格子呼吸
   const br = 0.55 + 0.45 * Math.sin(t * 5);
-  for (const o of S3.hlObjs || []) o.material.emissive.setHex(o.userData.hl).multiplyScalar(br);
+  for (const tl of S3.tiles) { const u = tl.userData, target = u.hl !== undefined ? 0.5 + 0.3 * br : (S3.gridOn && u.vr < S3.gridRows ? 0.22 : 0); tl.material.opacity += (target - tl.material.opacity) * Math.min(1, dt * 12); }
+  for (const o of S3.hlObjs || []) if (o.material.emissive) o.material.emissive.setHex(o.userData.hl).multiplyScalar(br);
   // 特效
   s3FxFrame(dt, t);
   S3.renderer.render(S3.scene, S3.cam);
@@ -3176,7 +3692,7 @@ function sprite(texName, pos, o) {
 function meshFx(obj, o) { S3.fxRoot.add(obj); const f = Object.assign({ o: obj, t0: nowS() + (o.delay || 0), life: 0.5 }, o); obj.visible = !o.delay; S3.fx.push(f); return f; }
 function groundRing(pos, color, size, life, delay) {
   const m = new THREE.Mesh(new THREE.RingGeometry(0.75, 1, 40), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
-  m.rotation.x = -Math.PI / 2; m.position.set(pos.x, 0.03, pos.z);
+  m.rotation.x = -Math.PI / 2; m.position.set(pos.x, 0.03 + groundH(pos.x, pos.z), pos.z);
   return meshFx(m, { life: life || 0.6, ring: size || 1.5, delay });
 }
 function burst(pos, n, o) {
@@ -3222,14 +3738,14 @@ function s3FxFrame(dt, t) {
     return true;
   });
 }
-const posOf = (k, h) => { const v = S3.V[k]; return v ? v.pos.clone().add(V3(0, (h === undefined ? 0.45 : h) * (v.scale || 1) + (v.R.fly || 0) * 0.6, 0)) : null; };
+const posOf = (k, h) => { const v = S3.V[k]; return v ? v.pos.clone().add(V3(0, (h === undefined ? 0.45 : h) * (v.scale || 1) + (v.R.fly || 0) * 0.6 + groundH(v.pos.x, v.pos.z), 0)) : null; };
 function slash(texName, at, o) { o = o || {}; return sprite(texName, at, { scale: o.scale || 0.7, scale1: (o.scale || 0.7) * 1.25, life: o.life || 0.28, rot: o.rot || 0, color: o.color, add: false, delay: o.delay, fadeIn: 0.15 }); }
 
 // 特效播放：name 由 ACT 定義
 function playFx(name, sk, tk, ex) {
   const sv = S3.V[sk], tv = tk !== undefined ? S3.V[tk] : null;
   if (!sv) return;
-  const A = sv.pos.clone(), sp = posOf(sk), tp = tv ? posOf(tk) : sp.clone().add(V3(0, 0, -0.6));
+  const A = sv.pos.clone().setY(sv.pos.y + groundH(sv.pos.x, sv.pos.z)), sp = posOf(sk), tp = tv ? posOf(tk) : sp.clone().add(V3(0, 0, -0.6));
   const hand = A.clone().add(V3(0, 0.5 * (sv.scale || 1), 0));
   switch (name) {
     case 'bump': case 'kick': slash('burst', tp, { scale: 0.35, color: 0xffd9a0 }); burst(tp, 5, { color: 0xf2e6cf, scale: 0.12, speed: 1.6 }); break;
@@ -3264,7 +3780,36 @@ function playFx(name, sk, tk, ex) {
     case 'stomp': groundRing(A, 0xf2e6cf, 3.2, 0.8); groundRing(A, 0xd9b98a, 2.2, 0.7, 0.15); burst(A.clone().add(V3(0, 0.1, 0)), 18, { color: 0xe8d8b8, scale: 0.35, speed: 3, up: 0.6, g: -1, life: 0.8 }); S3.shake = Math.max(S3.shake, 0.22); break;
     case 'roar': { const dir = tp.clone().sub(sp).setY(0).normalize(); for (let i = 0; i < 4; i++) sprite('ring', sp.clone().addScaledVector(dir, 0.3 + i * 0.35), { scale: 0.3, scale1: 1.4, life: 0.55, delay: i * 0.09, color: 0xffc94a, add: true }); groundRing(A, 0xffc94a, 3.0, 0.9); S3.shake = Math.max(S3.shake, 0.15); break; }
     case 'spikeBurst': burst(sp, 16, { tex: 'shard', color: 0x8a92a8, scale: 0.16, speed: 3.2, up: 1.2, g: -3 }); groundRing(A, 0xc8d0e0, 1.6, 0.5); break;
+    // ---- v0.5 ----
+    case 'flipper': slash('claw1', tp, { scale: 0.5, rot: 0.4, color: 0xdff2ff }); burst(tp, 5, { tex: 'drop', scale: 0.08, speed: 1.6, up: 1.5, g: -6, life: 0.45 }); break;
+    case 'slideHit': groundRing(tp, 0xbfe6ff, 1.4, 0.5); burst(tp, 12, { tex: 'drop', scale: 0.1, speed: 2.6, up: 2, g: -7, life: 0.6 }); slash('burst', tp, { scale: 0.55, color: 0xdff2ff }); S3.shake = Math.max(S3.shake, 0.08); break;
+    case 'headbutt': slash('burst', tp, { scale: 0.5, color: 0xfff0d0 }); burst(tp, 6, { color: 0xe8d8b8, scale: 0.18, speed: 1.8, up: 0.6, g: -1 }); break;
+    case 'rhinoCharge': slash('burst', tp, { scale: 0.9, color: 0xffe0b0 }); groundRing(tp, 0xe8d8b8, 1.8, 0.6); burst(tp, 14, { color: 0xe8d8b8, scale: 0.3, speed: 2.6, up: 1, g: -2, life: 0.7 }); sprite('star', tp.clone().add(V3(0, 0.4, 0)), { scale: 0.2, scale1: 0.5, life: 0.5, vel: V3(0, 1.5, 0) }); S3.shake = Math.max(S3.shake, 0.16); break;
+    case 'chamStrike': { const m = mesh(GEO.cap, T('#e98a9a')); meshFx(m, { life: 0.5, tongue: { from: sk, to: tk, pt: tp } }); burst(tp, 8, { tex: 'spark', color: 0x9be07a, scale: 0.13, add: true, delay: 0.2 }); slash('cross', tp, { scale: 0.7, delay: 0.22, color: 0xc8ff9a }); for (let i = 0; i < 6; i++) sprite('puff', sp.clone().add(V3((Math.random() - .5) * 0.5, Math.random() * 0.5, (Math.random() - .5) * 0.5)), { color: [0x9be07a, 0xf2b84a, 0x8fd3ff][i % 3], scale: 0.3, scale1: 0.05, life: 0.6, opacity: 0.7 }); break; }
+    case 'pounce': slash('claw3', tp, { scale: 0.95, rot: Math.PI * 0.6, color: 0xffd0a0 }); groundRing(tp, 0xffb070, 1.3, 0.5); burst(tp, 10, { tex: 'spark', color: 0xff9a4a, scale: 0.13, add: true, speed: 2.6 }); S3.shake = Math.max(S3.shake, 0.1); break;
+    case 'talonShot': for (let i = 0; i < 2; i++) projectile(hand.clone().add(V3(0, 0.2, 0)), tp.clone().add(V3((i - 0.5) * 0.15, 0, 0)), 'feather', 0.25, { scale: 0.3, arc: 0.2, delay: i * 0.06 }); at(0.28, () => slash('claw3', tp, { scale: 0.45, rot: 0.3 })); break;
+    case 'grabLift': burst(tp, 10, { tex: 'feather', scale: 0.17, speed: 1.6, up: 2, g: -1.5, life: 1.0, spin: 4 }); groundRing(tp, 0xf2e6cf, 1.2, 0.5); slash('claw3', tp, { scale: 0.7, rot: Math.PI / 2 }); break;
+    case 'zap': lightning(hand.clone().add(V3(0, 0.3, 0)), tp, 0xfff27a); burst(tp, 5, { tex: 'spark', color: 0xfff27a, scale: 0.12, add: true, speed: 2 }); break;
+    case 'chainZap': sprite('ring', posOf(sk, 0.9), { scale: 0.3, scale1: 1.4, life: 0.4, color: 0xfff27a, add: true }); burst(posOf(sk, 0.9), 10, { tex: 'spark', color: 0xfff27a, scale: 0.12, add: true, speed: 2.5, g: 0 }); break;
+    case 'fistSlam': slash('burst', tp, { scale: 0.6, color: 0xfff0d0 }); groundRing(tp, 0xe8d8b8, 1.0, 0.45); burst(tp, 6, { color: 0xe8d8b8, scale: 0.2, speed: 1.6, up: 0.5, g: -1 }); S3.shake = Math.max(S3.shake, 0.06); break;
+    case 'chestBeat': groundRing(A, 0xff8a4a, 2.6, 0.7); groundRing(A, 0xe8d8b8, 1.6, 0.6, 0.1); burst(A.clone().add(V3(0, 0.1, 0)), 16, { color: 0xe8d8b8, scale: 0.32, speed: 2.6, up: 0.6, g: -1, life: 0.8 }); sprite('anger', posOf(sk, 1.3), { scale: 0.2, scale1: 0.5, life: 0.8 }); S3.shake = Math.max(S3.shake, 0.2); break;
+    case 'spout': { const top = posOf(sk, 1.0); burst(top, 8, { tex: 'drop', scale: 0.1, speed: 0.8, up: 3, g: -6, life: 0.7 }); projectile(top, tp, 'spark', 0.3, { color: 0x8fd3ff, scale: 0.35, arc: 0.6, onEnd: () => { const b = posOf(tk); if (b) { burst(b, 8, { tex: 'drop', scale: 0.1, speed: 1.8, up: 2, g: -7, life: 0.5 }); slash('splat', b, { scale: 0.4, color: 0x8fd3ff }); } } }); break; }
+    case 'tidal': { const top = posOf(sk, 1.1); for (let i = 0; i < 3; i++) burst(top, 10, { tex: 'drop', scale: 0.14, speed: 1, up: 4.5, g: -7, life: 0.9, delay: i * 0.1 }); break; }
+    case 'fanOpen': groundRing(A, 0x3f8a5a, 3.6, 0.8); groundRing(A, 0xd8b54a, 2.4, 0.7, 0.12); for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; sprite('feather', posOf(sk, 0.8), { scale: 0.25, scale1: 0.1, life: 1.0, vel: V3(Math.cos(a) * 2.2, 0.6, Math.sin(a) * 2.2), g: -0.5, spin: 3, color: i % 2 ? 0x3f8a5a : 0x5a8ad8 }); } sprite('ring', posOf(sk, 0.8), { scale: 0.4, scale1: 2.6, life: 0.6, color: 0xff9ad0, add: true }); break;
+    case 'venomBite': slash('bite', tp, { scale: 0.85, life: 0.4, color: 0xd8ff9a }); burst(tp, 12, { tex: 'cloud', color: 0x8fd34a, scale: 0.22, speed: 1.2, up: 0.8, g: 0, life: 0.9 }); S3.shake = Math.max(S3.shake, 0.08); break;
   }
+}
+// 閃電：鋸齒折線，每段一根細圓柱，加亮混色
+function lightning(a, b, col, life) {
+  const g = new THREE.Group(), n = 6, mat = new THREE.MeshBasicMaterial({ color: col || 0xfff27a, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
+  let prev = a.clone();
+  for (let i = 1; i <= n; i++) {
+    const p = a.clone().lerp(b, i / n); if (i < n) p.add(V3((Math.random() - .5) * 0.3, (Math.random() - .5) * 0.3, (Math.random() - .5) * 0.3));
+    const d = p.distanceTo(prev), m = new THREE.Mesh(GEO.cyl, mat); m.scale.set(0.035, d, 0.035);
+    m.position.copy(prev).lerp(p, 0.5); m.quaternion.setFromUnitVectors(V3(0, 1, 0), p.clone().sub(prev).normalize()); g.add(m); prev = p;
+  }
+  meshFx(g, { life: life || 0.28, custom: (f, q) => { mat.opacity = q < 0.5 ? 1 : 1 - (q - 0.5) * 2; f.o.visible = Math.random() > 0.15; } });
+  sprite('puff', b.clone(), { color: col || 0xfff27a, scale: 0.5, scale1: 0.1, life: 0.3, add: true });
 }
 function s3Num(k, text, cls, delay, big) {
   const v = S3.V[k]; if (!v) return;
@@ -3309,11 +3854,16 @@ function s3NearestSlot(p) {
   return best;
 }
 // 格子高亮：map key -> color
-function s3Highlight(list) {
-  for (const t of S3.tiles) { t.material.emissive.setHex(0); }
+function s3Highlight(list, rows) {
+  for (const t of S3.tiles) { delete t.userData.hl; t.material.color.set(0xffffff); }
   for (const b of S3.bench) b.material.emissive.setHex(0);
-  S3.hlObjs = [];
-  for (const h of list) { const o = h.type === 'tile' ? S3.tiles[h.vr * CFG.COLS + h.vc] : S3.bench[h.i]; if (o) { o.userData.hl = h.col; o.material.emissive.setHex(h.col); S3.hlObjs.push(o); } }
+  S3.hlObjs = []; S3.gridOn = list.length > 0; S3.gridRows = rows || CFG.ROWS_HALF;
+  for (const h of list) {
+    const o = h.type === 'tile' ? S3.tiles[h.vr * CFG.COLS + h.vc] : S3.bench[h.i]; if (!o) continue;
+    o.userData.hl = h.col;
+    if (h.type === 'tile') { const c = new THREE.Color(h.col); c.r = Math.min(1, c.r * 2.6 + 0.15); c.g = Math.min(1, c.g * 2.6 + 0.15); c.b = Math.min(1, c.b * 2.6 + 0.15); o.material.color.copy(c); }
+    else { o.material.emissive.setHex(h.col); S3.hlObjs.push(o); }
+  }
 }
 
 // ===== 羈絆與裝備圖示（SVG）=====
@@ -3547,7 +4097,7 @@ function prepList() {
 }
 function renderPrep() {
   s3SetArena(G.arena); $('stage').dataset.arena = G.arena;
-  s3SetTerrain(G.terrain, myTeam());
+  s3SetTerrain(G.terrain, myTeam(), null, G.height || {});
   s3Sync(prepList(), 'prep');
   renderDock(); renderTraits(); renderSheet(); highlightSel();
 }
@@ -3879,7 +4429,7 @@ function myBattle() { const t = myTeam(); return G.battles.find(b => b.teams[0] 
 function startCombatView() {
   sel = null; renderSheet();
   const bt = myBattle(); cv = { bt, B: bt.B, vt: bt.teams[0] === myTeam() ? 0 : 1, zonePos: {}, lastCell: {} };
-  s3SetTerrain(cv.B.terrain, cv.vt, cv.B.temp);
+  s3SetTerrain(cv.B.terrain, cv.vt, cv.B.temp, cv.B.height);
   combatSync();
   // 敵方傳送進場
   for (const u of cv.B.units) if (u.team !== cv.vt) { const v = S3.V[kOf(u)]; if (v) { v.pop = nowS() + Math.random() * 0.3; groundRing(v.pos, 0xb9a4ff, 1.0, 0.5); } }
@@ -3891,7 +4441,8 @@ function combatSync() {
   const B = cv.B, frac = REPLAY ? Math.min(1, REPLAY.acc / CFG.TICK_MS) : G.phase === 'combat' ? Math.min(1, G.acc / CFG.TICK_MS) : 1, list = [];
   for (const u of B.units) {
     let c = u.c, r = u.r, lift = 0, moving = false, moveP = null, jumpP = null;
-    if (u.mvFrom && (REPLAY || G.phase === 'combat')) { const m = u.mvFrom, p = Math.max(0, Math.min(1, (B.t + frac - m.t0) / (m.t1 - m.t0))); c = m.c + (u.c - m.c) * p; r = m.r + (u.r - m.r) * p; if (m.jump) { lift = Math.sin(p * Math.PI) * 0.9; if (p < 1) jumpP = p; } else if (p < 1) moveP = p; }
+    if (u.mvFrom && (REPLAY || G.phase === 'combat')) { const m = u.mvFrom, p = Math.max(0, Math.min(1, (B.t + frac - m.t0) / (m.t1 - m.t0))); c = m.c + (u.c - m.c) * p; r = m.r + (u.r - m.r) * p; if (m.grab) { c = u.c; r = u.r; lift = Math.sin(Math.min(1, p * 1.6) * Math.PI / 2) * 1.9 * (p < 0.85 ? 1 : (1 - p) / 0.15); }
+      else if (m.jump) { lift = Math.sin(p * Math.PI) * (m.big ? 2.4 : 0.9); if (p < 1 && !m.big) jumpP = p; } else if (p < 1 && !m.slide) moveP = p; }
     // 入水漣漪
     const ck = u.c + ',' + u.r; if (u.alive && cv.lastCell[u.id] !== undefined && cv.lastCell[u.id] !== ck && terrainAt(B, u.c, u.r) === 'water') { const [wx, wz] = bWorld(u.c, u.r); at(0.15, () => ripple(V3(wx, 0.05, wz))); } cv.lastCell[u.id] = ck;
     const [x, z] = bWorld(c, r);
@@ -3900,13 +4451,15 @@ function combatSync() {
     if (u.team !== cv.vt && !face) face = [x, z + 5];
     const buffs = u.buffs.filter(b => b.u > B.t);
     list.push({ k: kOf(u), key: u.key, star: u.star, color: u.neutral ? '#f2c14e' : ownerColor(u.owner), enemy: u.team !== cv.vt && !u.neutral, neutral: u.neutral, x, z, y: lift, face: u.neutral ? null : face, moving, moveP, jumpP, king: u.king, mirror: u.mirror, skin: u.owner === ME ? skinOf(u.key) : null, hp: u.hp, maxhp: u.maxhp, shield: u.shield, mana: u.mana, manaMax: u.manaMax,
-      sleep: u.asleep, stun: u.alive && u.stun > B.t, stealth: u.stealth, taunted: u.alive && u.tauntUntil > B.t, blind: u.alive && u.blind > B.t, buffAtk: buffs.some(b => b.s === 'atk'), buffAs: buffs.some(b => b.s === 'as'), alive: u.alive,
+      sleep: u.asleep, stun: u.alive && u.stun > B.t, stealth: u.stealth || (u.alive && terrainAt(B, u.c, u.r) === 'shadow'), taunted: u.alive && u.tauntUntil > B.t, blind: u.alive && u.blind > B.t, buffAtk: buffs.some(b => b.s === 'atk'), buffAs: buffs.some(b => b.s === 'as'), alive: u.alive,
       victory: G.phase === 'result' && u.alive && B.winner === u.team });
   }
   G.players[ME].bench.forEach((u, i) => { if (!u) return; const [x, z] = benchWorld(i), st = unitStats(u); list.push({ k: 'u' + u.uid, key: u.key, star: u.star, color: ownerColor(ME), x, z, hp: st.hp, maxhp: st.hp, skin: skinOf(u.key) }); });
   s3Sync(list, 'combat');
-  if (B.temp.length !== cv.tempN) { cv.tempN = B.temp.length; s3SetTerrain(B.terrain, cv.vt, B.temp); }
+  if (B.temp.length !== cv.tempN) { cv.tempN = B.temp.length; s3SetTerrain(B.terrain, cv.vt, B.temp, B.height); }
   S3.nightTarget = B.night ? 1 : 0;
+  // 站在灼燒地塊上的單位身上冒火
+  if (Math.random() < 0.25) for (const u of B.units) if (u.alive && terrainAt(B, u.c, u.r) === 'burn') { const p = posOf(kOf(u), 0.2); if (p) sprite('flame', p.add(V3((Math.random() - .5) * 0.3, 0, 0.15)), { scale: 0.22, scale1: 0.05, life: 0.5, vel: V3(0, 0.9, 0), add: true }); }
   // 臭氣持續冒煙
   if (Math.random() < 0.35) for (const zn of B.zones) if (zn.kind === 'gas' && zn.until > B.t) { const [x, z] = bWorld(zn.c, zn.r); sprite('cloud', V3(x + (Math.random() - .5) * 2.4, 0.15, z + (Math.random() - .5) * 2.4), { color: 0x9bc24a, scale: 0.4, scale1: 0.9, life: 1.1, opacity: 0.6, vel: V3(0, 0.25, 0) }); }
 }
@@ -3928,7 +4481,7 @@ function handleBattleEvents(bt) {
       switch (ev.k) {
         case 'atk': {
           if (!v) break; const tu = B.units[ev.tg], tk = kOf(tu);
-          const dur = actDur(B, u, 'atk'); v.act = { kind: 'atk', t0: nowS(), dur };
+          const dur = actDur(B, u, 'atk'); v.act = { kind: 'atk', t0: nowS(), dur }; v.faceK = tk; v.faceUntil = nowS() + dur + 0.15;
           const A = (ACT[u.key] || {}).atk || { hit: 0.5, fx: 'bump' }, hd = dur * A.hit;
           if (RANGED_PROJ[u.key]) at(hd, () => { const a = posOf(k, 0.7), b = posOf(tk); if (a && b) projectile(a, b, RANGED_PROJ[u.key], 0.22, { toV: tk, arc: 0.4, spin: 14, scale: 0.35, onEnd: () => { const bb = posOf(tk); if (bb) { if (u.key === 'octopus') slash('splat', bb, { scale: 0.4, color: 0x2d2438 }); else if (u.key === 'skunk') burst(bb, 5, { tex: 'cloud', color: 0x9bc24a, scale: 0.25, speed: 0.6, up: 0.4, g: 0 }); else slash('burst', bb, { scale: 0.3 }); } } }); });
           else at(hd, () => playFx(A.fx, k, tk));
@@ -3938,7 +4491,9 @@ function handleBattleEvents(bt) {
           const kind = u.key === 'koala' && ev.s === '起床氣！' ? 'wake' : 'skill';
           const A = (ACT[u.key] || {})[kind]; if (!A) break;
           v.act = { kind, t0: nowS(), dur: A.dur };
-          const tu = ev.tg >= 0 ? B.units[ev.tg] : null, tk = tu ? kOf(tu) : undefined;
+          const tu = ev.tg >= 0 ? B.units[ev.tg] : null; let tk = tu ? kOf(tu) : undefined;
+          if (u.target >= 0 && B.units[u.target] && B.units[u.target].alive) tk = kOf(B.units[u.target]); // 技能實際打的對象（獵豹、老鷹等會換目標）
+          if (tk) { v.faceK = tk; v.faceUntil = nowS() + A.dur; }
           s3Num(k, ev.s, 'skill', 0, 15);
           sprite('ring', posOf(k, 0.5), { scale: 0.2, scale1: 1.2, life: 0.4, color: 0xfff3c8, add: true });
           at(A.dur * A.hit, () => playFx(A.fx, k, tk, { zone: cv.zonePos[ev.id] }));
@@ -3976,6 +4531,12 @@ function handleBattleEvents(bt) {
         case 'revive': if (v) { v.deadT = null; v.R.root.visible = true; v.pop = nowS(); augFx('necro', k); } break;
         case 'aug': augEventFx(B, ev); break;
         case 'night': banner('入夜', '夜行動物暴擊提升'); break;
+        case 'dash': { if (!v) break; const tk = kOf(B.units[ev.tg]); v.faceK = tk; v.faceUntil = nowS() + 0.8; const from = v.pos.clone(); for (let i = 0; i < 6; i++) at(i * 0.05, () => { const vv = S3.V[k]; if (vv) sprite(ev.s === 'slide' ? 'drop' : 'puff', vv.pos.clone().add(V3(0, 0.12 + groundH(vv.pos.x, vv.pos.z), 0)), { color: ev.s === 'slide' ? 0xbfe6ff : 0xe8d8b8, scale: 0.28, scale1: 0.05, life: 0.5, opacity: 0.8 }); }); groundRing(from, 0xe8d8b8, 0.8, 0.35); break; }
+        case 'grab': { const tk = kOf(B.units[ev.tg]); if (v) { v.faceK = tk; v.faceUntil = nowS() + 1.5; } at(0.45, () => { const p = posOf(tk, 0.6); if (p) burst(p, 6, { tex: 'feather', scale: 0.15, speed: 1.2, up: 1.5, g: -1, life: 0.9, spin: 4 }); }); break; }
+        case 'chain': { const ids = ev.ids.map(id => kOf(B.units[id])); const d0 = hitDelay(k, 'skill'); for (let i = 0; i + 1 < ids.length; i++) at(d0 + i * 0.09, () => { const a = posOf(ids[i], i ? 0.5 : 1.0), b = posOf(ids[i + 1], 0.5); if (a && b) { lightning(a, b, 0xfff27a, 0.3); burst(b, 5, { tex: 'spark', color: 0xfff27a, scale: 0.12, add: true, speed: 2 }); } }); at(d0, () => { S3.shake = Math.max(S3.shake, 0.08); }); break; }
+        case 'wave': { const d0 = hitDelay(k, 'skill'), wu = B.units[ev.id], step = wu.team === 0 ? 1 : -1; let n = 0; for (let rr = wu.r; rr >= 0 && rr < CFG.ROWS; rr += step, n++) for (let dc = -1; dc <= 1; dc++) { const c = ev.c + dc; if (c < 0 || c >= CFG.COLS) continue; const [x, z] = bWorld(c, rr), dl = d0 + n * 0.07; at(dl, () => { burst(V3(x, 0.2 + groundH(x, z), z), 4, { tex: 'drop', scale: 0.13, speed: 1.2, up: 3, g: -7, life: 0.6 }); sprite('puff', V3(x, 0.3 + groundH(x, z), z), { color: 0x8fd3ff, scale: 0.6, scale1: 0.9, life: 0.5, opacity: 0.7 }); }); } at(d0, () => { S3.shake = Math.max(S3.shake, 0.18); stageShake(5); }); break; }
+        case 'launch': { const [x, z] = bWorld(ev.fc, ev.fr), p = V3(x, groundH(x, z) + 0.15, z); sfx && sfx('skill'); groundRing(p, 0xfff3c8, 1.2, 0.5); if (S3.arenaKey === 'desert') burst(p, 14, { color: 0xf4dcae, scale: 0.4, speed: 1.6, up: 2.5, g: 0, life: 0.9 }); else if (S3.arenaKey === 'city') burst(p, 12, { color: 0xf2f2f2, scale: 0.45, speed: 1, up: 3, g: 0, life: 1.0, delay: 0 }); else { burst(p, 10, { tex: 'spark', color: 0xffd34d, scale: 0.12, add: true, speed: 2, up: 2 }); burst(p, 6, { tex: 'leaf', scale: 0.14, speed: 1.4, up: 2, g: -3, spin: 3 }); } s3Num(k, '彈射！', 'skill', 0, 15); break; }
+        case 'land': { if (!v) break; const p = v.pos.clone(); groundRing(p, ev.drop ? 0xffc070 : 0xfff3c8, ev.drop ? 1.8 : 1.4, 0.5); burst(p.clone().add(V3(0, 0.1 + groundH(p.x, p.z), 0)), 12, { color: 0xe8d8b8, scale: 0.3, speed: 2.2, up: 0.8, g: -1.5, life: 0.7 }); slash('burst', posOf(k, 0.3), { scale: ev.drop ? 0.9 : 0.6 }); hitstop(50); S3.shake = Math.max(S3.shake, ev.drop ? 0.2 : 0.12); v.land = nowS(); break; }
       }
     }
     B.ev.length = 0;
@@ -4124,7 +4685,7 @@ function showDex(tab) {
   if (tab === 'combos') body = COMBOS.map(c => `<div class="row">${pimg(c.a)}<div><b>${c.name}</b>　${ANIMALS[c.a].name}＋${ANIMALS[c.b].name}<br>${c.desc}</div></div>`).join('') + '<div class="plain"><div>兩隻需分屬兩位隊友、開場相鄰。兩隻都放過一次技能後自動發動一次。</div></div>';
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
   if (tab === 'augs') body = [1, 2, 3].map(tr => `<div class="plain"><div><b>${AUG_TIER_NAME[tr]}</b>（第 ${CFG.AUG_ROUNDS.join('、')} 回合三選一，銀／金／彩 依回合機率出現）</div></div>` + AUGMENTS.filter(x => x.tier === tr).map(x => `<div class="plain">${augIcon(x.id)}<div><b>${x.name}</b>　${x.desc}</div></div>`).join('')).join('');
-  if (tab === 'arena') body = Object.keys(ARENAS).map(a => `<div class="plain"><div><b>${ARENAS[a].name}</b>　地形：${Object.keys(ARENAS[a].weights).sort((x, y) => ARENAS[a].weights[y] - ARENAS[a].weights[x]).map(t => TERRAIN_SKIN[a][t]).join('、')}（越前面越常見）</div></div>`).join('') + Object.keys(TERRAIN).map(t => `<div class="plain"><div><b>${TERRAIN[t].name}類</b>　${TERRAIN[t].desc}</div></div>`).join('') + '<div class="plain"><div>每個階段換一個場地，地形雙方對稱。</div></div>';
+  if (tab === 'arena') body = Object.keys(ARENAS).map(a => `<div class="plain"><div><b>${ARENAS[a].name}</b>　地形：${Object.keys(ARENAS[a].weights).sort((x, y) => ARENAS[a].weights[y] - ARENAS[a].weights[x]).map(t => TERRAIN_SKIN[a][t]).join('、')}（越前面越常見）</div></div>`).join('') + Object.keys(TERRAIN).map(t => `<div class="plain"><div><b>${TERRAIN[t].name}類</b>　${TERRAIN[t].desc}</div></div>`).join('') + `<div class="plain"><div><b>高台</b>（${Object.keys(ARENAS).map(a => TERRAIN_SKIN[a].high).join('、')}）　遠程射程 +${HIGH.RANGE}；從低處打上高台的普攻有 ${HIGH.MISS}% 落空；爬坡移動變慢</div></div>` + '<div class="plain"><div>每個階段換一個場地，地形與高台雙方對稱。</div></div>';
   if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（7×4 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
   $('panel').innerHTML = `<button class="x" id="dexX" aria-label="關閉">✕</button><h2>圖鑑</h2><div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div><div class="dex">${body}</div>`;
   $('overlay').hidden = false;
@@ -4136,7 +4697,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.4 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.5 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -4158,7 +4719,7 @@ function boot() {
   featuresBoot();
   requestAnimationFrame(loop);
 }
-window.__zoo = { get G() { return G; }, S3 }; window.__upd = update;
+window.__zoo = { get G() { return G; }, S3 }; window.__upd = update; window.__s3hl = s3Highlight; window.__s3arena = s3SetArena; window.__s3ter = s3SetTerrain; window.__s3sync = s3Sync;
 
 // ===== 進階功能：統計、卡池、偵察、快捷鍵、陣容、代打投降、回放慢動作、技能預覽、
 //      傳送門、遭遇、選秀、天氣、指令、金庫隊長、標記、小小英雄、教學、收藏造型、自訂規則 =====
@@ -4174,7 +4735,7 @@ function skinOf(key) { const s = PROFILE.skinSel[key]; return s && PROFILE.unloc
 const SKIN_CSS = { base: '', gold: 'sepia(.6) saturate(1.8) brightness(1.1)', night: 'brightness(.7) saturate(.7) hue-rotate(200deg)', snow: 'brightness(1.35) saturate(.25)', sakura: 'hue-rotate(-25deg) saturate(1.3) brightness(1.1)', jade: 'hue-rotate(90deg) saturate(.9)' };
 
 // ---- 自訂規則（本機記住）----
-function loadRules() { try { return Object.assign({}, DEFAULT_RULES, JSON.parse(localStorage.getItem('zoo_rules') || '{}')); } catch (e) { return Object.assign({}, DEFAULT_RULES); } }
+function loadRules() { try { const s = JSON.parse(localStorage.getItem('zoo_rules') || '{}'); if (!s.v5) { s.maxRound = 0; s.v5 = 1; } return Object.assign({}, DEFAULT_RULES, s); } catch (e) { return Object.assign({}, DEFAULT_RULES); } }
 function saveRules(r) { try { localStorage.setItem('zoo_rules', JSON.stringify(r)); } catch (e) {} }
 
 // ---- 小工具 ----
@@ -4455,7 +5016,7 @@ function startReplay() {
   REPLAY = { B, acc: 0, end: 0 };
   cv = { bt: { B, teams: bt.teams }, B, vt: bt.teams[0] === myTeam() ? 0 : 1, zonePos: {}, lastCell: {}, replay: true };
   G.paused = true; sel = null; renderSheet();
-  s3SetTerrain(B.terrain, cv.vt, B.temp);
+  s3SetTerrain(B.terrain, cv.vt, B.temp, B.height);
   $('stage').insertAdjacentHTML('beforeend', '<div class="replaybar" id="replaybar">回放中<button class="btn" id="rpSlow">0.5×</button><button class="btn" id="rpNorm">1×</button><button class="btn primary" id="rpEnd">結束回放</button></div>');
   $('rpSlow').onclick = () => { G.speed = 0.5; }; $('rpNorm').onclick = () => { G.speed = 1; }; $('rpEnd').onclick = () => endReplay();
   banner('戰鬥回放', '可調整速度'); $('meter').hidden = !METER.on;
@@ -4622,7 +5183,7 @@ function openRules() {
     <div class="rules">
       <label class="rnum">團隊血量<input type="number" id="r_teamHp" min="30" max="300" step="10" value="${r.teamHp}"></label>
       <label class="rnum">準備秒數<input type="number" id="r_prepSec" min="10" max="90" step="5" value="${r.prepSec}"></label>
-      <label class="rnum">最多回合<input type="number" id="r_maxRound" min="10" max="50" step="1" value="${r.maxRound}"></label>
+      <label class="rnum">最多回合（0＝打到一隊倒下）<input type="number" id="r_maxRound" min="0" max="99" step="1" value="${r.maxRound}"></label>
       <label class="rnum">AI 強度<select id="r_aiLevel"><option value="easy" ${r.aiLevel === 'easy' ? 'selected' : ''}>簡單</option><option value="normal" ${r.aiLevel === 'normal' ? 'selected' : ''}>普通</option><option value="hard" ${r.aiLevel === 'hard' ? 'selected' : ''}>困難</option></select></label>
       ${tog('augments', '海克斯增幅', `第 ${CFG.AUG_ROUNDS.join('、')} 回合三選一`)}
       ${tog('portals', '開局傳送門', '投票決定全場規則')}
@@ -4639,7 +5200,7 @@ function openRules() {
   $('panel').querySelectorAll('[data-ban]').forEach(c => c.onchange = () => c.parentElement.classList.toggle('on', c.checked));
   $('rReset').onclick = () => { saveRules(Object.assign({}, DEFAULT_RULES)); openRules(); };
   $('rSave').onclick = () => {
-    const n = { teamHp: +$('r_teamHp').value || 100, prepSec: +$('r_prepSec').value || 30, maxRound: +$('r_maxRound').value || 30, aiLevel: $('r_aiLevel').value };
+    const n = { teamHp: +$('r_teamHp').value || 100, prepSec: +$('r_prepSec').value || 30, maxRound: Math.max(0, +$('r_maxRound').value || 0), v5: 1, aiLevel: $('r_aiLevel').value };
     for (const k of ['augments', 'portals', 'encounters', 'carousel', 'weather', 'neutrals', 'commands', 'frontline']) n[k] = $('r_' + k).checked;
     n.bans = [...$('panel').querySelectorAll('[data-ban]')].filter(c => c.checked).map(c => c.dataset.ban);
     if (Object.keys(ANIMALS).length - n.bans.length < 8) { toast('至少要留 8 種動物'); return; }
