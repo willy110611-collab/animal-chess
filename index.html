@@ -237,6 +237,50 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .over { text-align: center; }
 .over h2 { font-size: 40px; }
 .over img { width: 140px; height: 140px; }
+
+/* 經濟列：Lv.X（在場/上限）、XP 進度、購買經驗 */
+.lvl { flex: none; min-width: 92px; width: auto; height: auto; display: grid; gap: 2px; }
+.lvl .pop { font-size: 12px; line-height: 1.2; }
+.lvl .pop b { font-family: var(--f-display); font-size: 17px; }
+.xpbar { height: 6px; background: #2e211c; border-radius: 4px; overflow: hidden; box-shadow: inset 0 0 0 1px #5a443a; }
+.xpbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #4fa0e0, #8fd3ff); transition: width .4s cubic-bezier(.34,1.56,.64,1); }
+.xpt { font-size: 10px; opacity: .8; font-variant-numeric: tabular-nums; }
+#btnLevel { line-height: 1.15; }
+#btnLevel small { font-size: 10px; }
+.ebtn[disabled] { filter: grayscale(1); }
+.card.c5 { --cc: linear-gradient(135deg, #c8902a, #ffe08a, #c8902a); }
+.card.c5 .in { background: radial-gradient(90% 70% at 50% 35%, #fffbe8, #f2deaa); }
+#stage.shk { animation: stshk .32s cubic-bezier(.36,.07,.19,.97); }
+@keyframes stshk { 15% { transform: translate(calc(var(--shk) * -1), calc(var(--shk) * .4)); } 35% { transform: translate(var(--shk), calc(var(--shk) * -.5)); } 55% { transform: translate(calc(var(--shk) * -.6), calc(var(--shk) * .3)); } 75% { transform: translate(calc(var(--shk) * .4), 0); } }
+/* 海克斯 */
+.aug-ic { display: inline-grid; place-items: center; width: 20px; height: 20px; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font-size: 11px; font-weight: 900; color: #2a1a10; flex: none; }
+.aug-ic.t1 { background: linear-gradient(135deg,#9aa6b2,#e8eef4,#9aa6b2); } .aug-ic.t2 { background: linear-gradient(135deg,#c8902a,#ffe08a,#c8902a); } .aug-ic.t3 { background: linear-gradient(135deg,#ff8ab0,#ffe27a,#8af0c8,#8ab8ff,#d88aff); }
+.aug-ic.big { width: 56px; height: 56px; font-size: 26px; font-family: var(--f-display); }
+.augs { display: flex; gap: 6px; overflow-x: auto; align-items: center; scrollbar-width: none; }
+.augs .lbl { font-size: 11px; opacity: .6; flex: none; }
+.augchip { flex: none; display: flex; align-items: center; gap: 4px; background: #5a443a; color: var(--paper); border-radius: 999px; padding: 2px 9px 2px 3px; font-size: 11px; font-weight: 700; }
+.augchip.mate { background: #4a3a30; box-shadow: inset 0 0 0 1.5px var(--orange); }
+.augmodal { position: fixed; inset: 0; z-index: 35; display: grid; place-items: center; background: rgba(30,18,12,.62); padding: 16px max(12px, env(safe-area-inset-right, 0px)) 16px max(12px, env(safe-area-inset-left, 0px)); }
+.augmodal.min { background: none; pointer-events: none; }
+.augmodal.min .augbox { display: none; }
+.augpill { display: none; position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); pointer-events: auto; background: linear-gradient(135deg,#c8902a,#ffe08a,#c8902a); color: #3a2010; font-weight: 900; padding: 10px 18px; border-radius: 999px; box-shadow: 0 4px 0 rgba(0,0,0,.4); animation: pulse .7s ease-in-out infinite alternate; }
+.augmodal.min .augpill { display: block; }
+.augbox { width: min(640px, 100%); text-align: center; color: var(--paper); }
+.augbox h2 { font-family: var(--f-display); font-size: 28px; margin: 0; color: #ffe8b0; -webkit-text-stroke: 4px rgba(60,25,10,.7); paint-order: stroke fill; }
+.augbox .sub { margin: 4px 0 12px; font-size: 13px; opacity: .85; }
+.augcards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.augcard { position: relative; display: grid; justify-items: center; align-content: start; gap: 6px; padding: 14px 8px 12px; border-radius: 14px; background: #2e211c; color: var(--paper); min-height: 210px; animation: augin .5s cubic-bezier(.34,1.56,.64,1) backwards; overflow: hidden; }
+.augcard .frame { position: absolute; inset: 0; border-radius: 14px; padding: 3px; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.augcard.t1 .frame { background: linear-gradient(135deg,#9aa6b2,#e8eef4,#9aa6b2); } .augcard.t2 .frame { background: linear-gradient(135deg,#c8902a,#ffe08a,#c8902a); } .augcard.t3 .frame { background: linear-gradient(135deg,#ff8ab0,#ffe27a,#8af0c8,#8ab8ff,#d88aff); background-size: 300% 300%; animation: prism 3s linear infinite; }
+@keyframes prism { to { background-position: 300% 0; } }
+.augcard b { font-family: var(--f-display); font-size: 17px; }
+.augcard .d { font-size: 12px; line-height: 1.5; opacity: .9; }
+.augcard:hover { transform: translateY(-4px); }
+.augcard.chosen { animation: chosen .3s ease-out forwards; }
+@keyframes augin { from { transform: translateY(40px) rotateX(60deg); opacity: 0; } }
+@keyframes chosen { 50% { transform: scale(1.08); filter: brightness(1.5); } 100% { transform: scale(1); } }
+@media (max-width: 560px) { .augcards { grid-template-columns: 1fr; } .augcard { min-height: 0; grid-template-columns: 56px 1fr; justify-items: start; text-align: left; align-items: center; gap: 4px 10px; } .augcard .aug-ic.big { grid-row: span 2; } .augcard .d { grid-column: 2; } }
+.num.aug { color: #ffe08a; font-size: 13px; -webkit-text-stroke: 3px #5a3a10; }
 @media (prefers-reduced-motion: reduce) { .card.flip, #banner.show, .num { animation-duration: .01s; } }
 @media (min-width: 700px) { #stage { height: min(68vh, 640px); } }
 @media (max-width: 560px) {
@@ -282,19 +326,20 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
     </div>
     <div id="dock">
       <div class="econ">
-        <div class="lvl" id="lvl"><svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="19" fill="#2e211c" stroke="#5a443a" stroke-width="5"/><circle id="xpArc" cx="23" cy="23" r="19" fill="none" stroke="#6fc0ff" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 200"/></svg><div class="num2" id="lvNum"></div></div>
-        <div class="pop" id="pop"></div>
+        <div class="lvl" id="lvl"><div class="pop" id="pop"></div><div class="xpbar"><i id="xpFill"></i></div><div class="xpt" id="xpTxt"></div></div>
         <div class="gold" id="gold"></div>
-        <button class="ebtn" id="btnLevel">升級<small><svg class="ico" style="width:11px;height:11px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#f2c14e"/></svg>4</small></button>
-        <button class="ebtn" id="btnRoll"><svg class="ico" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><small>2</small></button>
+        <button class="ebtn" id="btnLevel">購買經驗<small>$4 (+4 XP)</small></button>
+        <button class="ebtn" id="btnRoll"><svg class="ico" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><small id="rollCost">$2</small></button>
         <button class="ebtn lock" id="btnLock" aria-label="鎖定商店"><svg class="ico" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path id="lockArc" d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.4" fill="none"/></svg></button>
       </div>
+      <div class="augs" id="augs" hidden></div>
       <div class="items" id="items"></div>
       <div class="shopwrap"><div class="shop" id="shop"></div><div class="sellzone" id="sellzone" hidden>拖到這裡出售</div></div>
       <div class="mate" id="mate"></div>
     </div>
   </section>
 </div>
+<div class="augmodal" id="augModal" hidden></div>
 <div class="sheet" id="sheet" hidden><div id="sheetIn"></div></div>
 <div class="toast" id="toast"></div>
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
@@ -322,13 +367,16 @@ const CFG = {
   MAX_ITEMS: 3,
   START_GOLD: 4, START_LEVEL: 2,
   BASE_INCOME: 5, WIN_GOLD: 1, MAX_INTEREST: 5,
+  INCOME_BY_STAGE: [0, 4, 5, 5, 6, 6, 6, 6], // 基本收入依階段提升（索引＝階段）
   XP_COST: 4, XP_BUY: 4, XP_ROUND: 2,
-  XP_NEED: { 2: 2, 3: 6, 4: 10, 5: 20, 6: 36, 7: 56 }, // 從該等級升到下一級所需經驗
-  MAX_LEVEL: 8,
+  XP_NEED: { 1: 2, 2: 6, 3: 10, 4: 20, 5: 36, 6: 56, 7: 80, 8: 100 }, // 從該等級升到下一級所需經驗
+  MAX_LEVEL: 9,
   SHOP_SIZE: 5, REROLL_COST: 2,
-  // 商店機率（%）：等級 → [1費, 2費, 3費, 4費]
-  SHOP_ODDS: { 1: [100, 0, 0, 0], 2: [100, 0, 0, 0], 3: [75, 25, 0, 0], 4: [55, 30, 15, 0], 5: [45, 33, 20, 2], 6: [30, 40, 25, 5], 7: [20, 33, 35, 12], 8: [15, 25, 35, 25] },
-  POOL: { 1: 18, 2: 15, 3: 12, 4: 9 },                  // 全場共用卡池
+  // 商店機率（%）：等級 → [1費, 2費, 3費, 4費, 5費]
+  SHOP_ODDS: { 1: [100, 0, 0, 0, 0], 2: [75, 25, 0, 0, 0], 3: [55, 30, 15, 0, 0], 4: [45, 33, 20, 2, 0], 5: [30, 40, 25, 5, 0], 6: [19, 30, 35, 15, 1], 7: [15, 20, 35, 25, 5], 8: [10, 15, 30, 30, 15], 9: [5, 10, 25, 35, 25] },
+  POOL: { 1: 18, 2: 15, 3: 12, 4: 10, 5: 8 },           // 全場共用卡池
+  AUG_ROUNDS: [5, 11, 17],                              // 海克斯三選一的回合
+  AUG_TIER_ODDS: [[60, 35, 5], [30, 55, 15], [15, 50, 35]], // 每次選擇時 銀／金／彩 機率（%）
   STAR_MUL: [0, 100, 180, 320],                         // 星級生命與攻擊倍率（%）
   GIFT_GOLD_MAX: 5,
   MAX_ROUND: 30,
@@ -370,17 +418,17 @@ const ANIMALS = {
   cheetah: { name: '獵豹', cost: 3, traits: ['savanna'], role: '刺客',
     hp: 720, atk: 74, ai: 14, rng: 1, arm: 25, mr: 20, mana: 80, sm: 0, mv: 4,
     skill: '疾馳撲殺', desc: '移動極快。連續攻擊同一目標每次攻速 +8%（最多 5 層）。技能：衝向血最少的敵人 300 物理傷害。' },
-  octopus: { name: '章魚', cost: 3, traits: ['water', 'night'], role: '控制法師',
-    hp: 740, atk: 48, ai: 20, rng: 3, arm: 25, mr: 40, mana: 80, sm: 20, mv: 8,
+  octopus: { name: '章魚', cost: 4, traits: ['water', 'night'], role: '控制法師',
+    hp: 920, atk: 58, ai: 20, rng: 3, arm: 25, mr: 40, mana: 80, sm: 20, mv: 8,
     skill: '噴墨', desc: '對敵人密集處 3×3 噴墨：200 魔法傷害並致盲 3 秒（普攻落空）。' },
-  owl: { name: '貓頭鷹', cost: 3, traits: ['sky', 'night'], role: '遠程',
-    hp: 600, atk: 65, ai: 20, rng: 4, arm: 20, mr: 30, mana: 70, sm: 0, mv: 7,
+  owl: { name: '貓頭鷹', cost: 4, traits: ['sky', 'night'], role: '遠程',
+    hp: 760, atk: 82, ai: 20, rng: 4, arm: 20, mr: 30, mana: 70, sm: 0, mv: 7,
     skill: '無聲撲擊', desc: '撲向血最少的敵人，350 物理傷害必定暴擊。' },
-  elephant: { name: '大象', cost: 4, traits: ['savanna', 'pack'], role: '坦',
-    hp: 1400, atk: 80, ai: 26, rng: 1, arm: 55, mr: 45, mana: 110, sm: 40, mv: 10,
+  elephant: { name: '大象', cost: 5, traits: ['savanna', 'pack'], role: '坦',
+    hp: 1800, atk: 95, ai: 26, rng: 1, arm: 55, mr: 45, mana: 110, sm: 40, mv: 10,
     skill: '踩踏', desc: '震地：2 格內敵人暈 1.5 秒，220 魔法傷害。' },
-  lion: { name: '獅子', cost: 4, traits: ['savanna', 'pack'], role: '領袖',
-    hp: 1150, atk: 95, ai: 20, rng: 1, arm: 45, mr: 40, mana: 90, sm: 20, mv: 8,
+  lion: { name: '獅子', cost: 5, traits: ['savanna', 'pack'], role: '領袖',
+    hp: 1480, atk: 118, ai: 20, rng: 1, arm: 45, mr: 40, mana: 90, sm: 20, mv: 8,
     skill: '王者咆哮', desc: '全隊攻擊 +25% 持續 6 秒；2 格內敵人恐懼 1.5 秒。' },
 };
 
@@ -470,6 +518,58 @@ const TERRAIN_SKIN = {
   city:   { grass: '樹籬', water: '積水', tree: '行道樹', rock: '路障' },
 };
 
+// ===== 海克斯增幅（參考 Gemini 規格書，改寫成自走棋版本）=====
+// tier: 1 銀、2 金、3 彩；hook 說明效果在哪裡生效（econ 立即經濟、start 開場、tick 戰鬥中、hit 傷害、kill 擊殺、round 回合結算）
+const AUGMENTS = [
+  { id: 'ambush', tier: 1, name: '伏擊本能', hook: 'start', desc: '你站在草叢或最外側兩欄的棋子，開場隱身，第一擊 +50%。' },
+  { id: 'wavestep', tier: 1, name: '輕足踏浪', hook: 'start', desc: '你的棋子不受水池減速，站在水池上攻擊 +20%。' },
+  { id: 'fortress', tier: 1, name: '固若金湯', hook: 'start', desc: '你放在後兩排的棋子，護甲與魔抗 +25。' },
+  { id: 'scout', tier: 1, name: '迅捷斥候', hook: 'start', desc: '你的 1 費棋子移動速度加倍，攻速 +15%。' },
+  { id: 'united', tier: 1, name: '同仇敵愾', hook: 'hit', desc: '你的棋子每有一個相鄰友軍，受到傷害 −5%（最多 −20%）。' },
+  { id: 'piggy', tier: 1, name: '存錢罐', hook: 'econ', desc: '立即獲得 8 金；利息上限從 5 提高到 6。' },
+  { id: 'catstep', tier: 1, name: '貓步輕盈', hook: 'start', desc: '你的棋子閃避 +10%。' },
+  { id: 'guarddog', tier: 1, name: '警戒看門犬', hook: 'start', desc: '你放在最後一排的棋子生命 +400、護甲 +20。' },
+  { id: 'firstmove', tier: 1, name: '先制威懾', hook: 'start', desc: '戰鬥前 5 秒，你的棋子攻速 +40%。' },
+  { id: 'nourish', tier: 1, name: '野性滋潤', hook: 'start', desc: '你站在草叢、水池或樹上的棋子，開場獲得 200 護盾。' },
+  { id: 'recycle', tier: 1, name: '資源回收', hook: 'round', desc: '每場戰鬥後，你每陣亡一隻棋子 +1 金（最多 +4）。' },
+  { id: 'howl', tier: 1, name: '狼群長嚎', hook: 'start', desc: '你的群居棋子攻速 +15%。' },
+  { id: 'retreat', tier: 1, name: '退堂鼓', hook: 'kill', desc: '你的棋子擊殺後回復 15% 生命。' },
+  { id: 'vanguard', tier: 1, name: '破陣尖兵', hook: 'start', desc: '你放在最前排的棋子攻擊 +20%。' },
+  { id: 'discount', tier: 1, name: '打折狂潮', hook: 'econ', desc: '接下來 4 回合，商店刷新只要 1 金。' },
+  { id: 'pounce', tier: 2, name: '猛獸飛撲', hook: 'start', desc: '你的近戰棋子開場撲向 3 格內最近的敵人，第一擊必定暴擊。' },
+  { id: 'underdog', tier: 2, name: '以小博大', hook: 'hit', desc: '你的 1～3 費棋子對 4、5 費敵人傷害 +80%。' },
+  { id: 'trample', tier: 2, name: '巨象踐踏', hook: 'tick', desc: '你的坦克（刺蝟、小熊貓、鱷魚、無尾熊、大象）放技能時，周圍 1 格敵人被震暈 1 秒。' },
+  { id: 'chainhunt', tier: 2, name: '連環狩獵', hook: 'kill', desc: '你的棋子擊殺後立刻再攻擊一次，並獲得 20 能量。' },
+  { id: 'amphibious', tier: 2, name: '兩棲突擊', hook: 'start', desc: '你的所有棋子都享有水池效果，水域羈絆的護盾也套用在你全部棋子身上。' },
+  { id: 'shadow', tier: 2, name: '暗影潛行', hook: 'start', desc: '你的棋子開場隱身，第一次攻擊前無法被選為目標。' },
+  { id: 'gangup', tier: 2, name: '狼群圍剿', hook: 'hit', desc: '同一個敵人被你 2 隻以上棋子鎖定時，受到的傷害 +25%。' },
+  { id: 'rapids', tier: 2, name: '激流勇進', hook: 'start', desc: '你的棋子移動速度 +60%，開場能量 +15。' },
+  { id: 'goldrain', tier: 2, name: '金幣雨', hook: 'kill', desc: '你的棋子每擊殺一個敵人 +1 金（每回合最多 +3）；擊殺 4、5 費敵人時，下回合免費刷新一次。' },
+  { id: 'roar', tier: 2, name: '威嚇咆哮', hook: 'start', desc: '開場你費用最高的棋子咆哮，2 格內敵人恐懼 1.5 秒。' },
+  { id: 'quake', tier: 2, name: '巨像撼地', hook: 'tick', desc: '你的 4、5 費棋子每 6 秒震地，周圍 1 格敵人暈 0.5 秒並受 120 魔法傷害。' },
+  { id: 'riposte', tier: 2, name: '回馬槍', hook: 'kill', desc: '你的棋子陣亡時，50% 機率對殺手造成其最大生命 30% 的真實傷害。' },
+  { id: 'scapegoat', tier: 2, name: '替罪之身', hook: 'kill', desc: '你的 3 費以上棋子第一次將被擊殺時，由身邊最近的 1、2 費友軍代替陣亡，核心回復 30% 生命。' },
+  { id: 'lastStand', tier: 2, name: '絕處逢生', hook: 'start', desc: '團隊血量低於 40 時，你的棋子攻擊與攻速 +25%。' },
+  { id: 'lunge', tier: 2, name: '疾風突刺', hook: 'start', desc: '你的近戰棋子射程 +1。' },
+  { id: 'beastking', tier: 3, name: '百獸之王', hook: 'start', desc: '你場上費用最高的棋子成為獸王：體型 1.2 倍，生命與攻擊 +80%，開場能量 +30。' },
+  { id: 'shift', tier: 3, name: '乾坤大挪移', hook: 'tick', desc: '戰鬥第 3 秒與第 12 秒，你血量最低的棋子與最健康的棋子互換位置，並各回復 50% 生命。' },
+  { id: 'soulfeed', tier: 3, name: '噬魂進化', hook: 'kill', desc: '你的棋子每擊殺一次，本場攻擊 +15%、生命上限 +10%。' },
+  { id: 'domain', tier: 3, name: '絕對領域', hook: 'hit', desc: '敵人站在我方後兩排時，攻擊與護甲 −40%，每秒受到 30 真實傷害。' },
+  { id: 'mutation', tier: 3, name: '基因突變', hook: 'start', desc: '你的每隻棋子都獲得 +25 護甲魔抗與 10% 護盾。' },
+  { id: 'ark', tier: 3, name: '最後的方舟', hook: 'econ', desc: '團隊血量 +20；本局接下來前 2 次敗北不扣血。' },
+  { id: 'rewind', tier: 3, name: '時間回溯', hook: 'tick', desc: '戰鬥第 12 秒，你存活的棋子生命回到開場時的數值，並獲得 20% 護盾。' },
+  { id: 'meteor', tier: 3, name: '天降隕石', hook: 'tick', desc: '每 6 秒隨機轟炸敵人密集的 3×3 區域，造成 200 魔法傷害。' },
+  { id: 'plague', tier: 3, name: '鼠疫肆虐', hook: 'tick', desc: '戰鬥中敵方全體每 4 秒攻擊與護甲 −6%（可疊加）。' },
+  { id: 'beastgod', tier: 3, name: '獸神降臨', hook: 'econ', desc: '立即獲得一隻 2 星的 5 費動物。' },
+  { id: 'bind', tier: 3, name: '地靈束縛', hook: 'start', desc: '戰鬥開始時，敵方 2 隻前排棋子被定身 2.5 秒。' },
+  { id: 'armsrace', tier: 3, name: '軍備競賽', hook: 'econ', desc: '立即升 1 級並獲得 20 金；人口上限額外 +1（最多 10）。' },
+  { id: 'mirror', tier: 3, name: '鏡像分身', hook: 'start', desc: '開場複製你場上費用最高的棋子（生命 50%），分身存活不會讓敵方扣你血。' },
+  { id: 'carnival', tier: 3, name: '生死狂歡', hook: 'kill', desc: '你的棋子每擊殺一次，你全部棋子回復 5% 生命並獲得 10 能量。' },
+  { id: 'necro', tier: 3, name: '通靈轉生', hook: 'kill', desc: '每場戰鬥你前 2 隻陣亡的棋子，1 秒後以全滿生命復活，並獲得 50 能量。' },
+];
+const AUG = {}; for (const a of AUGMENTS) AUG[a.id] = a;
+const AUG_TIER_NAME = ['', '銀色', '金色', '彩色'];
+
 // ===== 戰鬥引擎：決定性整數模擬（同種子同結果，四台手機各自跑） =====
 function makeRng(seed) {
   let a = seed >>> 0;
@@ -493,6 +593,7 @@ function createBattle(input) {
     t: 0, rng: makeRng(input.seed), units: [], grid: new Array(CFG.COLS * CFG.ROWS).fill(-1),
     terrain: Object.assign({}, input.terrain || {}), temp: [], zones: [], ev: [], night: false,
     over: false, winner: -1, combos: [], nextId: 0, pve: !!input.pve,
+    aug: input.aug || {}, low: input.low || {}, kills: {}, deaths: {}, bigKill: {}, revives: [], necroUsed: {},
   };
   for (const s of input.units) spawn(B, s.key, s.star, s.owner, s.team, s.c, s.r, s.items || [], false).uid = s.uid;
   applyTraits(B);
@@ -502,6 +603,7 @@ function createBattle(input) {
     if (u.waterShieldPct) u.shield += Math.floor(u.maxhp * u.waterShieldPct * (tt === 'water' ? 2 : 1) / 100);
     if (u.key === 'koala') u.asleep = true;
   }
+  augStart(B);
   findCombos(B);
   return B;
 }
@@ -597,8 +699,10 @@ function inZone(B, u, kind, team) {
 }
 function effAtk(B, u) {
   let p = 100 + u.atkPct + buffSum(B, u, 'atk');
-  if (hasTrait(u, 'water') && terrainAt(B, u.c, u.r) === 'water') p += 20;
+  if ((hasTrait(u, 'water') || u.wave) && terrainAt(B, u.c, u.r) === 'water') p += 20;
   if (inZone(B, u, 'gas')) p -= 30;
+  if (u.plague) p -= 6 * u.plague;
+  if (inDomain(B, u)) p -= 40;
   return Math.max(1, Math.floor(u.atk * p / 100));
 }
 function effInterval(B, u) {
@@ -637,15 +741,21 @@ function damage(B, src, tgt, raw, type, o) {
     let n = 0; for (const a of B.units) if (a.alive && a !== src && a.team === src.team && hasTrait(a, 'pack') && dist(a, src) <= 1) n++;
     amt = Math.floor(amt * (100 + n * src.packPct) / 100);
   }
+  if (o.atk && src.forceCrit) { crit = true; src.forceCrit = false; }
+  if (hasAug(B, src, 'underdog') && costOf(src) <= 3 && costOf(tgt) >= 4) amt = Math.floor(amt * 180 / 100);
+  if (hasAug(B, src, 'gangup')) { let n = 0; for (const a of B.units) if (a.alive && a.team === src.team && a.target === tgt.id) n++; if (n >= 2) amt = Math.floor(amt * 125 / 100); }
   if (!crit && o.atk) { const cc = src.crit + (B.night ? src.nightCrit : 0); if (cc && B.rng(100) < cc) crit = true; }
   if (crit) amt = Math.floor(amt * 150 / 100);
   if (o.atk && src.firstHit) { amt = Math.floor(amt * 150 / 100); src.firstHit = false; }
   if (B.t > CFG.OVERTIME_TICK) amt = Math.floor(amt * (100 + 10 * Math.floor((B.t - CFG.OVERTIME_TICK) / 20)) / 100);
   if (type === 'phys') {
     let arm = tgt.arm; if (tgt.key === 'croc' && terrainAt(B, tgt.c, tgt.r) === 'water') arm *= 2;
+    if (tgt.plague) arm = Math.floor(arm * Math.max(10, 100 - 6 * tgt.plague) / 100);
+    if (inDomain(B, tgt)) arm = Math.floor(arm * 60 / 100);
     amt = Math.floor(amt * 100 / (100 + Math.max(0, arm)));
   } else if (type === 'magic') amt = Math.floor(amt * 100 / (100 + Math.max(0, tgt.mr)));
-  const dr = Math.min(80, tgt.baseDr + buffSum(B, tgt, 'dr'));
+  let dr = Math.min(80, tgt.baseDr + buffSum(B, tgt, 'dr'));
+  if (hasAug(B, tgt, 'united')) { let n = 0; for (const a of B.units) if (a.alive && a !== tgt && a.team === tgt.team && dist(a, tgt) <= 1) n++; dr = Math.min(80, dr + Math.min(20, 5 * n)); }
   amt = Math.floor(amt * (100 - dr) / 100);
   if (amt < 1) amt = 1;
   let left = amt;
@@ -666,7 +776,24 @@ function damage(B, src, tgt, raw, type, o) {
 }
 
 function kill(B, u, killer) {
+  // 替罪之身：由身邊的 1、2 費友軍代替陣亡
+  if (hasAug(B, u, 'scapegoat') && !u.scaped && costOf(u) >= 3) {
+    let sub = null, sd = 99;
+    for (const a of B.units) if (a.alive && a !== u && a.owner === u.owner && !a.summon && costOf(a) <= 2) { const d = dist(a, u); if (d < sd) { sd = d; sub = a; } }
+    if (sub) { u.scaped = true; u.hp = Math.floor(u.maxhp * 30 / 100); B.ev.push({ k: 'txt', id: u.id, s: '替罪之身' }); B.ev.push({ k: 'aug', id: u.id, a: 'scapegoat', to: sub.id }); kill(B, sub, killer); return; }
+  }
   u.alive = false; u.hp = 0;
+  if (!u.summon && u.owner >= 0) B.deaths[u.owner] = (B.deaths[u.owner] || 0) + 1;
+  if (hasAug(B, u, 'riposte') && killer && killer.alive && killer !== u && B.rng(100) < 50) { B.ev.push({ k: 'aug', id: u.id, a: 'riposte', to: killer.id }); damage(B, u, killer, Math.floor(killer.maxhp * 30 / 100), 'true', {}); }
+  if (hasAug(B, u, 'necro') && (B.necroUsed[u.owner] || 0) < 2 && !u.summon && !u.revived) { B.necroUsed[u.owner] = (B.necroUsed[u.owner] || 0) + 1; u.revived = true; B.revives.push({ id: u.id, t: B.t + 20, c: u.c, r: u.r }); }
+  if (killer && killer.alive && killer.team !== u.team && killer.owner >= 0) {
+    const ko = killer.owner;
+    B.kills[ko] = (B.kills[ko] || 0) + 1; if (costOf(u) >= 4) B.bigKill[ko] = true;
+    if (hasAug(B, killer, 'retreat')) heal(B, killer, Math.floor(killer.maxhp * 15 / 100));
+    if (hasAug(B, killer, 'chainhunt')) { killer.nextAtk = B.t; killer.mana += 20; }
+    if (hasAug(B, killer, 'soulfeed')) { killer.atkPct += 15; const add = Math.floor(killer.maxhp * 10 / 100); killer.maxhp += add; killer.hp += add; B.ev.push({ k: 'aug', id: killer.id, a: 'soulfeed' }); }
+    if (hasAug(B, killer, 'carnival')) for (const a of B.units) if (a.alive && a.owner === ko) { heal(B, a, Math.floor(a.maxhp * 5 / 100)); a.mana += 10; }
+  }
   if (B.grid[idx(u.c, u.r)] === u.id) B.grid[idx(u.c, u.r)] = -1;
   B.ev.push({ k: 'die', id: u.id, key: u.key, team: u.team, by: killer ? killer.id : -1 });
   if (u.key === 'minibee' && killer && killer.alive) damage(B, u, killer, 60, 'true', {});
@@ -698,6 +825,7 @@ function teleport(B, u, c, r) {
   u.c = c; u.r = r; B.grid[idx(c, r)] = u.id;
 }
 const DIRS = [[0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+const DIRS1 = DIRS.map(([c, r]) => [-c, -r]); // 對面隊伍用鏡像方向，避免路徑偏好不對稱
 function stepToward(B, u, tgt, range) {
   // BFS 找最近能打到目標的格子，回傳第一步
   const start = idx(u.c, u.r), prev = new Map([[start, -1]]), q = [[u.c, u.r]];
@@ -705,7 +833,7 @@ function stepToward(B, u, tgt, range) {
   for (let qi = 0; qi < q.length; qi++) {
     const [c, r] = q[qi];
     if (Math.max(Math.abs(c - tgt.c), Math.abs(r - tgt.r)) <= range) { goal = idx(c, r); break; }
-    for (const [dc, dr] of DIRS) {
+    for (const [dc, dr] of (u.team === 1 ? DIRS1 : DIRS)) {
       const nc = c + dc, nr = r + dr, k = idx(nc, nr);
       if (!passable(B, nc, nr, u.id) || prev.has(k)) continue;
       prev.set(k, idx(c, r)); q.push([nc, nr]);
@@ -833,6 +961,7 @@ function cast(B, u) {
       break;
   }
   u.castCount++;
+  if (hasAug(B, u, 'trample') && TANKS.includes(u.key)) { for (const e of enemies(B, u)) if (dist(e, u) <= 1) stun(B, e, 20); B.ev.push({ k: 'aug', id: u.id, a: 'trample' }); }
 }
 
 function fireCombo(B, cbx) {
@@ -878,6 +1007,7 @@ function step(B) {
   B.t++;
   const t = B.t;
   if (!B.night && t >= CFG.NIGHT_TICK) { B.night = true; B.ev.push({ k: 'night' }); }
+  augTick(B);
   // 開場：蝙蝠飛向後排
   if (t === 1) for (const u of B.units) if (u.key === 'bat' && u.alive) {
     let back = null; for (const e of enemies(B, u)) if (!back || (u.team === 0 ? e.r > back.r : e.r < back.r) || (e.r === back.r && e.id < back.id)) back = e;
@@ -889,7 +1019,8 @@ function step(B) {
     const src = U(B, z.src);
     for (const e of B.units) if (e.alive && e.team !== z.team && Math.abs(e.c - z.c) <= 1 && Math.abs(e.r - z.r) <= 1) damage(B, src, e, z.per, 'magic', {});
   }
-  for (const u of B.units) {
+  const order = (t & 1) ? B.units.slice().reverse() : B.units; // 每 tick 交替行動順序，避免先手優勢
+  for (const u of order) {
     if (!u.alive) continue;
     if (sec) {
       for (const d of u.dots) if (d.until >= t && u.alive) damage(B, U(B, d.src), u, d.per, 'magic', {});
@@ -951,6 +1082,107 @@ function survivorStars(B, team) {
   let s = 0; for (const u of B.units) if (u.alive && u.team === team && !u.summon) s += u.star; return s;
 }
 
+// ===== 海克斯增幅：戰鬥內效果 =====
+const TANKS = ['hedgehog', 'redpanda', 'croc', 'koala', 'elephant'];
+const costOf = u => (ANIMALS[u.key] || { cost: 0 }).cost;
+function hasAug(B, u, id) { const a = u && u.owner >= 0 && B.aug[u.owner]; return !!(a && a.indexOf(id) >= 0); }
+function ownersWith(B, id) { const r = []; for (const k in B.aug) if (B.aug[k].indexOf(id) >= 0) r.push(+k); return r; }
+function teamOfOwner(B, o) { const u = B.units.find(x => x.owner === o); return u ? u.team : -1; }
+function backRow(team, r, n) { return team === 0 ? r < n : r >= CFG.ROWS - n; }
+function inDomain(B, u) {
+  if (!B.domainTeams) { B.domainTeams = []; for (const o of ownersWith(B, 'domain')) { const t = teamOfOwner(B, o); if (t >= 0 && !B.domainTeams.includes(t)) B.domainTeams.push(t); } }
+  for (const t of B.domainTeams) if (u.team !== t && backRow(t, u.r, 2)) return true;
+  return false;
+}
+function augStart(B) {
+  const byOwner = {};
+  for (const u of B.units) if (u.owner >= 0) (byOwner[u.owner] = byOwner[u.owner] || []).push(u);
+  for (const u of B.units) {
+    if (u.owner < 0) continue;
+    const tt = B.terrain[idx(u.c, u.r)], A = ANIMALS[u.key] || {};
+    if (hasAug(B, u, 'ambush') && (tt === 'grass' || u.c === 0 || u.c === CFG.COLS - 1)) { u.stealth = true; u.firstHit = true; }
+    if (hasAug(B, u, 'wavestep')) u.wave = true;
+    if (hasAug(B, u, 'fortress') && backRow(u.team, u.r, 2)) { u.arm += 25; u.mr += 25; }
+    if (hasAug(B, u, 'scout') && A.cost === 1) { u.mv = Math.max(2, Math.floor(u.mv / 2)); u.asPct += 15; }
+    if (hasAug(B, u, 'catstep')) u.dodge += 10;
+    if (hasAug(B, u, 'guarddog') && backRow(u.team, u.r, 1)) { u.maxhp += 400; u.hp += 400; u.arm += 20; }
+    if (hasAug(B, u, 'firstmove')) u.buffs.push({ s: 'as', v: 40, u: 100 });
+    if (hasAug(B, u, 'nourish') && (tt === 'grass' || tt === 'water' || tt === 'tree')) u.shield += 200;
+    if (hasAug(B, u, 'howl') && hasTrait(u, 'pack')) u.asPct += 15;
+    if (hasAug(B, u, 'vanguard') && (u.team === 0 ? u.r === CFG.ROWS_HALF - 1 : u.r === CFG.ROWS_HALF)) u.atkPct += 20;
+    if (hasAug(B, u, 'pounce') && u.rng === 1) { u.pounce = true; u.forceCrit = true; }
+    if (hasAug(B, u, 'amphibious')) { u.wave = true; if (!u.waterShieldPct) u.shield += Math.floor(u.maxhp * 15 / 100); }
+    if (hasAug(B, u, 'shadow')) u.stealth = true;
+    if (hasAug(B, u, 'rapids')) { u.mv = Math.max(2, Math.floor(u.mv * 6 / 10)); u.mana += 15; }
+    if (hasAug(B, u, 'lastStand') && B.low[u.owner]) { u.atkPct += 25; u.asPct += 25; }
+    if (hasAug(B, u, 'lunge') && u.rng === 1) u.rng = 2;
+    if (hasAug(B, u, 'mutation')) { u.arm += 25; u.mr += 25; u.shield += Math.floor(u.maxhp * 10 / 100); }
+    u.startHp = u.maxhp;
+  }
+  for (const o in byOwner) {
+    const list = byOwner[o].filter(u => !u.summon);
+    if (!list.length) continue;
+    const top = list.slice().sort((a, b) => (costOf(b) - costOf(a)) || (b.star - a.star) || a.id - b.id)[0];
+    if (hasAug(B, top, 'beastking')) { top.king = true; top.maxhp = Math.floor(top.maxhp * 18 / 10); top.hp = top.maxhp; top.startHp = top.maxhp; top.atk = Math.floor(top.atk * 18 / 10); top.mana += 30; }
+    if (hasAug(B, top, 'mirror')) {
+      const spot = freeNear(B, top.c, top.r, null);
+      if (spot) { const m = spawn(B, top.key, top.star, top.owner, top.team, spot[0], spot[1], top.items, true); m.maxhp = Math.floor(m.maxhp / 2); m.hp = m.maxhp; m.mirror = true; for (const k of ['traits', 'asPct', 'arm', 'mr', 'dodge', 'packPct', 'regenPct', 'nightCrit']) if (k !== 'traits') m[k] = top[k]; B.ev.push({ k: 'spawn', id: m.id }); if (m.key === 'koala') m.asleep = true; }
+    }
+  }
+}
+function augTick(B) {
+  const t = B.t;
+  if (t === 1) {
+    for (const u of B.units) if (u.alive && u.pounce) {
+      let best = null, bd = 99; for (const e of enemies(B, u)) { const d = dist(e, u); if (d <= 3 && d < bd) { bd = d; best = e; } }
+      if (best && bd > 1) { const spot = freeNear(B, best.c, best.r, u); if (spot) { teleport(B, u, spot[0], spot[1]); u.target = best.id; B.ev.push({ k: 'aug', id: u.id, a: 'pounce' }); } }
+    }
+    for (const o of ownersWith(B, 'roar')) {
+      const list = B.units.filter(u => u.alive && u.owner === o && !u.summon); if (!list.length) continue;
+      const top = list.sort((a, b) => (costOf(b) - costOf(a)) || (b.star - a.star))[0];
+      for (const e of enemies(B, top)) if (dist(e, top) <= 2) stun(B, e, 30, '恐懼');
+      B.ev.push({ k: 'aug', id: top.id, a: 'roar' });
+    }
+    for (const o of ownersWith(B, 'bind')) {
+      const tm = teamOfOwner(B, o); if (tm < 0) continue;
+      const foes = B.units.filter(u => u.alive && u.team !== tm).sort((a, b) => (tm === 0 ? a.r - b.r : b.r - a.r) || a.id - b.id).slice(0, 2);
+      for (const e of foes) { stun(B, e, 50, '定身'); B.ev.push({ k: 'aug', id: e.id, a: 'bind' }); }
+    }
+  }
+  if (t % 120 === 0) {
+    for (const u of B.units) if (u.alive && hasAug(B, u, 'quake') && costOf(u) >= 4) { for (const e of enemies(B, u)) if (dist(e, u) <= 1) { stun(B, e, 10); damage(B, u, e, 120, 'magic', {}); } B.ev.push({ k: 'aug', id: u.id, a: 'quake' }); }
+    for (const o of ownersWith(B, 'meteor')) {
+      const src = B.units.find(u => u.alive && u.owner === o); if (!src) continue;
+      const cc = clusterCenter(B, src); if (!cc) continue;
+      B.ev.push({ k: 'zone', kind: 'meteor', c: cc.c, r: cc.r, id: src.id });
+      for (const e of enemies(B, src)) if (Math.abs(e.c - cc.c) <= 1 && Math.abs(e.r - cc.r) <= 1) damage(B, src, e, 200, 'magic', {});
+    }
+  }
+  if (t % 20 === 0 && ownersWith(B, 'domain').length) { const src0 = B.units.find(u => u.alive && hasAug(B, u, 'domain')); if (src0) for (const e of B.units) if (e.alive && inDomain(B, e)) damage(B, src0, e, 30, 'true', {}); }
+  if (t % 80 === 0) for (const o of ownersWith(B, 'plague')) { const tm = teamOfOwner(B, o); if (tm < 0) continue; for (const e of B.units) if (e.alive && e.team !== tm) e.plague = (e.plague || 0) + 1; B.ev.push({ k: 'aug', id: -1, a: 'plague', team: tm }); }
+  if (t === 60 || t === 240) for (const o of ownersWith(B, 'shift')) {
+    const list = B.units.filter(u => u.alive && u.owner === o && !u.summon); if (list.length < 2) continue;
+    list.sort((a, b) => a.hp * 1000 / a.maxhp - b.hp * 1000 / b.maxhp);
+    const lo = list[0], hi = list[list.length - 1];
+    const lc = lo.c, lr = lo.r, hc = hi.c, hr = hi.r;
+    B.grid[idx(lc, lr)] = -1; B.grid[idx(hc, hr)] = -1;
+    lo.mvFrom = { c: lc, r: lr, t0: t, t1: t + 6, jump: true }; hi.mvFrom = { c: hc, r: hr, t0: t, t1: t + 6, jump: true };
+    lo.c = hc; lo.r = hr; hi.c = lc; hi.r = lr; B.grid[idx(lo.c, lo.r)] = lo.id; B.grid[idx(hi.c, hi.r)] = hi.id;
+    heal(B, lo, Math.floor(lo.maxhp * 50 / 100)); heal(B, hi, Math.floor(hi.maxhp * 50 / 100));
+    B.ev.push({ k: 'aug', id: lo.id, a: 'shift', to: hi.id });
+  }
+  if (t === 240) for (const u of B.units) if (u.alive && hasAug(B, u, 'rewind')) { u.hp = Math.max(u.hp, Math.min(u.maxhp, u.startHp)); u.shield += Math.floor(u.maxhp * 20 / 100); B.ev.push({ k: 'aug', id: u.id, a: 'rewind' }); }
+  B.revives = B.revives.filter(rv => {
+    if (rv.t > t) return true;
+    const u = B.units[rv.id];
+    const spot = passable(B, rv.c, rv.r, -2) ? [rv.c, rv.r] : freeNear(B, rv.c, rv.r, null);
+    if (!spot) return false;
+    u.alive = true; u.hp = u.maxhp; u.c = spot[0]; u.r = spot[1]; u.mvFrom = null; u.stun = 0; u.mana = Math.min(u.manaMax - 1, 50); u.dots = [];
+    B.grid[idx(u.c, u.r)] = u.id; B.ev.push({ k: 'revive', id: u.id }); B.ev.push({ k: 'aug', id: u.id, a: 'necro' });
+    return false;
+  });
+}
+
 // ===== 對局流程：經濟、卡池、升星、送禮、回合、AI =====
 const isPve = R => R <= 3 || (R - 3) % 5 === 0;
 const stageOf = R => R <= 3 ? 1 : 2 + Math.floor((R - 4) / 5);
@@ -964,11 +1196,12 @@ const power = u => ANIMALS[u.key].cost * u.star * u.star + u.items.length;
 function createGame(opt) {
   const G = {
     seed: opt.seed >>> 0, rng: makeRng(opt.seed), round: 0, phase: 'lobby', timer: 0,
-    teams: [{ hp: CFG.TEAM_HP, streak: 0 }, { hp: CFG.TEAM_HP, streak: 0 }],
+    teams: [{ hp: CFG.TEAM_HP, streak: 0, ark: 0 }, { hp: CFG.TEAM_HP, streak: 0, ark: 0 }],
     players: opt.players.map((p, i) => ({
       id: i, name: p.name, team: i < 2 ? 0 : 1, slot: i % 2, ai: !!p.ai,
       gold: CFG.START_GOLD, xp: 0, level: CFG.START_LEVEL, bench: new Array(CFG.BENCH).fill(null),
       items: [], ready: false, giftedGold: 0, lastIncome: null, shop: [], locked: false,
+      augs: [], augChoice: null, popBonus: 0, discount: 0, freeRoll: 0, killGold: 0,
     })),
     board: {}, pool: {}, terrain: {}, arena: 'jungle', arenaStart: 0, uid: 1, battles: [], log: [], winner: -1, lastResult: null, acc: 0,
   };
@@ -1015,7 +1248,7 @@ function rollShop(G, P) {
   P.shop = [];
   for (let i = 0; i < CFG.SHOP_SIZE; i++) {
     let roll = G.rng(100), cost = 1;
-    for (let c = 0; c < 4; c++) { if (roll < odds[c]) { cost = c + 1; break; } roll -= odds[c]; }
+    for (let c = 0; c < odds.length; c++) { if (roll < odds[c]) { cost = c + 1; break; } roll -= odds[c]; }
     let keys = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost === cost && G.pool[k] > 0);
     if (!keys.length) keys = Object.keys(ANIMALS).filter(k => G.pool[k] > 0 && ANIMALS[k].cost <= cost);
     if (!keys.length) { P.shop.push(null); continue; }
@@ -1032,8 +1265,15 @@ function act(G, pid, a) {
   if (G.phase !== 'prep' && a.t !== 'ready') return 'not_prep';
   switch (a.t) {
     case 'reroll': {
-      if (P.gold < CFG.REROLL_COST) return 'no_gold';
-      P.gold -= CFG.REROLL_COST; rollShop(G, P); G.log.push({ k: 'reroll', pid }); return 'ok';
+      const cost = rerollCost(P);
+      if (P.gold < cost) return 'no_gold';
+      P.gold -= cost; if (P.freeRoll > 0 && cost === 0) P.freeRoll--;
+      rollShop(G, P); G.log.push({ k: 'reroll', pid }); return 'ok';
+    }
+    case 'aug': {
+      if (!P.augChoice || !P.augChoice.includes(a.id)) return 'bad';
+      P.augChoice = null; P.augs.push(a.id); applyAugNow(G, P, a.id);
+      G.log.push({ k: 'aug', pid, id: a.id }); return 'ok';
     }
     case 'lock': P.locked = !P.locked; return 'ok';
     case 'buy': {
@@ -1073,7 +1313,7 @@ function act(G, pid, a) {
       const occ = G.board[cell];
       if (occ && occ.owner !== pid) return 'teammate_cell';
       if (o.zone === 'board') { delete G.board[o.cell]; if (occ) G.board[o.cell] = occ; G.board[cell] = o.u; return 'ok'; }
-      if (!occ && boardCount(G, pid) >= P.level) return 'pop_full';
+      if (!occ && boardCount(G, pid) >= popCap(P)) return 'pop_full';
       P.bench[o.i] = occ || null; G.board[cell] = o.u;
       return 'ok';
     }
@@ -1160,14 +1400,18 @@ function startPrep(G) {
       const k = keys[G.rng(keys.length)]; G.pool[k]--; P.bench[0] = newUnit(G, k, 1, P.id);
     } else {
       const T = G.teams[P.team], s = Math.abs(T.streak);
-      const inc = { base: CFG.BASE_INCOME, interest: Math.min(CFG.MAX_INTEREST, Math.floor(P.gold / 10)), streak: s >= 6 ? 3 : s >= 4 ? 2 : s >= 2 ? 1 : 0 };
+      const inc = { base: CFG.INCOME_BY_STAGE[Math.min(stageOf(R), CFG.INCOME_BY_STAGE.length - 1)] || CFG.BASE_INCOME, interest: Math.min(CFG.MAX_INTEREST + (P.augs.includes('piggy') ? 1 : 0), Math.floor(P.gold / 10)), streak: s >= 6 ? 3 : s >= 4 ? 2 : s >= 2 ? 1 : 0 };
       P.gold += inc.base + inc.interest + inc.streak; P.lastIncome = inc;
       addXp(P, CFG.XP_ROUND);
     }
     if (!P.locked) rollShop(G, P); P.locked = false;
+    if (P.discount > 0 && R > 1) P.discount--;
   }
+  if (CFG.AUG_ROUNDS.includes(R)) offerAugments(G);
   G.phase = 'prep'; G.timer = CFG.PREP_SEC * 1000;
-  for (const P of G.players) if (P.ai) aiPrep(G, P.id);
+  // AI 行動順序每回合輪替，避免某一隊總是先搶卡池
+  const order = G.players.map(p => p.id); for (let i = 0; i < G.round % 4; i++) order.push(order.shift());
+  for (const id of order) if (G.players[id].ai) aiPrep(G, id);
 }
 
 function battleUnitsForTeam(G, team, asTeam) {
@@ -1194,12 +1438,12 @@ function startCombat(G) {
   if (isPve(R)) {
     for (const team of [0, 1]) {
       const units = battleUnitsForTeam(G, team, 0);
-      for (const [key, c, r] of PVE[R]) { const [gc, gr] = toGlobal(1, c, r); units.push({ key, star: PVE_STAR[R], owner: -1, team: 1, c: gc, r: gr, items: [] }); }
-      G.battles.push({ teams: [team, -1], B: createBattle({ seed: seed + team, terrain: terrainFor(G, team), units, pve: true }) });
+      for (const [key, c, r] of pveOf(R)) { const [gc, gr] = toGlobal(1, c, r); units.push({ key, star: PVE_STAR[R] || 3, owner: -1, team: 1, c: gc, r: gr, items: [] }); }
+      G.battles.push({ teams: [team, -1], B: createBattle({ seed: seed + team, terrain: terrainFor(G, team), units, pve: true, aug: augMap(G), low: lowMap(G) }) });
     }
   } else {
     const units = battleUnitsForTeam(G, 0, 0).concat(battleUnitsForTeam(G, 1, 1));
-    G.battles.push({ teams: [0, 1], B: createBattle({ seed, terrain: Object.assign({}, G.terrain), units }) });
+    G.battles.push({ teams: [0, 1], B: createBattle({ seed, terrain: Object.assign({}, G.terrain), units, aug: augMap(G), low: lowMap(G) }) });
   }
   G.phase = 'combat'; G.acc = 0;
 }
@@ -1222,9 +1466,18 @@ function endCombat(G) {
       const T = G.teams[team];
       if (w === team) { res.win[team] = true; T.streak = T.streak > 0 ? T.streak + 1 : 1; for (const P of G.players) if (P.team === team) P.gold += CFG.WIN_GOLD; }
       else {
-        const d = CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - team) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (st - 1);
+        let d = CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - team) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (st - 1);
+        if (T.ark > 0) { T.ark--; d = 0; res.ark = true; }
         T.hp -= d; res.dmg[team] = d; T.streak = T.streak < 0 ? T.streak - 1 : -1;
       }
+    }
+  }
+  // 增幅：戰後經濟
+  for (const bt of G.battles) {
+    const B = bt.B;
+    for (const P of G.players) {
+      if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
+      if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
     }
   }
   G.lastResult = res;
@@ -1238,9 +1491,12 @@ function endCombat(G) {
 // 主更新：dt 毫秒
 function update(G, dt) {
   if (G.phase === 'prep') {
-    G.timer -= dt;
     const humans = G.players.filter(p => !p.ai);
-    if (G.timer <= 0 || (humans.length && humans.every(p => p.ready))) startCombat(G);
+    if (!humans.some(p => p.augChoice)) G.timer -= dt; // 有人在選海克斯時暫停倒數
+    if (G.timer <= 0 || (humans.length && humans.every(p => p.ready))) {
+      for (const P of G.players) if (P.augChoice) act(G, P.id, { t: 'aug', id: P.augChoice[0] });
+      startCombat(G);
+    }
   } else if (G.phase === 'combat') {
     G.acc += dt;
     while (G.acc >= CFG.TICK_MS && !combatDone(G)) { G.acc -= CFG.TICK_MS; for (const b of G.battles) step(b.B); }
@@ -1255,6 +1511,7 @@ function aiPrep(G, pid) {
   const P = G.players[pid], R = G.round, T = teammate(G, pid);
   const target = Math.min(CFG.MAX_LEVEL, 2 + Math.floor(R / 3));
   const reserve = R >= 6 ? 10 : 0;
+  if (P.augChoice) act(G, pid, { t: 'aug', id: P.augChoice[G.rng(P.augChoice.length)] });
   while (P.level < target && P.gold >= CFG.XP_COST + Math.min(reserve, 4)) act(G, pid, { t: 'level' });
   // 隊伍羈絆偏好
   const teamKeys = {}; for (const k in G.board) if (G.players[G.board[k].owner].team === P.team) teamKeys[G.board[k].key] = 1;
@@ -1279,7 +1536,7 @@ function aiPrep(G, pid) {
   };
   buyPass();
   const rollFloor = R >= 12 ? 20 : 50;
-  for (let n = 0; n < 6 && P.gold >= rollFloor + CFG.REROLL_COST && P.level >= target; n++) { act(G, pid, { t: 'reroll' }); buyPass(); }
+  for (let n = 0; n < 6 && P.gold >= rollFloor + rerollCost(P) && P.level >= target; n++) { act(G, pid, { t: 'reroll' }); buyPass(); }
   // 備戰區滿：賣最弱
   while (P.bench.indexOf(null) < 0) {
     const own = ownUnits(G, pid).filter(o => o.zone === 'bench').sort((a, b) => power(a.u) - power(b.u));
@@ -1297,7 +1554,7 @@ function aiPlace(G, pid) {
   const P = G.players[pid];
   // 先全部收回
   for (const k in G.board) if (G.board[k].owner === pid) { const u = G.board[k]; delete G.board[k]; const s = P.bench.indexOf(null); if (s >= 0) P.bench[s] = u; else { P.bench.push(u); } }
-  const list = ownUnits(G, pid).filter(o => o.zone === 'bench').sort((a, b) => power(b.u) - power(a.u)).slice(0, P.level);
+  const list = ownUnits(G, pid).filter(o => o.zone === 'bench').sort((a, b) => power(b.u) - power(a.u)).slice(0, popCap(P));
   const free = [];
   for (let r = 0; r < CFG.ROWS_HALF; r++) for (let c = 0; c < CFG.COLS; c++) {
     const [gc, gr] = toGlobal(P.team, c, r), k = gr * CFG.COLS + gc;
@@ -1313,7 +1570,9 @@ function aiPlace(G, pid) {
       for (const k in G.board) {
         const pu = G.board[k]; if (pu.key !== partner || pu.owner === pid || G.players[pu.owner].team !== P.team) continue;
         const pc = +k % CFG.COLS, pr = Math.floor(+k / CFG.COLS);
-        spot = free.find(f => Math.max(Math.abs(f.k % CFG.COLS - pc), Math.abs(Math.floor(f.k / CFG.COLS) - pr)) <= 1);
+        const adj = free.filter(f => Math.max(Math.abs(f.k % CFG.COLS - pc), Math.abs(Math.floor(f.k / CFG.COLS) - pr)) <= 1);
+        adj.sort((x, y) => (A.rng === 1 ? y.r - x.r : x.r - y.r) || Math.abs(x.c - 3) - Math.abs(y.c - 3) || x.c - y.c);
+        spot = adj[0];
         if (spot) break;
       }
       if (spot) break;
@@ -1340,6 +1599,38 @@ function compactBench(G, P) {
   }
   for (let i = 0; i < CFG.BENCH; i++) if (P.bench[i] === undefined) P.bench[i] = null;
 }
+
+// ---- 海克斯增幅 ----
+const popCap = P => Math.min(10, P.level + P.popBonus);
+const rerollCost = P => P.freeRoll > 0 ? 0 : P.discount > 0 ? 1 : CFG.REROLL_COST;
+function augMap(G) { const m = {}; for (const P of G.players) m[P.id] = P.augs.slice(); return m; }
+function lowMap(G) { const m = {}; for (const P of G.players) m[P.id] = G.teams[P.team].hp < 40; return m; }
+function offerAugments(G) {
+  const idx = CFG.AUG_ROUNDS.indexOf(G.round), odds = CFG.AUG_TIER_ODDS[Math.min(idx, CFG.AUG_TIER_ODDS.length - 1)];
+  let r = G.rng(100), tier = 1; for (let i = 0; i < 3; i++) { if (r < odds[i]) { tier = i + 1; break; } r -= odds[i]; }
+  G.augTier = tier;
+  for (const P of G.players) {
+    const pool = AUGMENTS.filter(a => a.tier === tier && !P.augs.includes(a.id)).map(a => a.id);
+    const pick = [];
+    while (pick.length < 3 && pool.length) pick.push(pool.splice(G.rng(pool.length), 1)[0]);
+    P.augChoice = pick;
+  }
+}
+function applyAugNow(G, P, id) {
+  if (id === 'piggy') P.gold += 8;
+  if (id === 'discount') P.discount = 4;
+  if (id === 'ark') { G.teams[P.team].hp += 20; G.teams[P.team].ark += 2; }
+  if (id === 'armsrace') { P.level = Math.min(CFG.MAX_LEVEL, P.level + 1); P.xp = 0; P.gold += 20; P.popBonus += 1; }
+  if (id === 'beastgod') {
+    const keys = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost === 5);
+    const k = keys[G.rng(keys.length)];
+    if (P.bench.indexOf(null) < 0) { const w = ownUnits(G, P.id).filter(o => o.zone === 'bench').sort((a, b) => power(a.u) - power(b.u))[0]; act(G, P.id, { t: 'sell', uid: w.u.uid }); }
+    const u = newUnit(G, k, 2, P.id); P.bench[P.bench.indexOf(null)] = u;
+    G.log.push({ k: 'gain', pid: P.id, uid: u.uid, key: k });
+  }
+}
+
+function pveOf(R) { return PVE[R] || PVE[23]; }
 
 // ===== 3D 大頭動物：球體拼裝、卡通著色、可動骨架（面向 +z）=====
 const GEO = {};
@@ -1834,7 +2125,14 @@ function poseRig(R, st) {
   }
   // 貓頭鷹偶爾轉頭 180°
   if (R.key === 'owl' && !st.act) { const c = (t % 9); R.head.rotation.y += c > 7 ? Math.sin((c - 7) / 2 * Math.PI) * Math.PI * 0.95 : 0; }
-  // 移動：小跳步
+  // 移動：擠壓與伸展（起步壓扁、空中拉長、落地回彈）
+  if (st.moveP !== null && st.moveP !== undefined) {
+    const k = st.moveP, sy = 1 - 0.13 * bell(k, 0, 0.22) + 0.12 * bell(k, 0.18, 0.78) - 0.12 * bell(k, 0.75, 1);
+    R.body.scale.y *= sy; R.body.scale.x *= 1 - (sy - 1) * 0.6; R.body.scale.z *= 1 - (sy - 1) * 0.6;
+    if (R.legL && !R.fly) { R.legL.rotation.x += 0.6 * Math.sin(k * Math.PI * 2); R.legR.rotation.x -= 0.6 * Math.sin(k * Math.PI * 2); }
+    R.body.rotation.x += 0.12 * bell(k, 0.1, 0.9);
+  }
+  if (st.land !== null && st.land !== undefined) { const k = st.land, sq = 0.16 * Math.sin(k * Math.PI) * (1 - k) - 0.05 * Math.sin(k * Math.PI * 2) * k; R.body.scale.y *= 1 - sq; R.body.scale.x *= 1 + sq * 0.6; R.body.scale.z *= 1 + sq * 0.6; }
   if (st.moving) {
     const ph = t * 13;
     R.body.position.y += Math.abs(Math.sin(ph)) * (R.fly ? 0.03 : 0.08);
@@ -1847,10 +2145,10 @@ function poseRig(R, st) {
     R.armL.rotation.x -= 1.0; R.armR.rotation.x -= 1.0; R.armL.rotation.z += 0.5; R.armR.rotation.z -= 0.5;
     R.torso.scale.y *= 1 + 0.05 * Math.sin(t * 1.2);
   }
-  if (st.act) { const A = (ACT[R.key] || {})[st.act.kind]; if (A) A.fn(R, Math.min(1, st.act.p)); }
+  if (st.act) { const A = (ACT[R.key] || {})[st.act.kind]; if (A) A.fn(R, Math.min(1, st.act.p)); if (st.act.kind === 'atk' && R.melee) { R.body.position.z -= 0.1 * bell(st.act.p, 0, 0.24); R.body.scale.z *= 1 - 0.08 * bell(st.act.p, 0, 0.24); } }
   if (st.stun) R.head.rotation.z += 0.18 * Math.sin(t * 6);
   if (st.hit > 0) { const k = Math.sin(st.hit * Math.PI); R.body.scale.x *= 1 + 0.12 * k; R.body.scale.y *= 1 - 0.12 * k; R.body.position.z -= 0.06 * k; }
-  if (st.dead !== undefined) { const d = ease.out(Math.min(1, st.dead)); R.body.rotation.z += 1.4 * d * (R.phase > 1.5 ? 1 : -1); R.body.position.y -= 0.12 * d; const sc = 1 - ramp(st.dead, 0.55, 1); R.yaw.scale.setScalar(Math.max(0.001, sc)); }
+  if (st.dead !== undefined) { const d = Math.min(1, st.dead); R.body.rotation.z += 0.5 * ease.out(Math.min(1, d * 3)) * (R.phase > 1.5 ? 1 : -1); R.yaw.rotation.y += ease.inOut(d) * Math.PI * 4; R.body.position.y += 0.25 * ease.out(d); const sc = 1 - ramp(d, 0.35, 1); R.yaw.scale.setScalar(Math.max(0.001, sc)); }
   else R.yaw.scale.setScalar(1);
   if (st.victory) hopUp(R, (t * 1.6) % 1, 0.25);
 }
@@ -1862,7 +2160,7 @@ function setNightEyes(R, on) {
   R.eyeMat.color.set(on ? R.glow : '#241914');
 }
 // 體型：費用越高越大，星級再放大
-const ART_SCALE = { 0: 1.0, 1: 1.0, 2: 1.07, 3: 1.14, 4: 1.25 };
+const ART_SCALE = { 0: 1.0, 1: 1.0, 2: 1.07, 3: 1.14, 4: 1.22, 5: 1.32 };
 function animalScale(key, star) {
   const A = ANIMALS[key] || EXTRA[key];
   let s = ART_SCALE[A.cost] || 0.95;
@@ -2147,9 +2445,13 @@ function s3SetTerrain(terrain, vt, temp) {
 }
 
 // ===== 單位、頭頂血條、特效、點選拖放 =====
+const easeSpring = k => { const c1 = 1.56, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); }; // 近似 cubic-bezier(.34,1.56,.64,1)
 const vview = (c, r, vt) => vt === 0 ? [c, r] : [CFG.COLS - 1 - c, CFG.ROWS - 1 - r];
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
-const nowS = () => performance.now() / 1000;
+let CLK = 0;
+const nowS = () => CLK; // 動畫時鐘：頓挫（hitstop）時會停住
+function hitstop(ms) { S3.freezeUntil = Math.max(S3.freezeUntil || 0, performance.now() + ms); }
+function stageShake(px) { const el = S3.wrap; el.style.setProperty('--shk', (px || 5) + 'px'); el.classList.remove('shk'); void el.offsetWidth; el.classList.add('shk'); }
 
 // ---- 單位 ----
 function s3Unit(k, info) {
@@ -2185,9 +2487,10 @@ function s3Sync(list, mode) {
   for (const it of list) {
     const v = s3Unit(it.k, it); seen[it.k] = 1;
     v.info = it; v.mode = mode;
-    if (it.star !== v.star) { v.star = it.star; v.el.st.textContent = '★'.repeat(it.star); v.el.st.className = 'hb-st s' + it.star; const sc = animalScale(it.key, it.star) * 1.05; v.R.root.scale.setScalar(sc); v.scale = sc; }
+    if (it.star !== v.star || !!it.king !== !!v.king) { v.star = it.star; v.king = !!it.king; v.el.st.textContent = (it.king ? '♛' : '') + '★'.repeat(it.star); v.el.st.className = 'hb-st s' + it.star; const sc = animalScale(it.key, it.star) * 1.05 * (it.king ? 1.2 : 1); v.R.root.scale.setScalar(sc); v.scale = sc; }
+    if (v.R.melee === undefined) v.R.melee = ((ANIMALS[it.key] || EXTRA[it.key] || {}).rng || 1) === 1;
     if (v.colorKey !== it.color) { v.colorKey = it.color; v.ring.material.color.set(it.color || '#ffffff'); v.ring.visible = !!it.color; v.hb.style.setProperty('--own', it.color || '#9a8a7a'); v.hb.classList.toggle('enemy', !!it.enemy); }
-    if (mode === 'prep') { v.R.root.visible = true; v.tgt.set(it.x, 0, it.z); if (!v.dragging && v.pos.distanceTo(v.tgt) > 3) v.pos.copy(v.tgt); }
+    if (mode === 'prep') { v.R.root.visible = true; if (Math.hypot(v.tgt.x - it.x, v.tgt.z - it.z) > 0.01) { v.tween = { from: v.pos.clone().setY(0), t0: nowS(), dur: 0.34 }; } v.tgt.set(it.x, 0, it.z); if (!v.dragging && v.pos.distanceTo(v.tgt) > 3.5) { v.pos.copy(v.tgt); v.tween = null; } }
     else { v.pos.set(it.x, it.y || 0, it.z); }
     if (it.alive === false && v.deadT === null) v.deadT = nowS();
     if (it.alive !== false && v.deadT !== null && mode === 'prep') v.deadT = null;
@@ -2199,6 +2502,7 @@ function toScreen(p) { const q = p.clone().project(S3.cam); return [(q.x + 1) / 
 
 // ---- 每幀更新 ----
 function s3Frame(dt, ctx) {
+  CLK += dt;
   const t = nowS();
   // 相機與晃動
   S3.cam.position.copy(S3.camBase);
@@ -2224,12 +2528,15 @@ function s3Frame(dt, ctx) {
   // 單位
   for (const k in S3.V) {
     const v = S3.V[k], it = v.info || {};
+    let moveP = null;
     if (v.mode === 'prep' && !v.dragging) {
-      const d = v.pos.distanceTo(v.tgt);
-      v.moving = d > 0.03;
-      if (v.moving) { const sp = Math.min(1, dt * 9); v.pos.lerp(v.tgt, sp); v.pos.y = Math.sin(Math.min(1, d) * Math.PI) * 0.35 * (d > 0.4 ? 1 : d); }
-      else v.pos.y = 0;
-    } else if (v.mode !== 'prep') v.moving = !!it.moving;
+      if (v.tween) {
+        const k = Math.min(1, (t - v.tween.t0) / v.tween.dur), e = easeSpring(k), d = v.tween.from.distanceTo(v.tgt);
+        v.pos.lerpVectors(v.tween.from, v.tgt, e); v.pos.y = Math.sin(k * Math.PI) * Math.min(0.45, 0.2 + d * 0.12);
+        moveP = k; if (k >= 1) { v.tween = null; v.pos.copy(v.tgt); v.land = t; }
+      } else { v.pos.copy(v.tgt); v.pos.y = 0; }
+      v.moving = false;
+    } else if (v.mode !== 'prep') { v.moving = false; if (it.moveP !== undefined && it.moveP !== null) moveP = it.moveP; if (it.landed) v.land = t; }
     if (v.dragging) v.moving = true;
     // 面向
     let ty = 0;
@@ -2244,16 +2551,23 @@ function s3Frame(dt, ctx) {
     if (v.act) { const p = (t - v.act.t0) / v.act.dur; if (p >= 1) v.act = null; else act = { kind: v.act.kind, p }; }
     const hitP = (t - v.hitT) / 0.18;
     const dead = v.deadT !== null ? (t - v.deadT) / 0.9 : undefined;
-    poseRig(v.R, { t, moving: v.moving, sleep: it.sleep, stun: it.stun, act, hit: hitP < 1 ? hitP : 0, dead, victory: it.victory });
+    if (!act && it.jumpP !== undefined && it.jumpP !== null && v.R.melee && ACT[v.unitKey] && ACT[v.unitKey].atk) act = { kind: 'atk', p: it.jumpP };
+    const landP = v.land ? (t - v.land) / 0.28 : 1;
+    poseRig(v.R, { t, moving: v.moving, moveP, land: landP < 1 ? landP : null, sleep: it.sleep, stun: it.stun, act, hit: hitP < 1 ? hitP : 0, dead, victory: it.victory });
+    // 選取時浮起
+    const liftT = v.dragging ? 0.45 : (S3.selK === k && v.mode === 'prep') ? 0.2 : 0;
+    v.lift += (liftT - v.lift) * Math.min(1, dt * 12);
     const fl = Math.max(0, 1 - hitP) * 0.55;
     if (fl !== v.lastFl) { setFlash(v.R, fl); v.lastFl = fl; }
     const nightOn = S3.night > 0.5 && (ANIMALS[v.unitKey] || {}).traits && ANIMALS[v.unitKey].traits.includes('night');
     if (nightOn !== v.nightOn) { setNightEyes(v.R, nightOn); v.nightOn = nightOn; }
-    if (!!it.stealth !== v.stealthOn) { v.stealthOn = !!it.stealth; for (const m of v.R.mats) { m.transparent = v.stealthOn || m.userData.op < 1; m.opacity = v.stealthOn ? 0.45 : m.userData.op; m.needsUpdate = true; } }
+    const ghost = it.stealth ? 0.45 : it.mirror ? 0.7 : 0;
+    if (ghost !== v.ghost) { v.ghost = ghost; for (const m of v.R.mats) { m.transparent = !!ghost || m.userData.op < 1; m.opacity = ghost || m.userData.op; m.needsUpdate = true; } }
     // 影子與圈
     const gone = dead !== undefined && dead > 0.8;
-    v.blob.position.set(v.pos.x, 0.012, v.pos.z); v.blob.scale.setScalar(0.38 * (v.scale || 1) * (1 - 0.25 * Math.min(1, v.lift + (v.R.fly || 0)))); v.blob.visible = !gone;
-    v.ring.position.set(v.pos.x, 0.016, v.pos.z); v.ring.visible = !!it.color && !gone; v.ring.scale.setScalar(v.scale || 1);
+    v.blob.position.set(v.pos.x, 0.012, v.pos.z); v.blob.scale.setScalar(0.38 * (v.scale || 1) * (1 + 0.5 * v.lift - 0.25 * Math.min(1, v.R.fly || 0))); v.blob.material.opacity = 0.25 * (1 - 0.8 * v.lift); v.blob.visible = !gone;
+    v.ring.position.set(v.pos.x, 0.016, v.pos.z); v.ring.visible = (!!it.color || S3.selK === k) && !gone;
+    if (S3.selK === k) { v.ring.material.color.set('#ffd34d'); v.ring.scale.setScalar((v.scale || 1) * (1.05 + 0.08 * Math.sin(t * 6))); } else { v.ring.material.color.set(it.color || '#ffffff'); v.ring.scale.setScalar(v.scale || 1); }
     // 暈眩星星
     if (it.stun && !v.stunG && !gone) { v.stunG = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('star'), transparent: true, depthWrite: false })); s.scale.setScalar(0.16); v.stunG.add(s); } S3.unitRoot.add(v.stunG); }
     if (v.stunG) { if (!it.stun || gone) { S3.unitRoot.remove(v.stunG); v.stunG = null; } else { const top = v3top(v); v.stunG.position.copy(top).add(V3(0, -0.12, 0)); v.stunG.children.forEach((s, i) => { const a = t * 5 + i * 2.1; s.position.set(Math.cos(a) * 0.28, Math.sin(t * 7 + i) * 0.03, Math.sin(a) * 0.18); }); } }
@@ -2288,6 +2602,9 @@ function s3Frame(dt, ctx) {
     // 死亡後移除（戰鬥中）
     if (dead !== undefined && dead > 1.2 && v.mode === 'combat') { v.R.root.visible = false; }
   }
+  // 格子呼吸光暈
+  const br = 0.55 + 0.45 * Math.sin(t * 5);
+  for (const o of S3.hlObjs || []) o.material.emissive.setHex(o.userData.hl).multiplyScalar(br);
   // 特效
   s3FxFrame(dt, t);
   S3.renderer.render(S3.scene, S3.cam);
@@ -2443,7 +2760,8 @@ function s3NearestSlot(p) {
 function s3Highlight(list) {
   for (const t of S3.tiles) { t.material.emissive.setHex(0); }
   for (const b of S3.bench) b.material.emissive.setHex(0);
-  for (const h of list) { const o = h.type === 'tile' ? S3.tiles[h.vr * CFG.COLS + h.vc] : S3.bench[h.i]; if (o) o.material.emissive.setHex(h.col); }
+  S3.hlObjs = [];
+  for (const h of list) { const o = h.type === 'tile' ? S3.tiles[h.vr * CFG.COLS + h.vc] : S3.bench[h.i]; if (o) { o.userData.hl = h.col; o.material.emissive.setHex(h.col); S3.hlObjs.push(o); } }
 }
 
 // ===== 羈絆與裝備圖示（SVG）=====
@@ -2474,7 +2792,9 @@ const ICON_ITEM = {
 };
 const iconTrait = (t, cls) => `<svg viewBox="0 0 24 24" class="${cls || ''}" aria-hidden="true">${ICON_TRAIT[t]}</svg>`;
 const iconItem = (k, cls) => `<svg viewBox="0 0 24 24" class="${cls || ''}" aria-hidden="true">${ICON_ITEM[k] || ''}</svg>`;
-const COST_COL = { 1: '#9a8a7a', 2: '#4f8a45', 3: '#3d7fc4', 4: '#8a4fc4' };
+const COST_COL = { 1: '#9a8a7a', 2: '#4f8a45', 3: '#3d7fc4', 4: '#8a4fc4', 5: '#d99a2b' };
+const AUG_COL = { 1: 'linear-gradient(135deg,#9aa6b2,#e8eef4,#9aa6b2)', 2: 'linear-gradient(135deg,#c8902a,#ffe08a,#c8902a)', 3: 'linear-gradient(135deg,#ff8ab0,#ffe27a,#8af0c8,#8ab8ff,#d88aff)' };
+const augIcon = (id, cls) => { const a = AUG[id]; return `<span class="aug-ic t${a.tier} ${cls || ''}" title="${a.name}">${a.name[0]}</span>`; };
 
 // ===== 介面與流程：HUD、商店、拖放、事件特效 =====
 const $ = id => document.getElementById(id);
@@ -2539,7 +2859,7 @@ function prepList() {
     list.push({ k: 'u' + u.uid, key: u.key, star: u.star, color: ownerColor(u.owner), enemy: P.team !== vt, x, z, hp: st.hp, maxhp: st.hp, mana: st.sm, manaMax: (ANIMALS[u.key] || {}).mana });
   }
   G.players[ME].bench.forEach((u, i) => { if (!u) return; const [x, z] = benchWorld(i), st = unitStats(u); list.push({ k: 'u' + u.uid, key: u.key, star: u.star, color: ownerColor(ME), x, z, hp: st.hp, maxhp: st.hp, mana: st.sm, manaMax: ANIMALS[u.key].mana }); });
-  if (pve) PVE[G.round].forEach(([key, c, r], i) => { const [gc, gr] = toGlobal(1 - vt === 1 ? 1 : 0, c, r); const [vc, vr] = [CFG.COLS - 1 - c, CFG.ROWS - 1 - r]; const [x, z] = cellWorld(vc, vr); const st = unitStats({ key, star: PVE_STAR[G.round], items: [] }); list.push({ k: 'pw' + i, key, star: PVE_STAR[G.round], enemy: true, x, z, hp: st.hp, maxhp: st.hp }); });
+  if (pve) pveOf(G.round).forEach(([key, c, r], i) => { const [gc, gr] = toGlobal(1 - vt === 1 ? 1 : 0, c, r); const [vc, vr] = [CFG.COLS - 1 - c, CFG.ROWS - 1 - r]; const [x, z] = cellWorld(vc, vr); const st = unitStats({ key, star: PVE_STAR[G.round] || 3, items: [] }); list.push({ k: 'pw' + i, key, star: PVE_STAR[G.round] || 3, enemy: true, x, z, hp: st.hp, maxhp: st.hp }); });
   return list;
 }
 function renderPrep() {
@@ -2585,6 +2905,7 @@ function processLog() {
     else if (L.k === 'equip') { const v = S3.V['u' + L.uid]; if (v) burst(v.pos.clone().add(V3(0, 0.6, 0)), 8, { tex: 'spark', color: 0xffe9a0, scale: 0.12, add: true, speed: 1.4, up: 1.5, g: -2 }); }
     else if (L.k === 'buy') { buyFly = L; }
     else if (L.k === 'gift' && L.to === ME) toast(`隊友送你 ${L.s}`);
+    else if (L.k === 'gain') { buyFly = null; at(0.1, () => { const v = S3.V['u' + L.uid]; if (v) { v.pop = nowS(); fxMerge({ uid: L.uid, eaten: [], star: 2 }); } }); }
   }
 }
 let flipShop = false, buyFly = null;
@@ -2613,18 +2934,20 @@ function renderDock() {
   const P = G.players[ME], T = teammate(G, ME), prep = G.phase === 'prep';
   // 等級與經驗環
   const need = CFG.XP_NEED[P.level], frac = need ? P.xp / need : 1;
-  $('xpArc').setAttribute('stroke-dasharray', `${(frac * 119.4).toFixed(1)} 200`);
-  $('lvNum').innerHTML = `<div>${P.level}<small>Lv</small></div>`;
-  if (prevLevel && P.level > prevLevel) { const l = $('lvl'); l.classList.remove('up'); void l.offsetWidth; l.classList.add('up'); toast(`升到 Lv${P.level}！人口 +1`); groundRing(V3(0, 0, 1.5), 0x6fc0ff, 4.5, 0.9); }
+  $('xpFill').style.width = (frac * 100).toFixed(1) + '%';
+  $('xpTxt').textContent = need ? `XP ${P.xp} / ${need}` : 'XP 已滿級';
+  if (prevLevel && P.level > prevLevel) { const l = $('lvl'); l.classList.remove('up'); void l.offsetWidth; l.classList.add('up'); toast(`升到 Lv.${P.level}！人口 +1`); groundRing(V3(0, 0, 1.5), 0x6fc0ff, 4.5, 0.9); }
   prevLevel = P.level;
-  $('pop').innerHTML = `人口<br><b>${boardCount(G, ME)}/${P.level}</b>`;
+  $('pop').innerHTML = `<b>Lv.${P.level}</b>（${boardCount(G, ME)}/${popCap(P)}）`;
   // 金幣
   const g = $('gold');
   g.innerHTML = goldSvg + `<span>${P.gold}</span>`;
   if (prevGold !== null && P.gold !== prevGold) { const d = document.createElement('span'); d.className = 'df ' + (P.gold > prevGold ? 'p' : 'm'); d.textContent = (P.gold > prevGold ? '+' : '') + (P.gold - prevGold); g.appendChild(d); g.classList.remove('bump'); void g.offsetWidth; g.classList.add('bump'); }
   prevGold = P.gold;
   $('btnLevel').disabled = !prep || P.level >= CFG.MAX_LEVEL || P.gold < CFG.XP_COST;
-  $('btnRoll').disabled = !prep || P.gold < CFG.REROLL_COST;
+  const rc = rerollCost(P); $('rollCost').textContent = rc === 0 ? '免費' : '$' + rc;
+  $('btnRoll').disabled = !prep || P.gold < rc;
+  renderAugs();
   $('btnLock').classList.toggle('on', P.locked);
   $('lockArc').setAttribute('d', P.locked ? 'M8 11V8a4 4 0 0 1 8 0v3' : 'M8 11V8a4 4 0 0 1 8 0');
   // 裝備
@@ -2700,6 +3023,7 @@ function hud() {
 // ---- 資訊卡 ----
 function renderSheet() {
   const sh = $('sheet'), inn = $('sheetIn');
+  S3.selK = sel && sel.type === 'unit' ? 'u' + sel.uid : null;
   if (!sel || drag) { sh.hidden = true; return; }
   let h = '';
   if (sel.type === 'unit') {
@@ -2726,6 +3050,9 @@ function renderSheet() {
     const members = Object.keys(ANIMALS).filter(k => ANIMALS[k].traits.includes(sel.k)).map(k => ANIMALS[k].name).join('、');
     h = `<div style="display:grid;place-items:center;color:var(--ink);--ib:var(--paper)">${iconTrait(sel.k).replace('<svg', '<svg width="44" height="44"')}</div><div><h3>${T.name}</h3><div class="meta">${members}</div></div>
       <p>${T.tiers.map((n, i) => `(${n}) ${T.desc[i]}`).join('<br>')}<br>兩位隊友都有出這個羈絆時，效果 +${SYNERGY_BONUS}%（默契）。</p><div class="acts"><button class="btn" data-a="close">✕</button></div>`;
+  } else if (sel.type === 'aug') {
+    const A = AUG[sel.id];
+    h = `<div style="display:grid;place-items:center">${augIcon(sel.id, 'big')}</div><div><h3>${A.name}</h3><div class="meta">${AUG_TIER_NAME[A.tier]}海克斯</div></div><p>${A.desc}</p><div class="acts"><button class="btn" data-a="close">✕</button></div>`;
   } else if (sel.type === 'combo') {
     const c = COMBOS.find(c => c.id === sel.id);
     h = `${pimg(c.a)}<div><h3>${c.name}</h3><div class="meta">${ANIMALS[c.a].name}＋${ANIMALS[c.b].name}，需分屬兩位隊友且開場相鄰</div></div><p>${c.desc}<br>兩隻都放過一次技能後自動發動。</p><div class="acts"><button class="btn" data-a="close">✕</button></div>`;
@@ -2789,7 +3116,7 @@ function onUp(e) {
     const slot = s3NearestSlot(s3GroundAt(e.clientX, e.clientY)), t = pickToTarget(slot);
     if (t) {
       const r = doAct({ t: 'move', uid: d.uid, to: t.zone === 'bench' ? { zone: 'bench', i: t.i } : { zone: 'board', cell: t.cell } });
-      if (r === 'ok') { const vv = S3.V[d.k]; if (vv) { vv.pos.copy(vv.tgt); groundRing(vv.tgt, 0xf2e6cf, 0.8, 0.35); burst(vv.tgt.clone().add(V3(0, 0.05, 0)), 6, { color: 0xf2e6cf, scale: 0.15, speed: 1.2, up: 0.4, g: 0 }); } }
+      if (r === 'ok') { const vv = S3.V[d.k]; if (vv) { vv.tween = null; vv.pos.copy(vv.tgt); vv.land = nowS(); groundRing(vv.tgt, 0xf2e6cf, 0.8, 0.35); burst(vv.tgt.clone().add(V3(0, 0.05, 0)), 6, { color: 0xf2e6cf, scale: 0.15, speed: 1.2, up: 0.4, g: 0 }); if (t.zone === 'board' && G.terrain[t.cell] === 'water') ripple(vv.tgt.clone()); } }
       else if (v) { v.pos.copy(v.tgt); }
     } else { renderPrep(); }
     return;
@@ -2856,7 +3183,7 @@ function buyFx(rect, src) {
 function myBattle() { const t = myTeam(); return G.battles.find(b => b.teams[0] === t || b.teams[1] === t); }
 function startCombatView() {
   sel = null; renderSheet();
-  const bt = myBattle(); cv = { bt, B: bt.B, vt: bt.teams[0] === myTeam() ? 0 : 1, zonePos: {} };
+  const bt = myBattle(); cv = { bt, B: bt.B, vt: bt.teams[0] === myTeam() ? 0 : 1, zonePos: {}, lastCell: {} };
   s3SetTerrain(cv.B.terrain, cv.vt, cv.B.temp);
   combatSync();
   // 敵方傳送進場
@@ -2868,14 +3195,16 @@ function bWorld(c, r) { const [vc, vr] = vview(c, r, cv.vt); return cellWorld(vc
 function combatSync() {
   const B = cv.B, frac = G.phase === 'combat' ? Math.min(1, G.acc / CFG.TICK_MS) : 1, list = [];
   for (const u of B.units) {
-    let c = u.c, r = u.r, lift = 0, moving = false;
-    if (u.mvFrom && G.phase === 'combat') { const m = u.mvFrom, p = Math.max(0, Math.min(1, (B.t + frac - m.t0) / (m.t1 - m.t0))); c = m.c + (u.c - m.c) * p; r = m.r + (u.r - m.r) * p; if (m.jump) lift = Math.sin(p * Math.PI) * 0.8; else moving = p < 1; }
+    let c = u.c, r = u.r, lift = 0, moving = false, moveP = null, jumpP = null;
+    if (u.mvFrom && G.phase === 'combat') { const m = u.mvFrom, p = Math.max(0, Math.min(1, (B.t + frac - m.t0) / (m.t1 - m.t0))); c = m.c + (u.c - m.c) * p; r = m.r + (u.r - m.r) * p; if (m.jump) { lift = Math.sin(p * Math.PI) * 0.9; if (p < 1) jumpP = p; } else if (p < 1) moveP = p; }
+    // 入水漣漪
+    const ck = u.c + ',' + u.r; if (u.alive && cv.lastCell[u.id] !== undefined && cv.lastCell[u.id] !== ck && terrainAt(B, u.c, u.r) === 'water') { const [wx, wz] = bWorld(u.c, u.r); at(0.15, () => ripple(V3(wx, 0.05, wz))); } cv.lastCell[u.id] = ck;
     const [x, z] = bWorld(c, r);
     const tg = u.target >= 0 ? B.units[u.target] : null;
     let face = null; if (tg && tg.alive) { const [tx, tz] = bWorld(tg.c, tg.r); face = [tx, tz]; }
     if (u.team !== cv.vt && !face) face = [x, z + 5];
     const buffs = u.buffs.filter(b => b.u > B.t);
-    list.push({ k: kOf(u), key: u.key, star: u.star, color: ownerColor(u.owner), enemy: u.team !== cv.vt, x, z, y: lift, face, moving, hp: u.hp, maxhp: u.maxhp, shield: u.shield, mana: u.mana, manaMax: u.manaMax,
+    list.push({ k: kOf(u), key: u.key, star: u.star, color: ownerColor(u.owner), enemy: u.team !== cv.vt, x, z, y: lift, face, moving, moveP, jumpP, king: u.king, mirror: u.mirror, hp: u.hp, maxhp: u.maxhp, shield: u.shield, mana: u.mana, manaMax: u.manaMax,
       sleep: u.asleep, stun: u.alive && u.stun > B.t, stealth: u.stealth, taunted: u.alive && u.tauntUntil > B.t, blind: u.alive && u.blind > B.t, buffAtk: buffs.some(b => b.s === 'atk'), buffAs: buffs.some(b => b.s === 'as'), alive: u.alive,
       victory: G.phase === 'result' && u.alive && B.winner === u.team });
   }
@@ -2913,7 +3242,8 @@ function handleEvents() {
           sprite('ring', posOf(k, 0.5), { scale: 0.2, scale1: 1.2, life: 0.4, color: 0xfff3c8, add: true });
           at(A.dur * A.hit, () => playFx(A.fx, k, tk, { zone: cv.zonePos[ev.id] }));
           break; }
-        case 'zone': { const [x, z] = bWorld(ev.c, ev.r); cv.zonePos[ev.id] = V3(x, 0.2, z); if (ev.kind === 'water') { burst(V3(x, 0.2, z), 14, { tex: 'drop', scale: 0.14, speed: 2.4, up: 3, g: -7, life: 0.8 }); groundRing(V3(x, 0, z), 0x6fa3c8, 1.8, 0.7); } break; }
+        case 'zone': { const [x, z] = bWorld(ev.c, ev.r); cv.zonePos[ev.id] = V3(x, 0.2, z);
+          if (ev.kind === 'meteor') { meteorFx(V3(x, 0, z)); break; } if (ev.kind === 'water') { burst(V3(x, 0.2, z), 14, { tex: 'drop', scale: 0.14, speed: 2.4, up: 3, g: -7, life: 0.8 }); groundRing(V3(x, 0, z), 0x6fa3c8, 1.8, 0.7); } break; }
         case 'proj': {
           const tu = B.units[ev.tg], tk = kOf(tu), fromK = k;
           if (ev.s === 'acorn') { const i = cv.projN = (cv.projN || 0) + 1; at(hitDelay(fromK, 'skill') + (i % 3) * 0.12, () => { const a = posOf(fromK, 0.7), b = posOf(tk); if (a && b) projectile(a, b, 'acorn', 0.25, { toV: tk, arc: 0.6, spin: 14, onEnd: () => { const bb = posOf(tk); if (bb) { slash('burst', bb, { scale: 0.3 }); burst(bb, 4, { tex: 'shard', color: 0x8a5a2b, scale: 0.08, speed: 1.6 }); } } }); }); }
@@ -2926,7 +3256,7 @@ function handleEvents() {
           else if (sk && ev.sk) d = hitDelay(sk, 'skill');
           const cls = ev.c ? 'crit' : ev.ty === 'magic' ? 'magic' : ev.ty === 'true' ? 'true' : '';
           s3Num(k, ev.a + (ev.c ? '!' : ''), cls, d, ev.a >= 200 && !ev.c ? 19 : 0);
-          at(d, () => { const vv = S3.V[k]; if (vv) vv.hitT = nowS(); });
+          at(d, () => { const vv = S3.V[k]; if (vv) vv.hitT = nowS(); if (ev.c) hitstop(45); else if (ev.sk && ev.a >= 200) hitstop(55); });
           break; }
         case 'heal': s3Num(k, '+' + ev.a, 'heal', 0); break;
         case 'miss': s3Num(k, ev.s, 'miss', hitDelay(k, 'atk')); break;
@@ -2936,11 +3266,14 @@ function handleEvents() {
         case 'buff': for (const id of ev.ids) { const tk = kOf(B.units[id]); at(0.5, () => { const p = posOf(tk, 0.3); if (p) burst(p, 6, { tex: 'spark', color: ev.s === 'atk' ? 0xffc94a : 0x7cc8ff, scale: 0.12, speed: 0.6, up: 2.2, g: 0, add: true, life: 0.8 }); }); } break;
         case 'die': {
           const p = v ? v.pos.clone().add(V3(0, 0.4, 0)) : null;
+          at(0.05, () => { hitstop(60); if ((ANIMALS[ev.key] || {}).cost >= 4) { stageShake(6); S3.shake = Math.max(S3.shake, 0.12); } else stageShake(3); });
           at(hitDelay(k, 'x') + 0.2, () => { if (p) burst(p, 8, { color: 0xffffff, scale: 0.35, speed: 1.2, up: 0.6, g: 0, life: 0.6 }); });
           if (p && (ev.key === 'hare' || ev.key === 'boar')) at(0.5, () => lootOrb(p));
           break; }
         case 'spawn': if (v) { v.pop = nowS(); burst(v.pos.clone().add(V3(0, 0.4, 0)), 6, { tex: 'spark', color: 0xffd34d, scale: 0.1, add: true }); } break;
         case 'combo': comboFx(B, ev); break;
+        case 'revive': if (v) { v.deadT = null; v.R.root.visible = true; v.pop = nowS(); augFx('necro', k); } break;
+        case 'aug': augEventFx(B, ev); break;
         case 'night': banner('入夜', '夜行動物暴擊提升'); break;
       }
     }
@@ -2978,6 +3311,57 @@ function damageOrbs(team) {
 }
 function confetti() { for (let i = 0; i < 26; i++) sprite(i % 3 ? 'spark' : 'star', V3((Math.random() - .5) * 7, 4.5 + Math.random() * 2, (Math.random() - .5) * 6), { scale: 0.2, scale1: 0.15, life: 1.8, vel: V3((Math.random() - .5), -2.5 - Math.random() * 2, 0), g: 0, color: [0xffd34d, 0xff8a6a, 0x9be07a, 0x8fd3ff][i % 4], spin: 4, delay: Math.random() * 0.5 }); }
 
+// ---- 海克斯特效 ----
+function ripple(p) { groundRing(p, 0x9fd3ef, 0.9, 0.6); groundRing(p, 0xd6eef7, 0.55, 0.5, 0.12); burst(p.clone().add(V3(0, 0.1, 0)), 6, { tex: 'drop', scale: 0.08, speed: 1, up: 1.8, g: -6, life: 0.5 }); }
+function meteorFx(p) {
+  const rock = mesh(GEO.sph, T('#7a4a30'), null, 0.35); const fire = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('puff'), color: 0xff8a3a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); fire.scale.setScalar(4); rock.add(fire);
+  const from = p.clone().add(V3(-2.5, 7, -2));
+  meshFx(rock, { life: 0.55, custom: (f, q) => { f.o.position.lerpVectors(from, p, q * q); f.o.rotation.x += 0.3; }, onEnd: () => { groundRing(p, 0xff8a3a, 2.4, 0.7); groundRing(p, 0xffd34d, 1.6, 0.5, 0.08); burst(p.clone().add(V3(0, 0.2, 0)), 18, { color: 0xffa060, scale: 0.4, speed: 3, up: 2, g: -4, life: 0.8, add: true }); hitstop(70); stageShake(7); S3.shake = Math.max(S3.shake, 0.2); } });
+}
+function augFx(id, k) { const a = AUG[id]; if (a) s3Num(k, a.name, 'aug', 0, 13); }
+function augEventFx(B, ev) {
+  const u = ev.id >= 0 ? B.units[ev.id] : null, k = u ? kOf(u) : null, v = k ? S3.V[k] : null, a = ev.a;
+  if (a === 'plague') { for (const e of B.units) if (e.alive && e.team !== ev.team) { const p = posOf(kOf(e), 0.6); if (p) burst(p, 3, { color: 0x9bc24a, scale: 0.15, speed: 0.4, up: 0.8, g: 0, life: 0.7 }); } return; }
+  if (!v) return;
+  augFx(a, k);
+  const p = v.pos.clone();
+  if (a === 'roar') { for (let i = 0; i < 3; i++) sprite('ring', posOf(k, 0.6), { scale: 0.3, scale1: 2.0, life: 0.6, delay: i * 0.1, color: 0xffc94a, add: true }); stageShake(4); }
+  else if (a === 'quake' || a === 'trample') { groundRing(p, 0xe8d8b8, 1.6, 0.5); burst(p.clone().add(V3(0, 0.1, 0)), 8, { color: 0xe8d8b8, scale: 0.25, speed: 1.6, up: 0.4, g: 0 }); stageShake(4); }
+  else if (a === 'bind') { groundRing(p, 0x8a6ad8, 0.9, 0.8); for (let i = 0; i < 6; i++) sprite('spark', p.clone().add(V3(Math.cos(i) * 0.4, 0.2 + i * 0.12, Math.sin(i) * 0.4)), { scale: 0.15, life: 2.2, color: 0xb9a4ff, add: true }); }
+  else if (a === 'pounce') { const c = posOf(k, 0.6); if (c) slash('claw3', c, { scale: 0.7 }); }
+  else if (a === 'shift' && ev.to !== undefined) { const b = posOf(kOf(B.units[ev.to])); for (let i = 0; i < 8; i++) sprite('spark', posOf(k).lerp(b, i / 7), { scale: 0.2, scale1: 0.05, life: 0.6, color: 0x8af0c8, add: true, delay: i * 0.03 }); }
+  else if (a === 'rewind') { groundRing(p, 0x8ab8ff, 1.2, 0.7); sprite('ring', posOf(k, 0.6), { scale: 1.2, scale1: 0.2, life: 0.6, color: 0x8ab8ff, add: true }); }
+  else if (a === 'necro') { const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 3, 20, 1, true), new THREE.MeshBasicMaterial({ map: tex('beam'), color: 0xb98aff, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); pil.position.copy(p).add(V3(0, 1.5, 0)); meshFx(pil, { life: 0.9, custom: (f, q) => { f.o.material.opacity = Math.sin(q * Math.PI); } }); }
+  else if (a === 'scapegoat' && ev.to !== undefined) { const b = posOf(kOf(B.units[ev.to])); if (b) for (let i = 0; i < 6; i++) projectile(b, posOf(k), 'spark', 0.4, { color: 0xffd34d, scale: 0.15, delay: i * 0.04 }); }
+  else if (a === 'riposte' && ev.to !== undefined) { const b = posOf(kOf(B.units[ev.to])); if (b) slash('claw1', b, { scale: 0.7, color: 0xff6a5a }); }
+  else if (a === 'soulfeed') burst(posOf(k, 0.6), 6, { tex: 'spark', color: 0xb98aff, scale: 0.12, add: true, speed: 0.8, up: 1.5, g: 0 });
+}
+
+// ---- 海克斯：三選一與已選清單 ----
+function renderAugs() {
+  const P = G.players[ME], T = teammate(G, ME);
+  const mine = P.augs.map(id => `<button class="augchip" data-aug="${id}">${augIcon(id)}<span>${AUG[id].name}</span></button>`).join('');
+  const mate = T.augs.map(id => `<button class="augchip mate" data-aug="${id}">${augIcon(id)}<span>${AUG[id].name}</span></button>`).join('');
+  $('augs').innerHTML = (mine || mate) ? `<span class="lbl">增幅</span>${mine}${mate}` : '';
+  $('augs').hidden = !(mine || mate);
+  const m = $('augModal');
+  if (P.augChoice && G.phase === 'prep') {
+    if (m.dataset.k !== P.augChoice.join()) {
+      m.dataset.k = P.augChoice.join(); m.classList.remove('min');
+      const tier = AUG[P.augChoice[0]].tier;
+      m.innerHTML = `<div class="augbox"><h2>${AUG_TIER_NAME[tier]}海克斯增幅</h2><p class="sub">三選一。選擇時準備倒數會暫停。</p><div class="augcards">${P.augChoice.map((id, i) => `<button class="augcard t${AUG[id].tier}" data-pick="${id}" style="animation-delay:${i * 90}ms"><span class="frame"></span>${augIcon(id, 'big')}<b>${AUG[id].name}</b><span class="d">${AUG[id].desc}</span></button>`).join('')}</div><button class="btn" id="augHide">先看棋盤</button></div><button class="augpill" id="augShow">選擇海克斯增幅</button>`;
+    }
+    m.hidden = false;
+  } else { m.hidden = true; m.dataset.k = ''; }
+}
+function pickAug(id) {
+  const r = act(G, ME, { t: 'aug', id });
+  if (r !== 'ok') return;
+  toast(`獲得增幅：${AUG[id].name}`);
+  confetti(); stageShake(3);
+  processLog(); renderPrep();
+}
+
 // ---- 階段切換 ----
 function onPhase() {
   const ph = G.phase;
@@ -2999,7 +3383,8 @@ function onPhase() {
   } else if (ph === 'over') showOver();
 }
 function loop(now) {
-  const dt = Math.min(0.1, (now - (lastT || now)) / 1000); lastT = now;
+  const frozen = now < (S3.freezeUntil || 0);
+  const dt = frozen ? 0 : Math.min(0.1, (now - (lastT || now)) / 1000); lastT = now;
   if (G && G.phase !== 'over' && !$('game').hidden) update(G, dt * 1000);
   if (G && !$('game').hidden) {
     if (G.phase !== lastPhase || G.round !== lastRound) { const was = lastPhase; lastPhase = G.phase; lastRound = G.round; onPhase(was); }
@@ -3028,14 +3413,15 @@ function newGame() {
 // ---- 圖鑑 ----
 function showDex(tab) {
   tab = tab || 'animals';
-  const tabs = [['animals', '動物'], ['traits', '羈絆'], ['combos', '合體技'], ['items', '裝備'], ['arena', '場地'], ['rules', '規則']];
+  const tabs = [['animals', '動物'], ['traits', '羈絆'], ['combos', '合體技'], ['items', '裝備'], ['augs', '海克斯'], ['arena', '場地'], ['rules', '規則']];
   let body = '';
   if (tab === 'animals') body = Object.keys(ANIMALS).map(k => { const A = ANIMALS[k]; return `<div class="row">${pimg(k)}<div><b>${A.name}</b>　<span style="color:${COST_COL[A.cost]};font-weight:900">${A.cost} 費</span>・${A.role}・${A.traits.map(TNAME).join('・')}<br>生命 ${A.hp}・攻擊 ${A.atk}・射程 ${A.rng}<br><b>${A.skill}</b>：${A.desc}</div></div>`; }).join('');
   if (tab === 'traits') body = Object.keys(TRAITS).map(t => { const T = TRAITS[t]; return `<div class="plain">${iconTrait(t)}<div><b>${T.name}</b>（${Object.keys(ANIMALS).filter(k => ANIMALS[k].traits.includes(t)).map(k => ANIMALS[k].name).join('、')}）<br>${T.tiers.map((n, i) => `(${n}) ${T.desc[i]}`).join('<br>')}</div></div>`; }).join('') + `<div class="plain"><div>羈絆以「不同種類」計算，兩位隊友的棋子合併計。兩人都有出同一羈絆時效果 +${SYNERGY_BONUS}%（默契）。</div></div>`;
   if (tab === 'combos') body = COMBOS.map(c => `<div class="row">${pimg(c.a)}<div><b>${c.name}</b>　${ANIMALS[c.a].name}＋${ANIMALS[c.b].name}<br>${c.desc}</div></div>`).join('') + '<div class="plain"><div>兩隻需分屬兩位隊友、開場相鄰。兩隻都放過一次技能後自動發動一次。</div></div>';
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
+  if (tab === 'augs') body = [1, 2, 3].map(tr => `<div class="plain"><div><b>${AUG_TIER_NAME[tr]}</b>（第 ${CFG.AUG_ROUNDS.join('、')} 回合三選一，銀／金／彩 依回合機率出現）</div></div>` + AUGMENTS.filter(x => x.tier === tr).map(x => `<div class="plain">${augIcon(x.id)}<div><b>${x.name}</b>　${x.desc}</div></div>`).join('')).join('');
   if (tab === 'arena') body = Object.keys(ARENAS).map(a => `<div class="plain"><div><b>${ARENAS[a].name}</b>　地形：${Object.keys(ARENAS[a].weights).sort((x, y) => ARENAS[a].weights[y] - ARENAS[a].weights[x]).map(t => TERRAIN_SKIN[a][t]).join('、')}（越前面越常見）</div></div>`).join('') + Object.keys(TERRAIN).map(t => `<div class="plain"><div><b>${TERRAIN[t].name}類</b>　${TERRAIN[t].desc}</div></div>`).join('') + '<div class="plain"><div>每個階段換一個場地，地形雙方對稱。</div></div>';
-  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（7×4 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級越高越容易出高費。<br>收入 ${CFG.BASE_INCOME} 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
+  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（7×4 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
   $('panel').innerHTML = `<button class="x" id="dexX" aria-label="關閉">✕</button><h2>圖鑑</h2><div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div><div class="dex">${body}</div>`;
   $('overlay').hidden = false;
   $('dexX').onclick = () => { $('overlay').hidden = true; };
@@ -3061,6 +3447,8 @@ function boot() {
   $('traits').addEventListener('click', e => { const c = e.target.closest('[data-trait],[data-combo]'); if (!c) return; sel = c.dataset.trait ? { type: 'trait', k: c.dataset.trait } : { type: 'combo', id: c.dataset.combo }; renderSheet(); });
   $('mate').addEventListener('click', e => { if (e.target.id === 'btnGiftGold') { if (doAct({ t: 'gift', gold: 1 }) === 'ok') toast('送了 1 金給隊友'); } if (e.target.id === 'btnReady') { act(G, ME, { t: 'ready' }); renderDock(); } });
   $('btnLevel').onclick = () => doAct({ t: 'level' });
+  $('augs').addEventListener('click', e => { const c = e.target.closest('[data-aug]'); if (c) { sel = { type: 'aug', id: c.dataset.aug }; renderSheet(); } });
+  $('augModal').addEventListener('click', e => { const c = e.target.closest('[data-pick]'); if (c) { c.classList.add('chosen'); setTimeout(() => pickAug(c.dataset.pick), 220); return; } if (e.target.id === 'augHide') $('augModal').classList.add('min'); if (e.target.id === 'augShow') $('augModal').classList.remove('min'); });
   $('btnRoll').onclick = () => doAct({ t: 'reroll' });
   $('btnLock').onclick = () => { doAct({ t: 'lock' }); toast(G.players[ME].locked ? '已鎖定：下回合保留這組商店' : '已解除鎖定'); };
   requestAnimationFrame(loop);
