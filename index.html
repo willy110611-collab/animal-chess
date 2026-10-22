@@ -4851,7 +4851,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.7.3 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.7.4 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5732,7 +5732,7 @@ const TIER_COL = ['#7a6a5a', '#b87a4c', '#aab4c0', '#f2c14e', '#5ac8c8', '#3fbf7
 function ladderLoad() {
   let L = null; try { L = JSON.parse(localStorage.getItem('zoo_ladder') || 'null'); } catch (e) {}
   L = Object.assign({ id: '', lp: 0, games: 0, wins: 0, top: 0, hist: [], seen: {} }, L || {});
-  if (!L.id) L.id = 'p' + Math.random().toString(36).slice(2, 10);
+  if (!L.id) { L.id = 'p' + Math.random().toString(36).slice(2, 10); try { localStorage.setItem('zoo_ladder', JSON.stringify(L)); } catch (e) {} } // 身分要固定，排行榜才不會重複
   return L;
 }
 let LADDER = ladderLoad();
@@ -5805,6 +5805,7 @@ const GLOBAL_LADDER = { TOPIC: 'zoochess/v1/ladder/', WAIT_MS: 2500, SHOW: 100, 
 const GL = { mq: null, rows: {}, open: false };
 function glEntry() { return { pid: LADDER.id, name: netName().slice(0, 8), lp: LADDER.lp, games: LADDER.games, wins: LADDER.wins, t: Date.now() }; }
 async function ladderPublish() { // 登記到每個連得上的伺服器（資料各自獨立，多存幾份比較不怕被清）
+  if (!LADDER.games) return; // 還沒打過的人不上榜
   const list = netBrokers(), msg = JSON.stringify(glEntry());
   for (let i = 0; i < list.length; i++) {
     try { const mq = new MiniMqtt(list[i]); await mq.connect(netId()); mq.pub(GLOBAL_LADDER.TOPIC + LADDER.id, msg, true); setTimeout(() => mq.close(), 800); } catch (e) {}
@@ -5818,7 +5819,7 @@ async function glOpen() {
   r.mq.onmsg = (topic, text) => { let m; try { m = JSON.parse(text); } catch (e) { return; } if (!glValid(m)) return; m.name = String(m.name).slice(0, 8); GL.rows[m.pid] = m; if (GL.open) { clearTimeout(GL.rt); GL.rt = setTimeout(glRender, 200); } };
   r.mq.onclose = () => { GL.mq = null; };
   r.mq.sub(GLOBAL_LADDER.TOPIC + '+');
-  r.mq.pub(GLOBAL_LADDER.TOPIC + LADDER.id, JSON.stringify(glEntry()), true);
+  if (LADDER.games) r.mq.pub(GLOBAL_LADDER.TOPIC + LADDER.id, JSON.stringify(glEntry()), true);
   setTimeout(() => { GL.loaded = true; glRender(); }, GLOBAL_LADDER.WAIT_MS);
 }
 function glClose() { GL.open = false; if (GL.mq) { GL.mq.close(); GL.mq = null; } }
