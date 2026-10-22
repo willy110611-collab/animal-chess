@@ -373,6 +373,8 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .ncode { font-family: var(--f-display); letter-spacing: .2em; background: var(--ink); color: var(--gold-2); border-radius: 8px; padding: 0 8px; }
 .nteams { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0; } .nteams > div { display: grid; gap: 4px; background: #fbf3e2; border-radius: 10px; padding: 6px; }
 .nteams b { font-size: 13px; } .nseat { background: #efdcb8; border-radius: 8px; padding: 8px 6px; font-weight: 700; font-size: 13px; text-align: left; display: grid; } .nseat.on { background: #fff; box-shadow: inset 0 0 0 2px #d9c4a0; } .nseat.me { box-shadow: inset 0 0 0 2px var(--rust); } .nseat small { font-size: 11px; color: var(--ink-soft); }
+.xfer textarea { width: 100%; box-sizing: border-box; font: 12px/1.4 ui-monospace, monospace; padding: 6px 8px; border-radius: 8px; border: 1px solid #d9c4a0; word-break: break-all; margin: 6px 0; }
+.xbtns { display: flex; gap: 6px; flex-wrap: wrap; }
 .tsv { font-size: 11px; background: var(--rust); color: #fff4e4; border-radius: 6px; padding: 1px 6px; vertical-align: middle; }
 .nmode { display: flex; gap: 6px; } .nmode .btn.on { background: var(--rust); color: #fff4e4; }
 .tierb { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--tc); color: #2a1a10; font-weight: 900; font-size: 12px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.15); white-space: nowrap; }
@@ -4855,7 +4857,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.8 · 測試服 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.8.1 · 測試服 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -6023,6 +6025,29 @@ async function glKey() {
   }
   return KEY;
 }
+// ---- 身分轉移碼：ZC1.<私鑰d>.<公鑰x>.<公鑰y> ----
+async function xferExport() {
+  if (!window.crypto || !crypto.subtle) return '';
+  await glKey(); let j = null; try { j = JSON.parse(localStorage.getItem('zoo_key') || 'null'); } catch (e) {}
+  return j && j.d ? `ZC1.${j.d}.${j.x}.${j.y}` : '';
+}
+async function xferImport(code) {
+  const m = String(code || '').replace(/\s+/g, '').match(/^ZC1\.([A-Za-z0-9_-]{40,46})\.([A-Za-z0-9_-]{40,46})\.([A-Za-z0-9_-]{40,46})$/);
+  if (!m) return '轉移碼格式不對，請整段貼上';
+  const jwk = { kty: 'EC', crv: 'P-256', d: m[1], x: m[2], y: m[3], ext: true, key_ops: ['sign'] };
+  try { // 用這把私鑰簽一次、公鑰驗一次，確認兩半是一對
+    const C = crypto.subtle, priv = await C.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+    const pub = await C.importKey('jwk', { kty: 'EC', crv: 'P-256', x: m[2], y: m[3], ext: true }, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+    const msg = _te.encode('zoo'), sig = await C.sign({ name: 'ECDSA', hash: 'SHA-256' }, priv, msg);
+    if (!(await C.verify({ name: 'ECDSA', hash: 'SHA-256' }, pub, sig, msg))) return '轉移碼不正確';
+    localStorage.setItem('zoo_key', JSON.stringify(jwk));
+  } catch (e) { return '轉移碼不正確'; }
+  KEY = null;
+  const id = glPidOf(m[2] + '.' + m[3]);
+  if (id !== LADDER.id) Object.assign(LADDER, { id, lp: 0, games: 0, wins: 0, top: 0, hist: [], seen: {}, verified: 0 });
+  ladderSave();
+  return 'ok';
+}
 const glPidOf = pub => 'k' + pub.slice(0, 16); // 玩家 id 由公鑰推出：別人沒有你的私鑰，就沒辦法用你的 id 發紀錄
 async function glInitId() {
   if (!window.crypto || !crypto.subtle) return;
@@ -6145,12 +6170,19 @@ function openLadder() {
     <label class="rnum">排行榜上的名字<input id="glName" maxlength="8" value="${esc(netName())}"></label>
     ${online ? `<h3>全球排行榜 <small id="glRank">讀取中…</small></h3><div class="lplist" id="glList"><small>連線中…</small></div>` : '<p class="nethint">全球排行榜要用 GitHub 網址開才看得到。</p>'}
     <h3>一起玩過的人</h3><div class="lplist">${rows.map((r, i) => `<div class="lprow ${r.me ? 'me' : ''}"><span>${i + 1}</span><b>${r.name}</b>${tierBadge(r.lp)}<em>${r.lp}</em></div>`).join('')}</div>
+    ${window.crypto && crypto.subtle ? `<h3>身分轉移</h3><div class="xfer"><p class="nethint">換手機、換瀏覽器或清掉瀏覽器資料前，先抄下轉移碼；到新裝置輸入就能找回同一個天梯身分與分數。轉移碼等於你的天梯密碼，不要給別人。</p>
+      <div class="xbtns"><button class="btn" id="xfShow">顯示我的轉移碼</button><button class="btn" id="xfIn">輸入轉移碼</button></div><div id="xfBox"></div></div>` : ''}
     <h3>最近戰績</h3><div class="lphist">${LADDER.hist.map(h => `<span class="${h.d >= 0 ? 'up' : 'dn'}" title="${new Date(h.t).toLocaleString()}">${h.n > 2 ? '#' + h.place : h.place === 1 ? '勝' : '敗'}<i>${h.d >= 0 ? '+' : ''}${h.d}</i><small>${h.mode}</small></span>`).join('') || '<small>還沒有戰績</small>'}</div>
     <p class="nethint">牌位：${LADDER_CFG.TIERS.join(' → ')}，每 100 LP 一階。2 隊對戰贏 +${LADDER_CFG.WIN2}／輸 ${LADDER_CFG.LOSE2}；4 隊混戰依名次 ${LADDER_CFG.PLACE4.slice(1).map(x => (x > 0 ? '+' : '') + x).join('／')}；對手越強贏越多、輸越少。只有跟真人隊伍對戰（排位配對或開房連線）才計分，練習不計。全球排行榜（測試服）的分數由每場的簽名對局紀錄重新計算：要有兩個不同隊伍的真人紀錄一致才算，改本機存檔沒有用。</p>`;
   $('overlay').hidden = false;
   $('mX').onclick = () => { $('overlay').hidden = true; glClose(); };
   $('glName').onchange = e => { netSetName(e.target.value.trim().slice(0, 8) || '玩家'); glRender(); };
   if (online) { GL.open = true; GL.err = ''; GL.loaded = false; glOpen(); }
+  if ($('xfShow')) {
+    $('xfShow').onclick = async () => { const c = await xferExport(); $('xfBox').innerHTML = c ? `<textarea id="xfCode" readonly rows="3">${c}</textarea><button class="btn moss" id="xfCopy">複製</button>` : '<small>這個瀏覽器不支援</small>'; if (c) { $('xfCode').onclick = e => e.target.select(); $('xfCopy').onclick = () => { try { navigator.clipboard.writeText(c); toast('已複製轉移碼'); } catch (e) { $('xfCode').select(); } }; } };
+    $('xfIn').onclick = () => { $('xfBox').innerHTML = `<textarea id="xfCode" rows="3" placeholder="貼上轉移碼（ZC1. 開頭）"></textarea><button class="btn primary" id="xfGo">換成這個身分</button><p class="nethint">換過去之後，這台裝置原本的身分會被取代；原本的身分若有分數，請先抄下它的轉移碼。</p>`;
+      $('xfGo').onclick = async () => { const r = await xferImport($('xfCode').value); if (r !== 'ok') { toast(r, 3000); return; } toast('已換成轉移碼的身分，分數從對局紀錄重新讀取', 3200); glClose(); openLadder(); }; };
+  }
 }
 window.__gl = { glLedger, glVerify, glBody, glKey, _b64, glPidOf }; // 測試用
 
