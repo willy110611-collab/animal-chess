@@ -4191,22 +4191,37 @@ function banner(b1, b2, cls) { const b = $('banner'); b.className = ''; b.queryS
 const goldSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="9" fill="#d99a2b"/><circle cx="12" cy="13" r="6.2" fill="#f2c14e"/><path d="M7.5 7.5q4.5-5 9 0z" fill="#7a4f28"/></svg>';
 
 // ---- 3D 小頭像（商店卡、圖鑑、資訊卡）----
-function makePortraits() {
+// 頭像：第一次開啟時用 3D 模型畫出來（分批，不卡住畫面），畫好後存在本機，之後開遊戲直接讀
+const PORT_VER = 'p1-' + Object.keys(ANIMALS).length; // 模型外觀有改時把 p1 改成 p2，舊快取就會重畫
+function makePortraits(first, done) {
+  try { const c = JSON.parse(localStorage.getItem('zoo_port') || 'null'); if (c && c.v === PORT_VER) { Object.assign(PORT, c.p); document.querySelectorAll('img[data-pk]').forEach(im => { if (PORT[im.dataset.pk]) im.src = PORT[im.dataset.pk]; }); done && done(); return; } } catch (e) {}
+  const all = Object.keys(ANIMALS).concat(['hare', 'boar']);
+  const order = first.concat(all.filter(k => !first.includes(k)));
   const c = document.createElement('canvas'); c.width = c.height = 220;
   const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, alpha: true, preserveDrawingBuffer: true });
   r.setClearColor(0x000000, 0);
   const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xfff1dc, 0x8a5a3c, 1.3)); const d = new THREE.DirectionalLight(0xffe2b8, 2.2); d.position.set(-3, 5, 6); sc.add(d);
   const cam = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
-  for (const k of Object.keys(ANIMALS).concat(['hare', 'boar'])) {
+  const one = k => {
     const R = buildAnimal(k); R.phase = 0; poseRig(R, { t: 0.4 });
     R.yaw.rotation.y = -0.4; sc.add(R.root);
     const h = Math.max(0.9, R.headTop || 1);
     cam.position.set(0, h * 0.6 + 0.2, 2.75 * h); cam.lookAt(0, h * 0.47, 0);
     r.render(sc, cam); PORT[k] = c.toDataURL('image/png'); sc.remove(R.root);
-  }
-  r.dispose(); r.forceContextLoss && r.forceContextLoss();
+    document.querySelectorAll(`img[data-pk="${k}"]`).forEach(im => { im.src = PORT[k]; });
+  };
+  let i = 0;
+  const step = () => {
+    const t0 = performance.now();
+    while (i < order.length && performance.now() - t0 < 30) one(order[i++]); // 每批最多 30ms，中間讓畫面更新
+    if (i < order.length) { setTimeout(step, 0); return; }
+    r.dispose(); r.forceContextLoss && r.forceContextLoss();
+    try { localStorage.setItem('zoo_port', JSON.stringify({ v: PORT_VER, p: PORT })); } catch (e) {}
+    done && done();
+  };
+  step();
 }
-const pimg = (k, cls) => `<img src="${PORT[k] || ''}" alt="" class="${cls || ''}">`;
+const pimg = (k, cls) => `<img src="${PORT[k] || ''}" data-pk="${k}" alt="" class="${cls || ''}">`;
 
 // ---- 單位資料 ----
 function unitStats(u) {
@@ -4861,9 +4876,10 @@ function showDex(tab) {
 
 // ---- 啟動 ----
 function boot() {
-  makePortraits();
-  $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.9.3'; // 版本號只留在原始碼，不顯示給玩家
+  const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
+  $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
+  makePortraits(parade);
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.9.4'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -6551,7 +6567,8 @@ function eggsFrame(dt) {
   }
 }
 
-boot();
+// 先讓瀏覽器把大廳畫出來，再做比較重的初始化（3D 場景、頭像），避免開啟時黑屏
+requestAnimationFrame(() => setTimeout(() => { performance.mark('boot-start'); boot(); performance.mark('boot-end'); }, 0));
 
 })();
 </script>
