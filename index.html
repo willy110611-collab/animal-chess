@@ -375,6 +375,8 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .nteams b { font-size: 13px; } .nseat { background: #efdcb8; border-radius: 8px; padding: 8px 6px; font-weight: 700; font-size: 13px; text-align: left; display: grid; } .nseat.on { background: #fff; box-shadow: inset 0 0 0 2px #d9c4a0; } .nseat.me { box-shadow: inset 0 0 0 2px var(--rust); } .nseat small { font-size: 11px; color: var(--ink-soft); }
 .xfer textarea { width: 100%; box-sizing: border-box; font: 12px/1.4 ui-monospace, monospace; padding: 6px 8px; border-radius: 8px; border: 1px solid #d9c4a0; word-break: break-all; margin: 6px 0; }
 .xbtns { display: flex; gap: 6px; flex-wrap: wrap; }
+#netRtt { position: absolute; left: 8px; bottom: 6px; z-index: 6; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: rgba(0,0,0,.35); color: #dff5d0; pointer-events: none; } #netRtt.mid { color: #ffe08a; } #netRtt.bad { color: #ff9a8a; }
+#btnAcc .tierb { margin-left: 6px; }
 .tsv { font-size: 11px; background: var(--rust); color: #fff4e4; border-radius: 6px; padding: 1px 6px; vertical-align: middle; }
 .nmode { display: flex; gap: 6px; } .nmode .btn.on { background: var(--rust); color: #fff4e4; }
 .tierb { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--tc); color: #2a1a10; font-weight: 900; font-size: 12px; box-shadow: inset 0 -2px 0 rgba(0,0,0,.15); white-space: nowrap; }
@@ -406,6 +408,7 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
     <div class="lobby-btns">
       <button class="btn primary" id="btnPractice">練習：2 隊對戰（4 人）</button>
       <button class="btn primary" id="btnPractice8">練習：4 隊混戰（8 人）</button>
+      <button class="btn moss" id="btnAcc" hidden>登入／註冊帳號</button>
       <button class="btn primary" id="btnMatch">排位配對（全球）</button>
       <button class="btn" id="btnOnline">開房連線（2～8 人）</button>
       <button class="btn moss" id="btnDex">圖鑑與規則</button>
@@ -3603,7 +3606,7 @@ function s3Unit(k, info) {
   let v = S3.V[k];
   if (v && v.unitKey !== info.key) { s3Remove(k, true); v = null; }
   if (!v) {
-    const R = buildAnimal(info.key); R.phase = Math.random() * 3;
+    const R = buildAnimal(info.key); R.phase = Math.random() * 3; S3.nBuild = (S3.nBuild || 0) + 1;
     for (const m of R.mats) if (m.emissive) m.emissive = new THREE.Color(0, 0, 0);
     S3.unitRoot.add(R.root);
     const hb = document.createElement('div'); hb.className = 'hb';
@@ -4800,7 +4803,7 @@ function onPhase() {
 }
 function loop(now) {
   requestAnimationFrame(loop); // 先排下一幀：就算這一幀某個特效出錯，遊戲也不會整個停住
-  try { loopBody(now); } catch (e) { console.error(e); }
+  const t0 = performance.now(); try { loopBody(now); } catch (e) { console.error(e); } const d = performance.now() - t0; S3.perf = S3.perf || { n: 0, sum: 0, big: 0 }; S3.perf.n++; S3.perf.sum += d; if (d > 50) S3.perf.big++;
 }
 function loopBody(now) {
   const frozen = now < (S3.freezeUntil || 0);
@@ -4819,6 +4822,7 @@ function loopBody(now) {
   }
 }
 function showOver() {
+  const am = $('augModal'); if (am) { am.hidden = true; am.innerHTML = ''; am.dataset.k = ''; } // 結束畫面不要被海克斯選單蓋住
   const win = G.winner === myTeam(), place = G.teams[myTeam()].place || (win ? 1 : 2), n = G.teams.length;
   $('panel').innerHTML = `<div class="over"><h2>${win ? '我隊獲勝！' : n > 2 ? `第 ${place} 名` : '這局輸了'}</h2><p>打到第 ${G.round} 回合，我隊剩 ${Math.max(0, G.teams[myTeam()].hp)} 血。${n > 2 ? `（${n} 隊中第 ${place} 名）` : ''}</p>${ladderOverHtml()}${pimg(win ? 'lion' : 'koala')}<div><button class="btn primary" id="btnAgain">再來一局</button></div></div>`;
   $('overlay').hidden = false;
@@ -4857,7 +4861,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.8.1 · 測試服 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.9 · 測試服 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -4933,6 +4937,7 @@ function featuresBoot() {
   $('btnLadder').onclick = () => openLadder();
   $('btnOnline').onclick = () => openOnline();
   $('btnMatch').onclick = () => openMatch();
+  $('btnAcc').onclick = () => openAccount();
   $('btnRules').onclick = () => openRules();
   $('btnCollect').onclick = () => openCollection();
   setupInstall();
@@ -5420,6 +5425,7 @@ const NET_CFG = {
   DROP_MS: 15000,              // 多久沒收到訊息算斷線
   SNAP_MS: 250,                // 房主多久檢查一次要不要送畫面
   TICK_MS: 200,                // 戰鬥中多久送一次 tick
+  EXTRAP_TICKS: 30,            // 沒收到房主 tick 時，最多自己往前推幾個 tick（原本 10，網路一抖就停格）
   BUFFER_TICKS: 12,            // 客人的戰鬥落後房主幾個 tick 播放（吸收網路延遲，12 = 0.6 秒）
   TAKEOVER_GAP_MS: 6000,       // 房主斷線時，候補順位每往後一位多等幾毫秒才接手
   MM_PING_MS: 2000,            // 排位配對：多久廣播一次「我在排」
@@ -5468,9 +5474,10 @@ const NET = { epoch: 0, hostSeat: 0, mm: null, role: null, mq: null, myId: '', l
 const AI_NAMES = ['阿熊', '野狼幫甲', '野狼幫乙', '河馬團甲', '河馬團乙', '鴨鴨隊甲', '鴨鴨隊乙'];
 function netName() { try { return localStorage.getItem('zoo_name') || '玩家'; } catch (e) { return '玩家'; } }
 function netSetName(n) { try { localStorage.setItem('zoo_name', n); } catch (e) {} }
-function netReset() { for (const t of NET.timers || []) clearInterval(t); NET.timers = []; NET.epoch = 0; NET.hostSeat = 0; NET.mmSeats = null; NET.started = false; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; }
+function netReset() { for (const t of NET.timers || []) clearInterval(t); NET.timers = []; clearInterval(NET.pingT); NET.pingT = 0; if (NET.ws) { const w = NET.ws; NET.ws = null; try { w.close(); } catch (e) {} } NET.srv = false; NET.ownerSeat = -1; NET.ranked = false; NET.code = ''; NET.tries = 0; NET.epoch = 0; NET.hostSeat = 0; NET.mmSeats = null; NET.started = false; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; }
 function netLeave() {
   try { if (NET.role === 'client' && NET.host) NET.host.send({ k: 'bye' }); } catch (e) {}
+  const r = document.getElementById('netRtt'); if (r) r.remove();
   try { if (NET.mq) NET.mq.close(); } catch (e) {}
   NET.mq = null; netReset();
   for (const k in S3.V) s3Remove(k);
@@ -5500,24 +5507,26 @@ function openOnline() {
       <p class="nethint">房主的手機要一直開著遊戲；空位由 AI 補上。同一個 Wi-Fi 最穩，行動網路偶爾會連不上。</p>
     </div>`;
   $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; if (NET.role && !G) netLeave(); };
-  $('netHost').onclick = () => { netSetName($('netName').value.trim() || '玩家'); netHostStart(); };
-  $('netJoin').onclick = () => { const c = $('netCode').value.trim().toUpperCase(); if (c.length !== 4) { toast('房號是 4 個字'); return; } netSetName($('netName').value.trim() || '玩家'); netJoin(c); };
+  if (srvOn()) { $('netName').closest('label').hidden = true; $('panel').querySelector('.nethint').textContent = '整場遊戲在伺服器上跑，誰斷線都不影響其他人；空位由 AI 補。至少兩隊有真人時計天梯分數。'; }
+  $('netHost').onclick = () => { netSetName($('netName').value.trim() || '玩家'); if (srvOn()) srvHost(); else netHostStart(); };
+  $('netJoin').onclick = () => { const c = $('netCode').value.trim().toUpperCase(); if (c.length !== 4) { toast('房號是 4 個字'); return; } netSetName($('netName').value.trim() || '玩家'); if (srvOn()) srvJoin(c); else netJoin(c); };
 }
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function renderRoom() {
   if (!NET.seats || !$('overlay') || G) return;
-  const host = NET.role === 'host';
+  const host = NET.srv ? (NET.ownerSeat === NET.mySeat && !NET.ranked) : NET.role === 'host';
   const nT = NET.seats.length >> 1, TN = ['藍隊', '紅隊', '綠隊', '紫隊'];
-  const seat = (i) => { const s = NET.seats[i]; const me = i === NET.mySeat; return `<button class="nseat ${s ? 'on' : ''} ${me ? 'me' : ''}" data-seat="${i}">${s ? esc(s.name) + (s.host ? '（房主）' : '') + (me ? '・你' : '') + (s.lp !== undefined ? `<small>${ladderTierName(s.lp)}</small>` : '') : '空位（AI）'}</button>`; };
+  const seat = (i) => { const s = NET.seats[i]; const me = i === NET.mySeat; return `<button class="nseat ${s ? 'on' : ''} ${me ? 'me' : ''}" data-seat="${i}">${s ? esc(s.name) + (s.host || (NET.srv && NET.ownerSeat === i) ? '（房主）' : '') + (me ? '・你' : '') + (s.lp !== undefined ? `<small>${ladderTierName(s.lp)}</small>` : '') : '空位（AI）'}</button>`; };
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="離開">✕</button><h2>房間 <span class="ncode">${NET.code}</span></h2>
     <p class="nethint">把房號告訴朋友，在大廳按「開房連線」→ 輸入房號加入。點空位可以換位置。</p>
     ${host ? `<div class="nmode"><button class="btn ${nT === 2 ? 'on' : ''}" data-mode="4">4 人（2 隊）</button><button class="btn ${nT === 4 ? 'on' : ''}" data-mode="8">8 人（4 隊）</button></div>` : `<p class="nethint">模式：${nT === 2 ? '4 人（2 隊）' : '8 人（4 隊）'}</p>`}
     <div class="nteams">${Array.from({ length: nT }, (_, t) => `<div><b>${TN[t]}</b>${seat(t * 2)}${seat(t * 2 + 1)}</div>`).join('')}</div>
-    ${host ? '<button class="btn primary" id="netStart">開始遊戲</button>' : '<p class="nethint">等房主開始…</p>'}`;
+    ${host ? '<button class="btn primary" id="netStart">開始遊戲</button>' : `<p class="nethint">${NET.ranked ? '排位房：人到齊就自動開始…' : '等房主開始…'}</p>`}`;
   $('overlay').hidden = false;
   $('mX').onclick = () => netLeave();
-  $('panel').querySelectorAll('[data-seat]').forEach(b => b.onclick = () => { const i = +b.dataset.seat; if (NET.seats[i]) return; if (host) { netMoveSeat(NET.mySeat, i); } else NET.host.send({ k: 'seat', seat: i }); });
-  if (host) { $('netStart').onclick = () => netStartGame(); $('panel').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => netSetMode(+b.dataset.mode)); }
+  $('panel').querySelectorAll('[data-seat]').forEach(b => b.onclick = () => { const i = +b.dataset.seat; if (NET.seats[i]) return; if (host && !NET.srv) { netMoveSeat(NET.mySeat, i); } else NET.host.send({ k: 'seat', seat: i }); });
+  if (host && NET.srv) { $('netStart').onclick = () => NET.host.send({ k: 'start' }); $('panel').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => NET.host.send({ k: 'mode', n: +b.dataset.mode })); }
+  else if (host) { $('netStart').onclick = () => netStartGame(); $('panel').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => netSetMode(+b.dataset.mode)); }
 }
 
 // ---------- 房主 ----------
@@ -5780,7 +5789,8 @@ function netClientMsg(m) {
   else if (m.k === 'tick') { if (m.round !== NET.battleRound) return; NET.hostT = m.t; NET.hostAt = performance.now(); NET.cmds = m.cmds; NET.speed = m.speed || 1; }
 }
 function netApplySnap(m) {
-  const ng = JSON.parse(m.s);
+  const t0 = performance.now(); NET.st = NET.st || { n: 0, bytes: 0, parse: 0, apply: 0, max: 0 };
+  const ng = JSON.parse(m.s); const t1 = performance.now();
   const oldLog = G ? G.log : [];
   ng.log = oldLog.length >= m.logFrom ? oldLog.slice(0, m.logFrom).concat(m.log) : oldLog.concat(m.log);
   ng.rng = () => 0; // 客人不擲骰；_ra 留著，接手當房主時用
@@ -5796,6 +5806,7 @@ function netApplySnap(m) {
     processLog();
     if (G.phase === lastPhase && G.round === lastRound) refresh();
   }
+  const t2 = performance.now(); const st = NET.st; st.n++; st.bytes += m.s.length; st.parse += t1 - t0; st.apply += t2 - t1; st.max = Math.max(st.max, t2 - t0);
 }
 function netClientUpdate(dt) {
   if (!G) return;
@@ -5807,7 +5818,7 @@ function netClientUpdate(dt) {
   const since = (performance.now() - NET.hostAt) / CFG.TICK_MS * (NET.speed || 1);
   NET.battles.forEach((bt, i) => {
     const B = bt.B; if (!B || B.over) return;
-    const target = Math.floor((NET.hostT[i] || 0) + Math.min(since, 10) - NET_CFG.BUFFER_TICKS);
+    const target = Math.floor((NET.hostT[i] || 0) + Math.min(since, NET_CFG.EXTRAP_TICKS) - NET_CFG.BUFFER_TICKS);
     let n = 0;
     while (B.t < target && !B.over && n++ < 40) { netApplyCmds(bt, i); step(B); }
   });
@@ -5832,9 +5843,10 @@ function openMatch() {
       <div id="mmStat" class="nethint">跟全世界正在排隊的人隨機配對，先找同地區（時區相近）的人；等 ${NET_CFG.MM_WIDEN_MS / 1000} 秒後放寬到全球，人數不夠的位置由 AI 補。至少要有兩隊有真人才會開打，這種對局計天梯分數。</div>
     </div>`;
   $('overlay').hidden = false;
-  $('mX').onclick = () => { mmStop(); $('overlay').hidden = true; };
+  $('mX').onclick = () => { if (MM.ws) srvMatchStop(); else mmStop(); $('overlay').hidden = true; };
   $('panel').querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { if (MM.mq) return; MM.mode = +b.dataset.mm; openMatch(); });
-  $('mmGo').onclick = () => { netSetName($('netName').value.trim() || '玩家'); if (MM.mq) mmStop(); else mmStart(); };
+  if (srvOn()) $('netName').closest('label').hidden = true;
+  $('mmGo').onclick = () => { netSetName($('netName').value.trim() || '玩家'); if (srvOn()) { if (MM.mq) srvMatchStop(); else srvMatchStart(); return; } if (MM.mq) mmStop(); else mmStart(); };
 }
 function mmStatus(txt) { const e = document.getElementById('mmStat'); if (e) e.innerHTML = txt; const b = document.getElementById('mmGo'); if (b) b.textContent = MM.mq ? '取消配對' : '開始配對'; }
 async function mmStart() {
@@ -5902,7 +5914,155 @@ function mmTryLead() {
   netHostStart({ code: room, mode: need, seats, mq });
 }
 window.NET_CODE = () => NET.code; window.NETROLE = () => NET.role || ''; window.ME_ = () => ME; // 測試用
-window.NETDBG = () => ({ hostT: NET.hostT, br: NET.battleRound, nb: NET.battles.length });
+window.NETDBG = () => ({ st: NET.st, hostT: NET.hostT, br: NET.battleRound, nb: NET.battles.length });
+
+// ===== 帳號＋自家伺服器連線（Cloudflare）=====
+// 有設定 SERVER 時：開房、排位配對、天梯都走自己的伺服器，整場遊戲由伺服器跑，玩家（包括房主）改不了結果。
+// 連不上伺服器時，開房連線會退回舊的公用中繼模式（不計分）。
+const SRV_CFG = {
+  SERVER: '__ZOO_SERVER__',   // 部署後填入，例如 https://zoochess.xxx.workers.dev
+  PING_MS: 3000,              // 多久測一次延遲
+  RECONNECT_TRIES: 8,         // 斷線自動重連幾次
+  DEAD_MS: 9000,              // 多久沒收到伺服器訊息就當作斷線
+};
+function srvUrl() { let o = null; try { o = localStorage.getItem('zoo_server'); } catch (e) {} const u = o || SRV_CFG.SERVER; return /^https?:\/\//.test(u) ? u.replace(/\/$/, '') : ''; }
+const srvOn = () => !!srvUrl() && !netBlocked();
+const ACC = { token: '', me: null };
+try { ACC.token = localStorage.getItem('zoo_tok') || ''; ACC.me = JSON.parse(localStorage.getItem('zoo_me') || 'null'); } catch (e) {}
+function accSave() { try { localStorage.setItem('zoo_tok', ACC.token || ''); localStorage.setItem('zoo_me', JSON.stringify(ACC.me)); } catch (e) {} accBadge(); }
+async function accApi(path, body) {
+  try {
+    const r = await fetch(srvUrl() + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ 'Content-Type': 'application/json' }, ACC.token ? { Authorization: 'Bearer ' + ACC.token } : {}), body: body ? JSON.stringify(body) : undefined });
+    return await r.json();
+  } catch (e) { return { err: '連不上伺服器，請確認網路' }; }
+}
+async function accRefresh() { if (!srvOn() || !ACC.token) return; const r = await accApi('/api/me'); if (r.ok) { ACC.me = r.me; accSave(); } else if (r.err === '請重新登入') { ACC.token = ''; ACC.me = null; accSave(); } }
+function accBadge() {
+  const b = document.getElementById('btnAcc'); if (!b) return;
+  b.hidden = !srvOn();
+  b.innerHTML = ACC.me ? `👤 ${esc(ACC.me.name)}　${tierBadge(ACC.me.lp)}` : '登入／註冊帳號';
+}
+// 需要登入時先跳登入框，登入後繼續原本要做的事
+function needLogin(then) { if (ACC.token && ACC.me) { then(); return; } openAccount(then); }
+function openAccount(then) {
+  const me = ACC.me;
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>帳號 <small class="tsv">測試服</small></h2>` + (me ? `
+    <div class="lpme">${tierBadge(me.lp)}<b>${me.lp} LP</b><small>帳號 ${esc(me.user)}・${me.games} 場・第一名 ${me.wins} 次</small></div>
+    <label class="rnum">暱稱<input id="acName" maxlength="8" value="${esc(me.name)}"></label>
+    <div class="xbtns"><button class="btn moss" id="acRename">更新暱稱</button><button class="btn" id="acOut">登出</button></div>` : `
+    <div class="acTabs nmode"><button class="btn on" data-ac="in">登入</button><button class="btn" data-ac="up">註冊</button></div>
+    <form class="netbox" id="acForm" autocomplete="on">
+      <label class="rnum">帳號<input id="acUser" maxlength="16" autocomplete="username" autocapitalize="none" placeholder="英文小寫、數字、底線"></label>
+      <label class="rnum">密碼<input id="acPass" type="password" maxlength="64" autocomplete="current-password" placeholder="至少 6 個字"></label>
+      <label class="rnum" id="acNameRow" hidden>暱稱<input id="acNick" maxlength="8" value="${esc(netName())}"></label>
+      <button class="btn primary" id="acGo" type="submit">登入</button>
+      <p class="nethint">連線對戰、排位配對與天梯都要登入。整場遊戲在伺服器上跑，分數也存在伺服器，改自己的瀏覽器改不了。密碼只存加密後的雜湊。</p>
+    </form>`);
+  $('overlay').hidden = false;
+  $('mX').onclick = () => { $('overlay').hidden = true; };
+  if (me) {
+    $('acRename').onclick = async () => { const r = await accApi('/api/rename', { name: $('acName').value }); if (r.ok) { ACC.me = r.me; netSetName(r.me.name); accSave(); toast('已更新'); } else toast(r.err); };
+    $('acOut').onclick = async () => { await accApi('/api/logout', {}); ACC.token = ''; ACC.me = null; accSave(); openAccount(); };
+    return;
+  }
+  let mode = 'in';
+  $('panel').querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { mode = b.dataset.ac; $('panel').querySelectorAll('[data-ac]').forEach(x => x.classList.toggle('on', x === b)); $('acNameRow').hidden = mode !== 'up'; $('acGo').textContent = mode === 'up' ? '註冊並登入' : '登入'; $('acPass').autocomplete = mode === 'up' ? 'new-password' : 'current-password'; });
+  $('acForm').onsubmit = async e => {
+    e.preventDefault(); $('acGo').disabled = true;
+    const body = { user: $('acUser').value, pass: $('acPass').value, name: $('acNick').value };
+    const r = await accApi(mode === 'up' ? '/api/register' : '/api/login', body);
+    $('acGo').disabled = false;
+    if (!r.ok) { toast(r.err || '失敗', 3000); return; }
+    ACC.token = r.token; ACC.me = r.me; netSetName(r.me.name); accSave();
+    toast(mode === 'up' ? '註冊完成，歡迎！' : `歡迎回來，${r.me.name}`);
+    if (then) then(); else openAccount();
+  };
+}
+
+// ---------- 伺服器房間（玩家都是「客人」，伺服器當房主）----------
+function srvWs(path) { return srvUrl().replace(/^http/, 'ws') + path; }
+function srvConnect(path, onFail) {
+  let ws; try { ws = new WebSocket(srvWs(path)); } catch (e) { onFail && onFail(); return; }
+  NET.srv = true; NET.ws = ws; NET.role = 'client'; NET.myId = ACC.me.uid;
+  NET.outbox = NET.outbox || [];
+  NET.host = { send(x) { if (NET.ws && NET.ws.readyState === 1) NET.ws.send(JSON.stringify(x)); else if (x.k === 'act' && NET.outbox.length < 20) NET.outbox.push(x); } }; // 重連中的操作先排隊，連上再送
+  let opened = false;
+  ws.onopen = () => { opened = true; NET.tries = 0; NET.lastHeard = performance.now(); NET.host.send({ k: 'hello', token: ACC.token }); const q = NET.outbox.splice(0); for (const x of q) NET.host.send(x); };
+  ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } NET.lastHeard = performance.now(); srvMsg(m); };
+  ws.onclose = () => {
+    if (NET.ws !== ws || ws.dead) return; ws.dead = true;
+    if (!opened && !NET.code) { onFail && onFail(); return; }
+    if (NET.srv && NET.code && (NET.tries || 0) < SRV_CFG.RECONNECT_TRIES) { NET.tries = (NET.tries || 0) + 1; toast('連線中斷，重新連線中…', 2000); setTimeout(() => { if (NET.srv && NET.ws === ws) srvConnect('/ws/room/' + NET.code); }, 600 * NET.tries); }
+    else if (NET.srv) { toast('跟伺服器的連線中斷了', 3200); netLeave(); }
+  };
+  clearInterval(NET.pingT);
+  NET.pingT = setInterval(() => { // 心跳：太久沒收到伺服器任何訊息就當作斷線，主動重連（手機切網路時 close 事件常常不會來）
+    if (!NET.srv || !NET.ws) return;
+    if (NET.ws.readyState === 1) NET.host.send({ k: 'ping', t: performance.now() });
+    if (performance.now() - NET.lastHeard > SRV_CFG.DEAD_MS && NET.ws.onclose) { const w = NET.ws; try { w.close(); } catch (e) {} w.onclose(); }
+  }, SRV_CFG.PING_MS);
+}
+function srvMsg(m) {
+  if (m.k === 'pong') { NET.rtt = Math.round(performance.now() - m.t); netRttShow(); return; }
+  if (m.k === 'room') { NET.code = m.code; NET.ownerSeat = m.owner; NET.ranked = m.ranked; }
+  if (m.k === 'lp') { srvLp(m); return; }
+  netClientMsg(m);
+}
+function srvLp(m) {
+  LADDER_RES = { seed: m.seed, before: m.before, after: m.after, d: m.d, up: ladderTier(m.after) > ladderTier(m.before) };
+  if (ACC.me) { ACC.me.lp = m.after; ACC.me.games++; if (m.place === 1) ACC.me.wins++; accSave(); }
+  LADDER.lp = m.after; LADDER.hist.unshift({ t: Date.now(), d: m.d, lp: m.after, place: m.place, n: G ? G.teams.length : 2, mode: '連線' }); LADDER.hist = LADDER.hist.slice(0, 20); ladderSave();
+  const el = document.getElementById('lpLive'); if (el) el.outerHTML = ladderResHtml(LADDER_RES);
+  if (LADDER_RES.up) setTimeout(() => { banner('晉級！', ladderTierName(m.after), 'win'); if (typeof confetti === 'function') confetti(); }, 600);
+}
+function srvHost() { if (NET.role) return; needLogin(() => { toast('建立房間中…'); NET.code = ''; srvConnect('/ws/new?mode=4', () => { toast('連不上伺服器，改用公用中繼（不計分）', 3200); netReset(); NET.srv = false; netHostStart(); }); }); }
+function srvJoin(code) { if (NET.role) return; needLogin(() => { toast('連線中…'); NET.code = code; srvConnect('/ws/room/' + code, () => { toast('連不上伺服器', 3000); netReset(); }); }); }
+function netRttShow() {
+  let el = document.getElementById('netRtt');
+  if (!el) { const st = document.getElementById('stage'); if (!st) return; el = document.createElement('div'); el.id = 'netRtt'; st.appendChild(el); }
+  const r = NET.rtt; el.textContent = r + ' ms'; el.className = r < 120 ? 'ok' : r < 300 ? 'mid' : 'bad'; el.hidden = !G;
+}
+// ---------- 伺服器排位配對 ----------
+function srvMatchStart() {
+  needLogin(() => {
+    let ws; try { ws = new WebSocket(srvWs('/ws/mm')); } catch (e) { mmStatus('連不上伺服器'); return; }
+    MM.ws = ws; MM.t0 = Date.now(); MM.mq = { srv: true }; mmStatus('連線中…');
+    ws.onopen = () => ws.send(JSON.stringify({ k: 'q', token: ACC.token, mode: MM.mode, tz: mmTz() }));
+    ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; }
+      if (m.k === 'err') { mmStatus(m.why); }
+      else if (m.k === 'stat') mmStatus(`配對中… 已等 ${Math.round(m.wait / 1000)} 秒<br>目前排隊：${m.n} 人（同地區 ${m.near} 人）${m.n <= 1 ? '<br>還沒有其他人在排，可以找朋友一起按，或先去練習' : ''}`);
+      else if (m.k === 'match') { MM.done = true; MM.ws = null; MM.mq = null; try { ws.close(); } catch (x) {} mmStatus(`配到 ${m.n} 人！進房中…`); NET.code = m.room; srvConnect('/ws/room/' + m.room, () => toast('進房失敗')); }
+    };
+    ws.onclose = () => { if (MM.ws === ws) { MM.ws = null; MM.mq = null; mmStatus('配對連線中斷了，請再按一次'); } };
+  });
+}
+function srvMatchStop() { if (MM.ws) { try { MM.ws.send(JSON.stringify({ k: 'cancel' })); MM.ws.close(); } catch (e) {} MM.ws = null; } MM.mq = null; mmStatus('已取消'); }
+// ---------- 伺服器天梯 ----------
+async function srvLadder() {
+  const box = document.getElementById('glList'); if (!box) return;
+  const r = await accApi('/api/ladder'); if (!GL.open) return;
+  if (!r.ok) { box.innerHTML = `<small>${esc(r.err || '讀取失敗')}</small>`; return; }
+  if (r.me) { ACC.me = r.me; accSave(); }
+  document.getElementById('glRank').textContent = r.rank ? `你是第 ${r.rank} 名／共 ${r.total} 人` : `共 ${r.total} 人${ACC.me ? '（你還沒有排位紀錄）' : ''}`;
+  box.innerHTML = r.top.map((x, i) => `<div class="lprow ${ACC.me && x.uid === ACC.me.uid ? 'me' : ''}"><span>${i + 1}</span><b>${esc(x.name)}${ACC.me && x.uid === ACC.me.uid ? '（你）' : ''}</b>${tierBadge(x.lp)}<em>${x.lp}</em></div>`).join('') || '<small>還沒有人打過排位。</small>';
+}
+setTimeout(() => { accBadge(); accRefresh(); }, 300);
+function openLadderSrv() {
+  const me = ACC.me, wr = me && me.games ? Math.round(me.wins * 100 / me.games) : 0;
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯 <small class="tsv">測試服</small></h2>
+    ${me ? `<div class="lpme">${tierBadge(me.lp)}<b>${me.lp} LP</b><small>${esc(me.name)}・${me.games} 場・第一名 ${me.wins} 次（${wr}%）</small></div><div class="lpbar"><i style="width:${me.lp >= 700 ? 100 : (me.lp % 100)}%"></i></div>`
+      : `<p class="nethint">登入帳號後才會有天梯分數。</p><button class="btn primary" id="lpLogin">登入／註冊</button>`}
+    <h3>全球排行榜 <small id="glRank">讀取中…</small></h3><div class="lplist" id="glList"><small>連線中…</small></div>
+    <h3>最近戰績（這台裝置）</h3><div class="lphist">${LADDER.hist.filter(h => h.mode === '連線').map(h => `<span class="${h.d >= 0 ? 'up' : 'dn'}" title="${new Date(h.t).toLocaleString()}">${h.n > 2 ? '#' + h.place : h.place === 1 ? '勝' : '敗'}<i>${h.d >= 0 ? '+' : ''}${h.d}</i></span>`).join('') || '<small>還沒有戰績</small>'}</div>
+    <p class="nethint">牌位：${LADDER_CFG.TIERS.join(' → ')}，每 100 LP 一階。2 隊對戰贏 +${LADDER_CFG.WIN2}／輸 ${LADDER_CFG.LOSE2}；4 隊混戰依名次 ${LADDER_CFG.PLACE4.slice(1).map(x => (x > 0 ? '+' : '') + x).join('／')}；對手越強贏越多、輸越少。只有至少兩隊有真人的連線對局才計分。分數由伺服器計算與保存。</p>`;
+  $('overlay').hidden = false;
+  $('mX').onclick = () => { $('overlay').hidden = true; GL.open = false; };
+  if ($('lpLogin')) $('lpLogin').onclick = () => openAccount(() => openLadderSrv());
+  GL.open = true; srvLadder();
+}
+window.__act = a => actMe(a); // 測試用
+window.__netClose = () => NET.ws && NET.ws.close(); // 測試用
+window.__netDbg = () => ({ code: NET.code, ws: NET.ws && NET.ws.readyState, tries: NET.tries, role: NET.role, srv: NET.srv });
 
 // ===== 天梯（牌位與積分 LP）=====
 // 每場結束（或被淘汰）結算一次；存在這台裝置。連線對戰時會交換彼此的 LP，排行榜列出你和一起玩過的人。
@@ -5954,6 +6114,10 @@ function ladderSettle() {
   if (!G) return null;
   const t = myTeam(), T = G.teams[t];
   if (!(G.phase === 'over' || T.out) || !T.place) return null;
+  if (G.server) { // 伺服器局：分數由伺服器算好再送來
+    if (!G.ranked) return (LADDER_RES = { seed: G.seed, unranked: true, after: ACC.me ? ACC.me.lp : LADDER.lp });
+    return LADDER_RES && LADDER_RES.seed === G.seed ? LADDER_RES : { seed: G.seed, pending: true };
+  }
   if (LADDER.lastSeed === G.seed) return null; // 同一場只結算一次（連線時 G 會一直被房主的畫面取代，所以用種子判斷）
   LADDER.lastSeed = G.seed;
   // 天梯只算「連線、且至少有一隊對手裡有真人」的對局；練習或全是 AI 對手不計分
@@ -5980,8 +6144,12 @@ function ladderSettle() {
 }
 function ladderOverHtml() {
   const r = ladderSettle() || (LADDER_RES && G && LADDER_RES.seed === G.seed ? LADDER_RES : null); if (!r) return '';
+  if (r.pending) return '<div class="lpres" id="lpLive"><small>天梯結算中…</small></div>';
   if (r.unranked) return `<div class="lpres"><div>${tierBadge(r.after)}</div><small>${G.online ? '對手都是 AI，這場不計分' : '練習模式不計天梯分數'}（排位配對或跟真人連線才算）</small></div>`;
-  return `<div class="lpres"><div>${tierBadge(r.after)}</div><b class="${r.d >= 0 ? 'up' : 'dn'}">${r.d >= 0 ? '+' : ''}${r.d} LP</b><small>${r.before} → ${r.after}${G.online ? '' : '（練習算一半）'}</small></div>`;
+  return ladderResHtml(r);
+}
+function ladderResHtml(r) {
+  return `<div class="lpres"><div>${tierBadge(r.after)}</div><b class="${r.d >= 0 ? 'up' : 'dn'}">${r.d >= 0 ? '+' : ''}${r.d} LP</b><small>${r.before} → ${r.after}</small></div>`;
 }
 // 被淘汰但比賽還沒結束：跳出名次與 LP，可以繼續觀戰
 function ladderFrame() {
@@ -6159,9 +6327,10 @@ function glRender() {
     + (myRank > GLOBAL_LADDER.SHOW ? `<div class="lprow me"><span>${myRank}</span><b>${esc(netName())}（你）</b>${tierBadge(LADDER.lp)}<em>${LADDER.lp}</em></div>` : '')
     || '<small>還沒有任何經過確認的對局。</small>';
 }
-setTimeout(() => { if (!netBlocked()) ladderPublish(); }, 4000);
+setTimeout(() => { if (!netBlocked() && !srvOn()) ladderPublish(); }, 4000);
 
 function openLadder() {
+  if (srvOn()) { openLadderSrv(); return; }
   const rows = [{ name: '你（' + esc(netName()) + '）', lp: LADDER.lp, me: true }].concat(Object.values(LADDER.seen).map(s => ({ name: esc(s.name), lp: s.lp }))).sort((a, b) => b.lp - a.lp);
   const wr = LADDER.games ? Math.round(LADDER.wins * 100 / LADDER.games) : 0, online = !netBlocked();
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯</h2>
