@@ -1,7 +1,8 @@
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#3b2a24"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="動物戰棋"></head><body style="margin:0"><title>動物戰棋</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<!-- 字型不擋畫面：網路連不到 Google 字型時先用系統字，載到再換 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" media="print" onload="this.media='all'">
 <style>
 /* 版面：上方 3D 戰場（含 HUD、羈絆欄），下方操作區（等級金幣、裝備、5 格商店、隊友與準備） */
 :root {
@@ -4862,7 +4863,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.9.2 · 測試服 · 數值會再調整';
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.9.3'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5508,7 +5509,7 @@ function openOnline() {
       <p class="nethint">房主的手機要一直開著遊戲；空位由 AI 補上。同一個 Wi-Fi 最穩，行動網路偶爾會連不上。</p>
     </div>`;
   $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; if (NET.role && !G) netLeave(); };
-  if (srvOn()) { $('netName').closest('label').hidden = true; $('panel').querySelector('.nethint').textContent = '整場遊戲在伺服器上跑，誰斷線都不影響其他人；空位由 AI 補。至少兩隊有真人時計天梯分數。'; }
+  if (srvOn()) { $('netName').closest('label').hidden = true; $('panel').querySelector('.nethint').textContent = '空位由電腦補上。'; }
   $('netHost').onclick = () => { netSetName($('netName').value.trim() || '玩家'); if (srvOn()) srvHost(); else netHostStart(); };
   $('netJoin').onclick = () => { const c = $('netCode').value.trim().toUpperCase(); if (c.length !== 4) { toast('房號是 4 個字'); return; } netSetName($('netName').value.trim() || '玩家'); if (srvOn()) srvJoin(c); else netJoin(c); };
 }
@@ -5836,12 +5837,12 @@ const mmTz = () => Math.round(-new Date().getTimezoneOffset() / 60);
 const MM_ORDER = { 4: [0, 2, 1, 3], 8: [0, 2, 4, 6, 1, 3, 5, 7] }; // 真人盡量分到不同隊
 function openMatch() {
   if (netBlocked()) { openOnline(); return; }
-  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>排位配對 <small class="tsv">測試服</small></h2>
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>排位配對</h2>
     <div class="netbox">
       <label class="rnum">你的名字<input id="netName" maxlength="8" value="${esc(netName())}"></label>
       <div class="nmode"><button class="btn ${MM.mode === 4 ? 'on' : ''}" data-mm="4">4 人（2 隊）</button><button class="btn ${MM.mode === 8 ? 'on' : ''}" data-mm="8">8 人（4 隊）</button></div>
       <button class="btn primary" id="mmGo">開始配對</button>
-      <div id="mmStat" class="nethint">跟全世界正在排隊的人隨機配對，先找同地區（時區相近）的人；等 ${NET_CFG.MM_WIDEN_MS / 1000} 秒後放寬到全球，人數不夠的位置由 AI 補。至少要有兩隊有真人才會開打，這種對局計天梯分數。</div>
+      <div id="mmStat" class="nethint">會優先配到附近的玩家，人數不夠時由電腦補上。</div>
     </div>`;
   $('overlay').hidden = false;
   $('mX').onclick = () => { if (MM.ws) srvMatchStop(); else mmStop(); $('overlay').hidden = true; };
@@ -5935,7 +5936,7 @@ async function accApi(path, body) {
   try {
     const r = await fetch(srvUrl() + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ 'Content-Type': 'application/json' }, ACC.token ? { Authorization: 'Bearer ' + ACC.token } : {}), body: body ? JSON.stringify(body) : undefined });
     return await r.json();
-  } catch (e) { return { err: '連不上伺服器，請確認網路' }; }
+  } catch (e) { return { err: '連不上，請確認網路' }; }
 }
 async function accRefresh() { if (!srvOn() || !ACC.token) return; const r = await accApi('/api/me'); if (r.ok) { ACC.me = r.me; accSave(); } else if (r.err === '請重新登入') { ACC.token = ''; ACC.me = null; accSave(); } }
 function accBadge() {
@@ -5947,7 +5948,7 @@ function accBadge() {
 function needLogin(then) { if (ACC.token && ACC.me) { then(); return; } openAccount(then); }
 function openAccount(then, startup) {
   const me = ACC.me;
-  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>${startup ? '登入動物戰棋' : '帳號'} <small class="tsv">測試服</small></h2>` + (me ? `
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>${startup ? '登入動物戰棋' : '帳號'}</h2>` + (me ? `
     <div class="lpme">${tierBadge(me.lp)}<b>${me.lp} LP</b><small>帳號 ${esc(me.user)}・${me.games} 場・第一名 ${me.wins} 次</small></div>
     <label class="rnum">暱稱<input id="acName" maxlength="8" value="${esc(me.name)}"></label>
     <div class="xbtns"><button class="btn moss" id="acRename">更新暱稱</button><button class="btn" id="acOut">登出</button></div>` : `
@@ -5958,7 +5959,6 @@ function openAccount(then, startup) {
       <label class="rnum" id="acNameRow" hidden>暱稱<input id="acNick" maxlength="8" value="${esc(netName())}"></label>
       <button class="btn primary" id="acGo" type="submit">登入</button>
       ${startup ? '<button class="btn" id="acSkip" type="button">先不登入，只玩練習</button>' : ''}
-      <p class="nethint">連線對戰、排位配對與天梯都要登入。整場遊戲在伺服器上跑，分數也存在伺服器，改自己的瀏覽器改不了。密碼只存加密後的雜湊。</p>
     </form>`);
   $('overlay').hidden = false;
   $('mX').onclick = () => { $('overlay').hidden = true; };
@@ -5996,7 +5996,7 @@ function srvConnect(path, onFail) {
     if (NET.ws !== ws || ws.dead) return; ws.dead = true;
     if (!opened && !NET.code) { onFail && onFail(); return; }
     if (NET.srv && NET.code && (NET.tries || 0) < SRV_CFG.RECONNECT_TRIES) { NET.tries = (NET.tries || 0) + 1; toast('連線中斷，重新連線中…', 2000); setTimeout(() => { if (NET.srv && NET.ws === ws) srvConnect('/ws/room/' + NET.code); }, 600 * NET.tries); }
-    else if (NET.srv) { toast('跟伺服器的連線中斷了', 3200); netLeave(); }
+    else if (NET.srv) { toast('連線中斷了', 3200); netLeave(); }
   };
   clearInterval(NET.pingT);
   NET.pingT = setInterval(() => { // 心跳：太久沒收到伺服器任何訊息就當作斷線，主動重連（手機切網路時 close 事件常常不會來）
@@ -6018,8 +6018,8 @@ function srvLp(m) {
   const el = document.getElementById('lpLive'); if (el) el.outerHTML = ladderResHtml(LADDER_RES);
   if (LADDER_RES.up) setTimeout(() => { banner('晉級！', ladderTierName(m.after), 'win'); if (typeof confetti === 'function') confetti(); }, 600);
 }
-function srvHost() { if (NET.role) return; needLogin(() => { toast('建立房間中…'); NET.code = ''; srvConnect('/ws/new?mode=4', () => { toast('連不上伺服器，改用公用中繼（不計分）', 3200); netReset(); NET.srv = false; netHostStart(); }); }); }
-function srvJoin(code) { if (NET.role) return; needLogin(() => { toast('連線中…'); NET.code = code; srvConnect('/ws/room/' + code, () => { toast('連不上伺服器', 3000); netReset(); }); }); }
+function srvHost() { if (NET.role) return; needLogin(() => { toast('建立房間中…'); NET.code = ''; srvConnect('/ws/new?mode=4', () => { toast('連不上，請確認網路後再試', 3200); netReset(); }); }); }
+function srvJoin(code) { if (NET.role) return; needLogin(() => { toast('連線中…'); NET.code = code; srvConnect('/ws/room/' + code, () => { toast('連不上，請確認網路後再試', 3000); netReset(); }); }); }
 function netRttShow() {
   let el = document.getElementById('netRtt');
   if (!el) { const st = document.getElementById('stage'); if (!st) return; el = document.createElement('div'); el.id = 'netRtt'; st.appendChild(el); }
@@ -6028,7 +6028,7 @@ function netRttShow() {
 // ---------- 伺服器排位配對 ----------
 function srvMatchStart() {
   needLogin(() => {
-    let ws; try { ws = new WebSocket(srvWs('/ws/mm')); } catch (e) { mmStatus('連不上伺服器'); return; }
+    let ws; try { ws = new WebSocket(srvWs('/ws/mm')); } catch (e) { mmStatus('連不上，請確認網路後再試'); return; }
     MM.ws = ws; MM.t0 = Date.now(); MM.mq = { srv: true }; mmStatus('連線中…');
     ws.onopen = () => ws.send(JSON.stringify({ k: 'q', token: ACC.token, mode: MM.mode, tz: mmTz() }));
     ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; }
@@ -6058,12 +6058,12 @@ setTimeout(async () => {
 }, 300);
 function openLadderSrv() {
   const me = ACC.me, wr = me && me.games ? Math.round(me.wins * 100 / me.games) : 0;
-  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯 <small class="tsv">測試服</small></h2>
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯</h2>
     ${me ? `<div class="lpme">${tierBadge(me.lp)}<b>${me.lp} LP</b><small>${esc(me.name)}・${me.games} 場・第一名 ${me.wins} 次（${wr}%）</small></div><div class="lpbar"><i style="width:${me.lp >= 700 ? 100 : (me.lp % 100)}%"></i></div>`
       : `<p class="nethint">登入帳號後才會有天梯分數。</p><button class="btn primary" id="lpLogin">登入／註冊</button>`}
     <h3>全球排行榜 <small id="glRank">讀取中…</small></h3><div class="lplist" id="glList"><small>連線中…</small></div>
     <h3>最近戰績（這台裝置）</h3><div class="lphist">${LADDER.hist.filter(h => h.mode === '連線').map(h => `<span class="${h.d >= 0 ? 'up' : 'dn'}" title="${new Date(h.t).toLocaleString()}">${h.n > 2 ? '#' + h.place : h.place === 1 ? '勝' : '敗'}<i>${h.d >= 0 ? '+' : ''}${h.d}</i></span>`).join('') || '<small>還沒有戰績</small>'}</div>
-    <p class="nethint">牌位：${LADDER_CFG.TIERS.join(' → ')}，每 100 LP 一階。2 隊對戰贏 +${LADDER_CFG.WIN2}／輸 ${LADDER_CFG.LOSE2}；4 隊混戰依名次 ${LADDER_CFG.PLACE4.slice(1).map(x => (x > 0 ? '+' : '') + x).join('／')}；對手越強贏越多、輸越少。只有至少兩隊有真人的連線對局才計分。分數由伺服器計算與保存。</p>`;
+    <p class="nethint">牌位：${LADDER_CFG.TIERS.join(' → ')}，每 100 LP 一階。2 隊對戰贏 +${LADDER_CFG.WIN2}／輸 ${LADDER_CFG.LOSE2}；4 隊混戰依名次 ${LADDER_CFG.PLACE4.slice(1).map(x => (x > 0 ? '+' : '') + x).join('／')}；對手越強贏越多、輸越少。和真人隊伍對戰才計分。</p>`;
   $('overlay').hidden = false;
   $('mX').onclick = () => { $('overlay').hidden = true; GL.open = false; };
   if ($('lpLogin')) $('lpLogin').onclick = () => openAccount(() => openLadderSrv());
@@ -6346,12 +6346,12 @@ function openLadder() {
     <div class="lpme">${tierBadge(LADDER.lp)}<b id="lpMeLp">${LADDER.lp} LP</b><small>${LADDER.games} 場・第一名 ${LADDER.wins} 次（${wr}%）・前半名次 ${LADDER.top} 次</small></div>
     <div class="lpbar"><i style="width:${LADDER.lp >= 700 ? 100 : (LADDER.lp % 100)}%"></i></div>
     <label class="rnum">排行榜上的名字<input id="glName" maxlength="8" value="${esc(netName())}"></label>
-    ${online ? `<h3>全球排行榜 <small id="glRank">讀取中…</small></h3><div class="lplist" id="glList"><small>連線中…</small></div>` : '<p class="nethint">全球排行榜要用 GitHub 網址開才看得到。</p>'}
+    ${online ? `<h3>全球排行榜 <small id="glRank">讀取中…</small></h3><div class="lplist" id="glList"><small>連線中…</small></div>` : ''}
     <h3>一起玩過的人</h3><div class="lplist">${rows.map((r, i) => `<div class="lprow ${r.me ? 'me' : ''}"><span>${i + 1}</span><b>${r.name}</b>${tierBadge(r.lp)}<em>${r.lp}</em></div>`).join('')}</div>
     ${window.crypto && crypto.subtle ? `<h3>身分轉移</h3><div class="xfer"><p class="nethint">換手機、換瀏覽器或清掉瀏覽器資料前，先抄下轉移碼；到新裝置輸入就能找回同一個天梯身分與分數。轉移碼等於你的天梯密碼，不要給別人。</p>
       <div class="xbtns"><button class="btn" id="xfShow">顯示我的轉移碼</button><button class="btn" id="xfIn">輸入轉移碼</button></div><div id="xfBox"></div></div>` : ''}
     <h3>最近戰績</h3><div class="lphist">${LADDER.hist.map(h => `<span class="${h.d >= 0 ? 'up' : 'dn'}" title="${new Date(h.t).toLocaleString()}">${h.n > 2 ? '#' + h.place : h.place === 1 ? '勝' : '敗'}<i>${h.d >= 0 ? '+' : ''}${h.d}</i><small>${h.mode}</small></span>`).join('') || '<small>還沒有戰績</small>'}</div>
-    <p class="nethint">牌位：${LADDER_CFG.TIERS.join(' → ')}，每 100 LP 一階。2 隊對戰贏 +${LADDER_CFG.WIN2}／輸 ${LADDER_CFG.LOSE2}；4 隊混戰依名次 ${LADDER_CFG.PLACE4.slice(1).map(x => (x > 0 ? '+' : '') + x).join('／')}；對手越強贏越多、輸越少。只有跟真人隊伍對戰（排位配對或開房連線）才計分，練習不計。全球排行榜（測試服）的分數由每場的簽名對局紀錄重新計算：要有兩個不同隊伍的真人紀錄一致才算，改本機存檔沒有用。</p>`;
+    <p class="nethint">牌位：${LADDER_CFG.TIERS.join(' → ')}，每 100 LP 一階。2 隊對戰贏 +${LADDER_CFG.WIN2}／輸 ${LADDER_CFG.LOSE2}；4 隊混戰依名次 ${LADDER_CFG.PLACE4.slice(1).map(x => (x > 0 ? '+' : '') + x).join('／')}；對手越強贏越多、輸越少。和真人隊伍對戰才計分。</p>`;
   $('overlay').hidden = false;
   $('mX').onclick = () => { $('overlay').hidden = true; glClose(); };
   $('glName').onchange = e => { netSetName(e.target.value.trim().slice(0, 8) || '玩家'); glRender(); };
