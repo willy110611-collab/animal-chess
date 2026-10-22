@@ -4851,7 +4851,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.7.1 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.7.2 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5519,6 +5519,8 @@ async function netHostStart() {
   r.mq.onmsg = (topic, text) => { let m; try { m = JSON.parse(text); } catch (e) { return; } if (!m || !m.from) return; netHostIncoming(m); };
   r.mq.onclose = () => { if (NET.role === 'host') { toast('跟連線伺服器斷線，重新連線中…', 2500); netHostReconnect(); } };
   r.mq.sub(T_(code, 'h'));
+  // 房主切到背景時畫面停止更新，用計時器繼續推進遊戲，其他人才不會卡住
+  NET.timers.push(setInterval(() => { if (NET.role !== 'host' || !G) return; const now = performance.now(); if (now - (NET.lastFrame || 0) < 400) return; const dt = Math.min(1000, now - (NET.bgAt || now)); NET.bgAt = now; if (dt > 0 && G.phase !== 'over') update(G, dt); netHostTick(dt / 1000, true); }, 250));
   NET.timers.push(setInterval(() => { if (NET.role !== 'host') return; netBroadcast({ k: 'hb' }); const now = performance.now(); for (const c of NET.conns.slice()) if (now - c.last > NET_CFG.DROP_MS) netHostDrop(c); }, 4000));
   renderRoom();
 }
@@ -5600,8 +5602,9 @@ function netSnapshot() {
   const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input') ? undefined : v);
   return { s, log, logFrom: NET.logSent };
 }
-function netHostTick(dt) {
+function netHostTick(dt, fromTimer) {
   if (!G || NET.role !== 'host') return;
+  if (!fromTimer) NET.lastFrame = performance.now();
   // 新戰鬥：把戰鬥輸入（含種子）送給大家
   const bk = G.round + G.phase + G.battles.length;
   if (G.phase === 'combat' && NET.battleKey !== bk && G.battles.length && G.battles[0].input) { NET.battleKey = bk; netBroadcast({ k: 'battles', round: G.round, list: G.battles.map(b => ({ teams: b.teams, input: b.input })) }); }
