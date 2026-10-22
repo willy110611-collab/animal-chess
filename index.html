@@ -4861,7 +4861,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.9 · 測試服 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.9.1 · 測試服 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5920,7 +5920,7 @@ window.NETDBG = () => ({ st: NET.st, hostT: NET.hostT, br: NET.battleRound, nb: 
 // 有設定 SERVER 時：開房、排位配對、天梯都走自己的伺服器，整場遊戲由伺服器跑，玩家（包括房主）改不了結果。
 // 連不上伺服器時，開房連線會退回舊的公用中繼模式（不計分）。
 const SRV_CFG = {
-  SERVER: '__ZOO_SERVER__',   // 部署後填入，例如 https://zoochess.xxx.workers.dev
+  SERVER: 'https://zoochess.willy110611.workers.dev',   // 部署後填入，例如 https://zoochess.xxx.workers.dev
   PING_MS: 3000,              // 多久測一次延遲
   RECONNECT_TRIES: 8,         // 斷線自動重連幾次
   DEAD_MS: 9000,              // 多久沒收到伺服器訊息就當作斷線
