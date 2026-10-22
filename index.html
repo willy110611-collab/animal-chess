@@ -403,7 +403,7 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
     <div class="lobby-btns">
       <button class="btn primary" id="btnPractice">練習：2 隊對戰（4 人）</button>
       <button class="btn primary" id="btnPractice8">練習：4 隊混戰（8 人）</button>
-      <button class="btn" id="btnOnline">開房連線（2～4 人）</button>
+      <button class="btn" id="btnOnline">開房連線（2～8 人）</button>
       <button class="btn moss" id="btnDex">圖鑑與規則</button>
       <span class="note" id="loadNote">正在準備 3D 角色…</span>
     </div>
@@ -4851,7 +4851,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.7 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.7.1 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5404,31 +5404,75 @@ function setupInstall() {
 // ===== 開房連線（房主制）=====
 // 房主的瀏覽器跑整場遊戲（唯一真相）；其他人只送操作、收畫面。
 // 戰鬥用同一份種子在各自手機上重跑（決定性模擬），只同步 tick 與戰鬥指令，流量很小。
-// 連線走 WebRTC（PeerJS 公用配對伺服器），需要用 GitHub Pages 網址開；Claude 預覽頁不能連線。
+// 連線走公用 MQTT 中繼（WebSocket），手機行動網路也能通；需要用 GitHub Pages 網址開，Claude 預覽頁不能連線。
+// 訊息會經過公用伺服器、別人知道房號也能看到遊戲資料（不含個資），只適合朋友間玩。
 const NET_CFG = {
-  PEERJS: 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',
-  PREFIX: 'zoochess-v1-',      // 房號前綴（改了就跟舊版房間互不相通）
+  BROKERS: ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'], // 依序嘗試
+  PREFIX: 'zoochess/v1/',      // 頻道前綴（改了就跟舊版房間互不相通）
+  HELLO_WAIT_MS: 6000,         // 加入時每個伺服器等房主回覆多久
+  DROP_MS: 15000,              // 多久沒收到訊息算斷線
   SNAP_MS: 250,                // 房主多久檢查一次要不要送畫面
   TICK_MS: 200,                // 戰鬥中多久送一次 tick
   BUFFER_TICKS: 12,            // 客人的戰鬥落後房主幾個 tick 播放（吸收網路延遲，12 = 0.6 秒）
-  ICE: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }],
 };
-const NET = { role: null, peer: null, conns: [], host: null, code: '', seats: null, mySeat: 0, lastSnap: '', snapAcc: 0, tickAcc: 0, logSent: 0, battleKey: '', battles: [], hostT: [], hostAt: 0, cmds: [], speed: 1, pending: {}, reqId: 1, name: '' };
+// ---- 迷你 MQTT 3.1.1 客戶端（只用 QoS 0 的發布／訂閱）----
+const _te = new TextEncoder(), _td = new TextDecoder();
+const mqStr = s => { const b = _te.encode(s); return [b.length >> 8, b.length & 255, ...b]; };
+function mqPkt(h, vh, pl) { const body = vh.concat(Array.from(pl || [])); const len = []; let n = body.length; do { let d = n % 128; n = Math.floor(n / 128); if (n > 0) d |= 128; len.push(d); } while (n > 0); return new Uint8Array([h, ...len, ...body]); }
+class MiniMqtt {
+  constructor(url) { this.url = url; this.buf = new Uint8Array(0); this.pid = 1; this.onmsg = null; this.onclose = null; }
+  connect(cid) {
+    return new Promise((res, rej) => {
+      let ws; try { ws = this.ws = new WebSocket(this.url, ['mqtt']); } catch (e) { rej(e); return; }
+      ws.binaryType = 'arraybuffer';
+      const to = setTimeout(() => { rej(new Error('timeout')); try { ws.close(); } catch (e) {} }, 7000);
+      ws.onopen = () => ws.send(mqPkt(0x10, mqStr('MQTT').concat([4, 0x02, 0, 60]), mqStr(cid)));
+      ws.onmessage = e => this.feed(new Uint8Array(e.data), () => { clearTimeout(to); this.alive = setInterval(() => { if (ws.readyState === 1) ws.send(new Uint8Array([0xC0, 0])); }, 25000); res(); });
+      ws.onerror = () => { clearTimeout(to); rej(new Error('ws')); };
+      ws.onclose = () => { clearInterval(this.alive); if (this.onclose) this.onclose(); };
+    });
+  }
+  sub(topic) { const id = this.pid++; this.ws.send(mqPkt(0x82, [id >> 8, id & 255], mqStr(topic).concat([0]))); }
+  pub(topic, text) { if (this.ws && this.ws.readyState === 1) this.ws.send(mqPkt(0x30, mqStr(topic), _te.encode(text))); }
+  close() { this.onclose = null; try { this.ws.send(new Uint8Array([0xE0, 0])); this.ws.close(); } catch (e) {} }
+  feed(chunk, onConnack) {
+    const b = new Uint8Array(this.buf.length + chunk.length); b.set(this.buf); b.set(chunk, this.buf.length); this.buf = b;
+    for (;;) {
+      const B = this.buf; if (B.length < 2) return;
+      let len = 0, mul = 1, i = 1, d;
+      do { if (i >= B.length) return; d = B[i++]; len += (d & 127) * mul; mul *= 128; } while (d & 128);
+      if (B.length < i + len) return;
+      const type = B[0] >> 4, body = B.subarray(i, i + len);
+      if (type === 2) { if (body[1] === 0) onConnack(); }
+      else if (type === 3) { const tl = (body[0] << 8) | body[1], qos = (B[0] >> 1) & 3, topic = _td.decode(body.subarray(2, 2 + tl)), off = 2 + tl + (qos ? 2 : 0); if (this.onmsg) this.onmsg(topic, _td.decode(body.subarray(off))); }
+      this.buf = B.slice(i + len);
+    }
+  }
+}
+function netBrokers() { let o = null; try { o = localStorage.getItem('zoo_broker'); } catch (e) {} return o ? [o] : NET_CFG.BROKERS; }
+const netId = () => 'zc' + Math.random().toString(36).slice(2, 12);
+const NET = { role: null, mq: null, myId: '', lastHeard: 0, timers: [], conns: [], host: null, code: '', seats: null, mySeat: 0, lastSnap: '', snapAcc: 0, tickAcc: 0, logSent: 0, battleKey: '', battles: [], hostT: [], hostAt: 0, cmds: [], speed: 1, pending: {}, reqId: 1, name: '' };
 const AI_NAMES = ['阿熊', '野狼幫甲', '野狼幫乙', '河馬團甲', '河馬團乙', '鴨鴨隊甲', '鴨鴨隊乙'];
 function netName() { try { return localStorage.getItem('zoo_name') || '玩家'; } catch (e) { return '玩家'; } }
 function netSetName(n) { try { localStorage.setItem('zoo_name', n); } catch (e) {} }
-function netReset() { NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; }
+function netReset() { for (const t of NET.timers || []) clearInterval(t); NET.timers = []; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; }
 function netLeave() {
-  try { if (NET.peer) NET.peer.destroy(); } catch (e) {}
-  NET.peer = null; netReset();
+  try { if (NET.role === 'client' && NET.host) NET.host.send({ k: 'bye' }); } catch (e) {}
+  try { if (NET.mq) NET.mq.close(); } catch (e) {}
+  NET.mq = null; netReset();
   for (const k in S3.V) s3Remove(k);
   G = null; $('game').hidden = true; $('lobby').hidden = false; $('overlay').hidden = true;
 }
-function loadPeerJS() {
-  if (window.Peer) return Promise.resolve();
-  const load = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(); s.onerror = () => rej(new Error('peerjs')); document.head.appendChild(s); });
-  return load('peerjs.min.js').catch(() => load(NET_CFG.PEERJS)); // 先用網站自己放的一份，失敗再用 CDN
+// 依序連上可用的中繼伺服器
+async function netConnect(startIdx) {
+  const list = netBrokers();
+  for (let i = startIdx || 0; i < list.length; i++) {
+    const mq = new MiniMqtt(list[i]);
+    try { await mq.connect(netId()); return { mq, idx: i }; } catch (e) {}
+  }
+  return null;
 }
+const T_ = (code, s) => NET_CFG.PREFIX + code + '/' + s;
 const netBlocked = () => /claude\.ai|claudeusercontent|anthropic/.test(location.hostname) || location.protocol === 'file:';
 function randCode() { const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random() * A.length)]; return s; }
 
@@ -5464,22 +5508,41 @@ function renderRoom() {
 }
 
 // ---------- 房主 ----------
-function netHostStart() {
+async function netHostStart() {
   if (NET.role) return;
   toast('建立房間中…');
-  loadPeerJS().then(() => {
-    const tryOpen = (n) => {
-      const code = randCode(), peer = new Peer(NET_CFG.PREFIX + code, { config: { iceServers: NET_CFG.ICE } });
-      peer.on('open', () => {
-        NET.role = 'host'; NET.peer = peer; NET.code = code; NET.mySeat = 0;
-        NET.seats = [{ name: netName(), host: true, lp: ladderMe().lp, pid: ladderMe().id }, null, null, null];
-        renderRoom();
-      });
-      peer.on('error', e => { if (e.type === 'unavailable-id' && n < 4) { peer.destroy(); tryOpen(n + 1); } else { toast('連線伺服器失敗：' + e.type, 3000); } });
-      peer.on('connection', c => netHostConn(c));
-    };
-    tryOpen(0);
-  }).catch(() => toast('載入連線元件失敗，請確認網路', 3000));
+  const r = await netConnect(0);
+  if (!r) { toast('連不上連線伺服器，請確認網路', 3200); return; }
+  const code = randCode();
+  NET.role = 'host'; NET.mq = r.mq; NET.code = code; NET.mySeat = 0; NET.conns = [];
+  NET.seats = [{ name: netName(), host: true, lp: ladderMe().lp, pid: ladderMe().id }, null, null, null];
+  r.mq.onmsg = (topic, text) => { let m; try { m = JSON.parse(text); } catch (e) { return; } if (!m || !m.from) return; netHostIncoming(m); };
+  r.mq.onclose = () => { if (NET.role === 'host') { toast('跟連線伺服器斷線，重新連線中…', 2500); netHostReconnect(); } };
+  r.mq.sub(T_(code, 'h'));
+  NET.timers.push(setInterval(() => { if (NET.role !== 'host') return; netBroadcast({ k: 'hb' }); const now = performance.now(); for (const c of NET.conns.slice()) if (now - c.last > NET_CFG.DROP_MS) netHostDrop(c); }, 4000));
+  renderRoom();
+}
+async function netHostReconnect() {
+  for (let n = 0; n < 5 && NET.role === 'host'; n++) {
+    const r = await netConnect(0); if (!r) { await new Promise(x => setTimeout(x, 2000)); continue; }
+    NET.mq.onmsg && (r.mq.onmsg = NET.mq.onmsg); r.mq.onclose = NET.mq.onclose; NET.mq = r.mq; r.mq.sub(T_(NET.code, 'h'));
+    NET.lastSnap = ''; NET.battleKey = ''; toast('已重新連線'); return;
+  }
+}
+function netHostIncoming(m) {
+  let c = NET.conns.find(x => x.id === m.from);
+  if (!c) {
+    if (m.k !== 'hello') return;
+    c = { id: m.from, open: true, last: performance.now(), send(x) { if (NET.mq) NET.mq.pub(T_(NET.code, 'c/' + this.id), JSON.stringify(x)); }, close() { this.open = false; } };
+  } else if (m.k === 'hello') { // 同一個人重新連上：補送座位、開局與完整畫面
+    c.last = performance.now(); c.send({ k: 'seat', seat: c.seat });
+    if (G) { c.send({ k: 'start', seat: c.seat }); NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; } else netSendRoom();
+    return;
+  }
+  c.last = performance.now();
+  if (m.k === 'bye') { netHostDrop(c); return; }
+  if (m.k === 'ping') return;
+  netHostMsg(c, m);
 }
 function netSetMode(n) {
   if (G || n === NET.seats.length) return;
@@ -5489,13 +5552,7 @@ function netSetMode(n) {
   } else while (NET.seats.length < n) NET.seats.push(null);
   netSendRoom();
 }
-function netHostConn(c) {
-  c.on('open', () => {});
-  c.on('data', m => netHostMsg(c, m));
-  c.on('close', () => netHostDrop(c));
-  c.on('error', () => netHostDrop(c));
-}
-function netBroadcast(m) { for (const c of NET.conns) if (c.open) { try { c.send(m); } catch (e) {} } }
+function netBroadcast(m) { if (NET.mq && NET.conns.length) NET.mq.pub(T_(NET.code, 'all'), JSON.stringify(m)); }
 function netSendRoom() { netBroadcast({ k: 'room', seats: NET.seats, code: NET.code }); renderRoom(); }
 function netMoveSeat(from, to) {
   if (to < 0 || to >= NET.seats.length || NET.seats[to] || G) return;
@@ -5507,8 +5564,8 @@ function netMoveSeat(from, to) {
 function netHostMsg(c, m) {
   if (!m || typeof m !== 'object') return;
   if (m.k === 'hello') {
-    if (G) { c.send({ k: 'full', why: '遊戲已經開始了' }); setTimeout(() => c.close(), 300); return; }
-    const free = NET.seats.findIndex(x => !x); if (free < 0) { c.send({ k: 'full', why: '房間滿了' }); setTimeout(() => c.close(), 300); return; }
+    if (G) { c.send({ k: 'full', why: '遊戲已經開始了' }); return; }
+    const free = NET.seats.findIndex(x => !x); if (free < 0) { c.send({ k: 'full', why: '房間滿了' }); return; }
     c.seat = free; NET.conns.push(c);
     NET.seats[free] = { name: String(m.name || '玩家').slice(0, 8), lp: +m.lp || 0, pid: String(m.pid || '').slice(0, 24) };
     c.send({ k: 'seat', seat: free }); netSendRoom(); toast(`${NET.seats[free].name} 加入了`);
@@ -5559,21 +5616,41 @@ function netHostTick(dt) {
 }
 
 // ---------- 客人 ----------
-function netJoin(code) {
-  if (NET.role) return;
-  toast('連線中…');
-  loadPeerJS().then(() => {
-    const peer = new Peer({ config: { iceServers: NET_CFG.ICE } });
-    NET.peer = peer;
-    peer.on('open', () => {
-      const c = peer.connect(NET_CFG.PREFIX + code, { reliable: true, serialization: 'json' });
-      const to = setTimeout(() => { if (!NET.role) { toast('找不到這個房號，或房主的網路連不上', 3200); try { peer.destroy(); } catch (e) {} NET.peer = null; } }, 12000);
-      c.on('open', () => { clearTimeout(to); NET.role = 'client'; NET.host = c; NET.code = code; c.send({ k: 'hello', name: netName(), lp: ladderMe().lp, pid: ladderMe().id }); });
-      c.on('data', m => netClientMsg(m));
-      c.on('close', () => { if (NET.role === 'client') { toast('跟房主的連線中斷了', 3200); netLeave(); } });
+async function netJoin(code) {
+  if (NET.role || NET.joining) return;
+  NET.joining = true; toast('連線中…');
+  const list = netBrokers();
+  for (let bi = 0; bi < list.length; bi++) {
+    const r = await netConnect(bi); if (!r) break;
+    bi = r.idx;
+    const ok = await new Promise(res => {
+      const myId = netId(); let done = false;
+      r.mq.onmsg = (topic, text) => { let m; try { m = JSON.parse(text); } catch (e) { return; } NET.lastHeard = performance.now(); if (!done && (m.k === 'seat' || m.k === 'full')) { done = true; clearTimeout(to); res(true); } netClientMsg(m); };
+      r.mq.sub(T_(code, 'all')); r.mq.sub(T_(code, 'c/' + myId));
+      NET.myId = myId; NET.code = code; NET.mq = r.mq;
+      NET.host = { send(x) { if (NET.mq) NET.mq.pub(T_(NET.code, 'h'), JSON.stringify(Object.assign({ from: NET.myId }, x))); } };
+      const hello = () => NET.host.send({ k: 'hello', name: netName(), lp: ladderMe().lp, pid: ladderMe().id });
+      setTimeout(hello, 300);
+      const to = setTimeout(() => { if (!done) { done = true; try { r.mq.close(); } catch (e) {} NET.mq = null; res(false); } }, NET_CFG.HELLO_WAIT_MS);
     });
-    peer.on('error', e => { toast(e.type === 'peer-unavailable' ? '找不到這個房號' : '連線失敗：' + e.type, 3000); try { peer.destroy(); } catch (x) {} NET.peer = null; NET.role = null; });
-  }).catch(() => toast('載入連線元件失敗，請確認網路', 3000));
+    if (ok) {
+      NET.joining = false;
+      if (!NET.role) NET.role = 'client';
+      NET.mq.onclose = () => { if (NET.role === 'client') { toast('跟連線伺服器斷線，重新連線中…', 2500); netClientReconnect(); } };
+      NET.timers.push(setInterval(() => { if (NET.role !== 'client') return; NET.host.send({ k: 'ping' }); if (performance.now() - NET.lastHeard > NET_CFG.DROP_MS) { toast('跟房主的連線中斷了', 3200); netLeave(); } }, 4000));
+      return;
+    }
+  }
+  NET.joining = false; NET.host = null;
+  toast('找不到這個房號，或房主已經離開', 3200);
+}
+async function netClientReconnect() {
+  for (let n = 0; n < 5 && NET.role === 'client'; n++) {
+    const r = await netConnect(0); if (!r) { await new Promise(x => setTimeout(x, 2000)); continue; }
+    r.mq.onmsg = NET.mq.onmsg; r.mq.onclose = NET.mq.onclose; NET.mq = r.mq;
+    r.mq.sub(T_(NET.code, 'all')); r.mq.sub(T_(NET.code, 'c/' + NET.myId));
+    NET.host.send({ k: 'hello', name: netName(), lp: ladderMe().lp, pid: ladderMe().id }); toast('已重新連線'); return;
+  }
 }
 function netSendAct(a) {
   if (!NET.host) return 'bad';
@@ -5582,9 +5659,10 @@ function netSendAct(a) {
 }
 function netClientMsg(m) {
   if (!m) return;
-  if (m.k === 'seat') { NET.mySeat = m.seat; renderRoom(); }
+  if (m.k === 'seat') { NET.role = 'client'; NET.mySeat = m.seat; renderRoom(); }
+  else if (m.k === 'hb') {}
   else if (m.k === 'room') { NET.seats = m.seats; NET.code = m.code; renderRoom(); }
-  else if (m.k === 'full') { toast(m.why, 3000); netLeave(); }
+  else if (m.k === 'full') { toast(m.why, 3000); setTimeout(netLeave, 50); }
   else if (m.k === 'start') { ME = NET.mySeat = m.seat; NET.started = true; for (const k in S3.V) s3Remove(k); }
   else if (m.k === 'res') { const t = NET.pending[m.id]; delete NET.pending[m.id]; if (m.r !== 'ok' && !['ready', 'ping', 'move'].includes(t)) toast(ERR[m.r] || '不行'); if (m.r !== 'ok' && t === 'move') renderPrep(); }
   else if (m.k === 'snap') netApplySnap(m);
