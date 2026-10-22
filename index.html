@@ -484,7 +484,7 @@ const ANIMALS = {
     skill: '站立威嚇', desc: '嘲諷 2 格內敵人 3 秒，自身受到傷害 −30%。' },
   skunk: { name: '臭鼬', cost: 2, traits: ['forest', 'night'], role: '控制',
     hp: 780, atk: 48, ai: 20, rng: 2, arm: 30, mr: 30, mana: 70, sm: 0, mv: 8,
-    skill: '臭氣', desc: '在敵人密集處放 3×3 臭氣 4 秒：區內敵人攻擊 −30%，每秒 40 魔法傷害。' },
+    skill: '臭氣', desc: '在敵人密集處放一圈臭氣（中心＋周圍 6 格）4 秒：區內敵人攻擊 −30%，每秒 40 魔法傷害。' },
   croc: { name: '鱷魚', cost: 2, traits: ['water', 'armor'], role: '戰士',
     hp: 800, atk: 65, ai: 22, rng: 1, arm: 40, mr: 25, mana: 80, sm: 0, mv: 9,
     skill: '死亡翻滾', desc: '咬住目標暈 2 秒，造成 300 物理傷害。站水格護甲加倍。' },
@@ -499,7 +499,7 @@ const ANIMALS = {
     skill: '疾馳撲殺', desc: '移動極快。連續攻擊同一目標每次攻速 +8%（最多 5 層）。技能：衝向血最少的敵人 300 物理傷害。' },
   octopus: { name: '章魚', cost: 4, traits: ['water', 'night'], role: '控制法師',
     hp: 920, atk: 58, ai: 20, rng: 3, arm: 25, mr: 40, mana: 80, sm: 20, mv: 8,
-    skill: '噴墨', desc: '對敵人密集處 3×3 噴墨：200 魔法傷害並致盲 3 秒（普攻落空）。' },
+    skill: '噴墨', desc: '對敵人密集處噴一圈墨（中心＋周圍 6 格）：200 魔法傷害並致盲 3 秒（普攻落空）。' },
   owl: { name: '貓頭鷹', cost: 4, traits: ['sky', 'night'], role: '遠程',
     hp: 760, atk: 82, ai: 20, rng: 4, arm: 20, mr: 30, mana: 70, sm: 0, mv: 7,
     skill: '無聲撲擊', desc: '撲向血最少的敵人，350 物理傷害必定暴擊。' },
@@ -533,7 +533,7 @@ const ANIMALS = {
     skill: '捶胸震地', desc: '捶胸嘲諷 2 格內敵人 2.5 秒，獲得 18% 生命護盾，再雙拳砸地，周圍 1 格 200 魔法傷害。' },
   whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor'], role: '坦／法師',
     hp: 2000, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
-    skill: '潮汐巨浪', desc: '噴出巨浪橫掃自己左右各 1 欄：敵人 260 魔法傷害並暈 1 秒，友軍回復 15% 生命。' },
+    skill: '潮汐巨浪', desc: '噴出巨浪，沿自己左右各 1 格寬的直線橫掃全場：敵人 260 魔法傷害並暈 1 秒，友軍回復 15% 生命。' },
   peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest'], role: '輔助',
     hp: 1350, atk: 95, ai: 20, rng: 3, arm: 30, mr: 40, mana: 100, sm: 30, mv: 8,
     skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
@@ -624,7 +624,7 @@ const itemDef = k => MATS[k] || ITEMS[k] || EMBLEMS[k] || CONSUMABLES[k];
 // 合體技：a、b 為動物 key，需分屬兩位隊友且開場相鄰
 const COMBOS = [
   { id: 'hunt',   a: 'lion',     b: 'cheetah',  name: '狩獵圍捕', desc: '獵豹瞬移到血最少的敵人旁，生命低於 15% 直接斬殺，否則 250 物理傷害' },
-  { id: 'swamp',  a: 'croc',     b: 'frog',     name: '沼澤陷阱', desc: '在敵人密集處生成 3×3 水池 5 秒' },
+  { id: 'swamp',  a: 'croc',     b: 'frog',     name: '沼澤陷阱', desc: '在敵人密集處生成一圈水池（中心＋周圍 6 格）5 秒' },
   { id: 'guard',  a: 'redpanda', b: 'koala',    name: '樹下守護', desc: '兩者回復 30% 生命，小熊貓受傷 −40% 持續 4 秒' },
   { id: 'toxic',  a: 'bee',      b: 'skunk',    name: '毒霧蜂群', desc: '我方蜜蜂與小蜂 5 秒內普攻附加中毒' },
   { id: 'throw',  a: 'elephant', b: 'squirrel', name: '象鼻投擲', desc: '大象把松鼠甩進敵方後排，落地 250 魔法範圍傷害並暈 0.5 秒' },
@@ -700,7 +700,7 @@ const AUGMENTS = [
   { id: 'mutation', tier: 3, name: '基因突變', hook: 'start', desc: '你的每隻棋子都獲得 +25 護甲魔抗與 10% 護盾。' },
   { id: 'ark', tier: 3, name: '最後的方舟', hook: 'econ', desc: '團隊血量 +20；本局接下來前 2 次敗北不扣血。' },
   { id: 'rewind', tier: 3, name: '時間回溯', hook: 'tick', desc: '戰鬥第 12 秒，你存活的棋子生命回到開場時的數值，並獲得 20% 護盾。' },
-  { id: 'meteor', tier: 3, name: '天降隕石', hook: 'tick', desc: '每 6 秒隨機轟炸敵人密集的 3×3 區域，造成 200 魔法傷害。' },
+  { id: 'meteor', tier: 3, name: '天降隕石', hook: 'tick', desc: '每 6 秒轟炸敵人最密集的一圈（中心＋周圍 6 格），造成 200 魔法傷害。' },
   { id: 'plague', tier: 3, name: '鼠疫肆虐', hook: 'tick', desc: '戰鬥中敵方全體每 4 秒攻擊與護甲 −6%（可疊加）。' },
   { id: 'beastgod', tier: 3, name: '獸神降臨', hook: 'econ', desc: '立即獲得一隻 2 星的 5 費動物。' },
   { id: 'bind', tier: 3, name: '地靈束縛', hook: 'start', desc: '戰鬥開始時，敵方 2 隻前排棋子被定身 2.5 秒。' },
@@ -789,7 +789,15 @@ function makeRng(seed) {
 const SKILL_MUL = [0, 100, 150, 225];
 const idx = (c, r) => r * CFG.COLS + c;
 const inB = (c, r) => c >= 0 && c < CFG.COLS && r >= 0 && r < CFG.ROWS;
-const dist = (a, b) => Math.max(Math.abs(a.c - b.c), Math.abs(a.r - b.r));
+// ===== 六角格（odd-r：奇數列往右半格）。棋盤 7×8，以 (3.25, 3.5) 為中心點對稱 =====
+const hexD = (c1, r1, c2, r2) => { const q1 = c1 - ((r1 - (r1 & 1)) >> 1), q2 = c2 - ((r2 - (r2 & 1)) >> 1), dq = q1 - q2, dr = r1 - r2; return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2; };
+const hexX = (c, r) => c + ((r & 1) ? 0.5 : 0); // 橫向實際位置（算「欄」範圍用）
+const NB_EVEN = [[0, 1], [-1, 1], [1, 0], [-1, 0], [0, -1], [-1, -1]], NB_ODD = [[1, 1], [0, 1], [1, 0], [-1, 0], [1, -1], [0, -1]];
+function hexNb(c, r, team) { // 鄰格順序：往前優先；對面隊伍用鏡像順序，雙方尋路偏好完全對稱
+  if (team === 1) { const mc = CFG.COLS - 1 - c, mr = CFG.ROWS - 1 - r; return ((mr & 1) ? NB_ODD : NB_EVEN).map(([dc, dr]) => [CFG.COLS - 1 - (mc + dc), CFG.ROWS - 1 - (mr + dr)]); }
+  return ((r & 1) ? NB_ODD : NB_EVEN).map(([dc, dr]) => [c + dc, r + dr]);
+}
+const dist = (a, b) => hexD(a.c, a.r, b.c, b.r);
 const statOf = key => ANIMALS[key] || EXTRA[key];
 const hasTrait = (u, t) => u.traits.indexOf(t) >= 0;
 
@@ -934,11 +942,11 @@ function findCombos(B) {
 const U = (B, id) => B.units[id];
 function buffSum(B, u, stat) { let s = 0; for (const b of u.buffs) if (b.s === stat && b.u > B.t) s += b.v; return s; }
 function terrainAt(B, c, r) {
-  for (const z of B.temp) if (z.until > B.t && Math.abs(z.c - c) <= 1 && Math.abs(z.r - r) <= 1 && B.terrain[idx(c, r)] !== 'rock') return z.type;
+  for (const z of B.temp) if (z.until > B.t && hexD(z.c, z.r, c, r) <= 1 && B.terrain[idx(c, r)] !== 'rock') return z.type;
   return B.terrain[idx(c, r)];
 }
 function inZone(B, u, kind, team) {
-  for (const z of B.zones) if (z.kind === kind && z.team !== u.team && z.until > B.t && Math.abs(z.c - u.c) <= 1 && Math.abs(z.r - u.r) <= 1) return true;
+  for (const z of B.zones) if (z.kind === kind && z.team !== u.team && z.until > B.t && hexD(z.c, z.r, u.c, u.r) <= 1) return true;
   return false;
 }
 const isHigh = (B, c, r) => !!(B.height && B.height[idx(c, r)]);
@@ -1088,17 +1096,15 @@ function teleport(B, u, c, r) {
   u.mvFrom = { c: u.c, r: u.r, t0: B.t, t1: B.t + 4, jump: true };
   u.c = c; u.r = r; B.grid[idx(c, r)] = u.id;
 }
-const DIRS = [[0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
-const DIRS1 = DIRS.map(([c, r]) => [-c, -r]); // 對面隊伍用鏡像方向，避免路徑偏好不對稱
 function stepToward(B, u, tgt, range) {
   // BFS 找最近能打到目標的格子，回傳第一步
   const start = idx(u.c, u.r), prev = new Map([[start, -1]]), q = [[u.c, u.r]];
   let goal = -1;
   for (let qi = 0; qi < q.length; qi++) {
     const [c, r] = q[qi];
-    if (Math.max(Math.abs(c - tgt.c), Math.abs(r - tgt.r)) <= range) { goal = idx(c, r); break; }
-    for (const [dc, dr] of (u.team === 1 ? DIRS1 : DIRS)) {
-      const nc = c + dc, nr = r + dr, k = idx(nc, nr);
+    if (hexD(c, r, tgt.c, tgt.r) <= range) { goal = idx(c, r); break; }
+    for (const [nc, nr] of hexNb(c, r, u.team)) {
+      const k = idx(nc, nr);
       if (!passable(B, nc, nr, u.id) || prev.has(k)) continue;
       prev.set(k, idx(c, r)); q.push([nc, nr]);
     }
@@ -1110,19 +1116,18 @@ function stepToward(B, u, tgt, range) {
 function freeNear(B, c, r, from) {
   // 找 (c,r) 周圍最近的空格；from 用於平手時偏好
   let best = null, bd = 99;
-  for (let rad = 1; rad <= 3 && !best; rad++) for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad; dc <= rad; dc++) {
-    if (Math.max(Math.abs(dc), Math.abs(dr)) !== rad) continue;
-    const nc = c + dc, nr = r + dr; if (!passable(B, nc, nr, -2)) continue;
-    const d = from ? Math.max(Math.abs(nc - from.c), Math.abs(nr - from.r)) : 0;
+  for (let rad = 1; rad <= 3 && !best; rad++) for (let nr = r - rad; nr <= r + rad; nr++) for (let nc = c - rad - 1; nc <= c + rad + 1; nc++) {
+    if (hexD(c, r, nc, nr) !== rad || !passable(B, nc, nr, -2)) continue;
+    const d = from ? hexD(nc, nr, from.c, from.r) : 0;
     if (d < bd) { bd = d; best = [nc, nr]; }
   }
   return best;
 }
 function clusterCenter(B, u) {
-  // 敵人最密集的 3×3 中心
+  // 敵人最密集的「半徑 1（7 格）」中心
   let best = null, bn = -1;
   for (const e of enemies(B, u)) {
-    let n = 0; for (const f of enemies(B, u)) if (Math.abs(f.c - e.c) <= 1 && Math.abs(f.r - e.r) <= 1) n++;
+    let n = 0; for (const f of enemies(B, u)) if (hexD(f.c, f.r, e.c, e.r) <= 1) n++;
     if (n > bn) { bn = n; best = e; }
   }
   return best;
@@ -1209,7 +1214,7 @@ function cast(B, u) {
     case 'octopus': {
       const cc = clusterCenter(B, u); if (!cc) break;
       B.zones.push({ kind: 'ink', team: u.team, c: cc.c, r: cc.r, until: B.t + 30, per: 0 }); B.ev.push({ k: 'zone', kind: 'ink', c: cc.c, r: cc.r, id: u.id });
-      for (const e of es) if (Math.abs(e.c - cc.c) <= 1 && Math.abs(e.r - cc.r) <= 1) {
+      for (const e of es) if (hexD(e.c, e.r, cc.c, cc.r) <= 1) {
         damage(B, u, e, sk(200), 'magic', { skill: 1 }); e.blind = Math.max(e.blind, B.t + 60); B.ev.push({ k: 'cc', id: e.id, s: '致盲' });
       }
       break; }
@@ -1283,9 +1288,10 @@ function cast(B, u) {
       for (const e of es) if (dist(e, u) <= 1) damage(B, u, e, sk(200), 'magic', { skill: 1 });
       break; }
     case 'whale': {
-      for (const e of es) if (Math.abs(e.c - u.c) <= 1) { damage(B, u, e, sk(260), 'magic', { skill: 1 }); stun(B, e, 20); }
-      for (const a of allies(B, u)) if (Math.abs(a.c - u.c) <= 1) heal(B, a, Math.floor(a.maxhp * 15 / 100));
-      B.ev.push({ k: 'wave', id: u.id, c: u.c });
+      const ux = hexX(u.c, u.r); // 以自己為中心、左右各 1 格寬的直線帶
+      for (const e of es) if (Math.abs(hexX(e.c, e.r) - ux) <= 1) { damage(B, u, e, sk(260), 'magic', { skill: 1 }); stun(B, e, 20); }
+      for (const a of allies(B, u)) if (Math.abs(hexX(a.c, a.r) - ux) <= 1) heal(B, a, Math.floor(a.maxhp * 15 / 100));
+      B.ev.push({ k: 'wave', id: u.id, c: u.c, x: ux });
       break; }
     case 'peacock': {
       for (const e of es) if (dist(e, u) <= 3) stun(B, e, 30, '魅惑');
@@ -1358,7 +1364,7 @@ function step(B) {
   // 區域傷害
   if (sec) for (const z of B.zones) if (z.until >= t && z.per) {
     const src = U(B, z.src);
-    for (const e of B.units) if (e.alive && e.team !== z.team && Math.abs(e.c - z.c) <= 1 && Math.abs(e.r - z.r) <= 1) damage(B, src, e, z.per, 'magic', {});
+    for (const e of B.units) if (e.alive && e.team !== z.team && hexD(e.c, e.r, z.c, z.r) <= 1) damage(B, src, e, z.per, 'magic', {});
   }
   envTick(B);
   const order = (t & 1) ? B.units.slice().reverse() : B.units; // 每 tick 交替行動順序，避免先手優勢
@@ -1548,7 +1554,7 @@ function augTick(B) {
       const src = B.units.find(u => u.alive && u.owner === o); if (!src) continue;
       const cc = clusterCenter(B, src); if (!cc) continue;
       B.ev.push({ k: 'zone', kind: 'meteor', c: cc.c, r: cc.r, id: src.id });
-      for (const e of enemies(B, src)) if (Math.abs(e.c - cc.c) <= 1 && Math.abs(e.r - cc.r) <= 1) damage(B, src, e, 200, 'magic', {});
+      for (const e of enemies(B, src)) if (hexD(e.c, e.r, cc.c, cc.r) <= 1) damage(B, src, e, 200, 'magic', {});
     }
   }
   if (t % 20 === 0 && ownersWith(B, 'domain').length) { const src0 = B.units.find(u => u.alive && hasAug(B, u, 'domain')); if (src0) for (const e of B.units) if (e.alive && inDomain(B, e)) damage(B, src0, e, 30, 'true', {}); }
@@ -2095,7 +2101,7 @@ function aiPlace(G, pid) {
     const [gc, gr] = toGlobal(P.team, c, r), k = gr * CFG.COLS + gc;
     if (!G.board[k] && G.terrain[k] !== 'rock' && !P.avoidCells[k]) free.push({ k, c, r });
   }
-  const centerScore = f => Math.abs(f.c - 3);
+  const centerScore = f => Math.abs(hexX(f.k % CFG.COLS, Math.floor(f.k / CFG.COLS)) - 3.25);
   for (const o of list) {
     const A = ANIMALS[o.u.key];
     // 合體技：靠近隊友的搭檔
@@ -2105,8 +2111,8 @@ function aiPlace(G, pid) {
       for (const k in G.board) {
         const pu = G.board[k]; if (pu.key !== partner || pu.owner === pid || G.players[pu.owner].team !== P.team) continue;
         const pc = +k % CFG.COLS, pr = Math.floor(+k / CFG.COLS);
-        const adj = free.filter(f => Math.max(Math.abs(f.k % CFG.COLS - pc), Math.abs(Math.floor(f.k / CFG.COLS) - pr)) <= 1);
-        adj.sort((x, y) => (A.rng === 1 ? y.r - x.r : x.r - y.r) || Math.abs(x.c - 3) - Math.abs(y.c - 3) || x.c - y.c);
+        const adj = free.filter(f => hexD(f.k % CFG.COLS, Math.floor(f.k / CFG.COLS), pc, pr) <= 1);
+        adj.sort((x, y) => (A.rng === 1 ? y.r - x.r : x.r - y.r) || centerScore(x) - centerScore(y) || x.c - y.c);
         spot = adj[0];
         if (spot) break;
       }
@@ -2124,7 +2130,7 @@ function aiPlace(G, pid) {
         if (tt === 'burn') s += 1.5; if (A.rng >= 2 && (hi || tt === 'shadow' || tt === 'tree')) s -= 1.2; if (tt === 'bounce') s += A.rng >= 2 || A.role === '坦' ? 2 : -0.8; return s; };
       const rowS = f => front ? (CFG.ROWS_HALF - 1 - f.r) : f.r;
       const cand = free.slice().sort((a, b) => (rowS(a) + tScore(a)) - (rowS(b) + tScore(b)) || centerScore(a) - centerScore(b) || a.c - b.c);
-      if (A.rng === 1 && (o.u.key === 'bat' || o.u.key === 'cheetah')) cand.sort((a, b) => b.r - a.r || Math.abs(a.c - 3) - Math.abs(b.c - 3));
+      if (A.rng === 1 && (o.u.key === 'bat' || o.u.key === 'cheetah')) cand.sort((a, b) => b.r - a.r || centerScore(a) - centerScore(b));
       spot = cand[0];
     }
     if (!spot) break;
@@ -3149,7 +3155,9 @@ function tex(name) {
     case 'heal': { g.fillStyle = '#8fe07a'; g.shadowColor = '#5fbf4a'; g.shadowBlur = 10; g.fillRect(M - 12, 24, 24, 80); g.fillRect(24, M - 12, 80, 24); break; }
     case 'beam': { const gr = g.createLinearGradient(0, 0, 0, SPR_SIZE); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.35, 'rgba(255,255,255,.75)'); gr.addColorStop(1, 'rgba(255,255,255,.95)'); g.fillStyle = gr; g.fillRect(0, 0, SPR_SIZE, SPR_SIZE); break; }
     case 'shard': { g.fillStyle = '#fff'; g.beginPath(); g.moveTo(M, 8); g.lineTo(M + 14, M); g.lineTo(M, 120); g.lineTo(M - 14, M); g.fill(); break; }
-    case 'cell': { const rr = 18, m = 10, w = SPR_SIZE - m * 2; g.beginPath(); g.moveTo(m + rr, m); g.arcTo(m + w, m, m + w, m + w, rr); g.arcTo(m + w, m + w, m, m + w, rr); g.arcTo(m, m + w, m, m, rr); g.arcTo(m, m, m + w, m, rr); g.closePath(); g.fillStyle = 'rgba(255,255,255,.28)'; g.fill(); g.lineWidth = 6; g.strokeStyle = 'rgba(255,255,255,.95)'; g.stroke(); break; }
+    case 'cell': { // 尖頂六角形（平面 1.1 寬，外接半徑 0.55 → 畫布半徑約 62px，留邊）
+      const R = 58; g.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 2 + i * Math.PI / 3; g.lineTo(M + Math.cos(a) * R, M + Math.sin(a) * R); } g.closePath();
+      g.fillStyle = 'rgba(255,255,255,.26)'; g.fill(); g.lineWidth = 6; g.lineJoin = 'round'; g.strokeStyle = 'rgba(255,255,255,.95)'; g.stroke(); break; }
     case 'flame': { const gr = g.createRadialGradient(M, M + 18, 4, M, M + 10, 50); gr.addColorStop(0, 'rgba(255,250,200,1)'); gr.addColorStop(.35, 'rgba(255,190,60,.95)'); gr.addColorStop(.7, 'rgba(240,90,30,.6)'); gr.addColorStop(1, 'rgba(200,40,20,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(M, 6); g.bezierCurveTo(M + 40, 50, M + 42, 100, M, 118); g.bezierCurveTo(M - 42, 100, M - 40, 50, M, 6); g.fill(); break; }
     case 'splat': { g.fillStyle = '#fff'; g.beginPath(); for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, r = 30 + (i * 37 % 19); g.lineTo(M + Math.cos(a) * r, M + Math.sin(a) * r); } g.fill(); for (const [x, y, r] of [[18, 30, 8], [110, 40, 7], [100, 104, 9], [26, 98, 6]]) { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); } break; }
   }
@@ -3180,7 +3188,7 @@ function s3Resize() {
   const a = w / h; S3.cam.aspect = a;
   // 依畫面比例調整距離，讓 7 欄＋備戰席剛好入鏡
   S3.cam.fov = 36;
-  const dist = a < 1 ? 13.0 / Math.max(0.62, a) : 12.2 + 3.2 / a;
+  const dist = (a < 1 ? 13.0 / Math.max(0.62, a) : 12.2 + 3.2 / a) * 0.93; // 六角棋盤較短，鏡頭拉近一點
   const ang = 0.93;
   S3.camBase.set(0, Math.sin(ang) * dist, Math.cos(ang) * dist + 0.9);
   S3.camLook.set(0, 0, a < 1 ? 0.15 : 0.2);
@@ -3188,8 +3196,10 @@ function s3Resize() {
 }
 
 // ---- 座標 ----
-const cellWorld = (vc, vr) => [vc - 3, 3 - vr];
-const benchWorld = i => [(i - 3.5) * 0.8, 4.4];
+// 六角格：奇數列往右半格，列距 √3/2；整盤以 (0, -0.5) 為中心
+const HEX_DZ = 0.866;
+const cellWorld = (vc, vr) => [vc + ((vr & 1) ? 0.5 : 0) - 3.25, -0.5 + (3.5 - vr) * HEX_DZ];
+const benchWorld = i => [(i - 3.5) * 0.8, 3.85];
 
 // ---- 場地 ----
 const ARENA_LOOK = {
@@ -3221,13 +3231,13 @@ function s3SetArena(key) {
   ARENA_DECO[key](S3.arena, r);
   // 棋盤底座
   // 棋盤是一塊有機形狀的島（地面網格在 s3SetTerrain 依高台重建），這裡只放邊緣點綴
-  if (key === 'jungle') { for (let i = 0; i < 22; i++) { const v = new THREE.Mesh(GEO.sph, T(i % 2 ? '#4f7a35' : '#6b9a45')); const a = i / 22 * Math.PI * 2; v.scale.set(0.3 + r() * 0.2, 0.18 + r() * 0.1, 0.35); v.position.set(Math.cos(a) * 4.45, -0.25, -0.5 + Math.sin(a) * 4.95); v.rotation.y = r() * 3; S3.board.add(v); } }
-  if (key === 'desert') { for (let i = 0; i < 16; i++) { const v = new THREE.Mesh(GEO.box, T(['#c98a5a', '#b87a4c', '#d9a070'][i % 3])); const a = i / 16 * Math.PI * 2 + r() * 0.2; v.scale.set(0.3 + r() * 0.3, 0.2 + r() * 0.2, 0.3 + r() * 0.3); v.rotation.y = r() * 3; v.position.set(Math.cos(a) * 4.5, -0.25, -0.5 + Math.sin(a) * 5.0); S3.board.add(v); } }
-  if (key === 'city') { for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2; const v = new THREE.Mesh(GEO.box, T(i % 2 ? '#c8c0b4' : '#b0a89c')); v.scale.set(0.5, 0.16, 0.25); v.rotation.y = -a + Math.PI / 2; v.position.set(Math.cos(a) * 4.42, -0.24, -0.5 + Math.sin(a) * 4.92); S3.board.add(v); } }
+  if (key === 'jungle') { for (let i = 0; i < 22; i++) { const v = new THREE.Mesh(GEO.sph, T(i % 2 ? '#4f7a35' : '#6b9a45')); const a = i / 22 * Math.PI * 2; v.scale.set(0.3 + r() * 0.2, 0.18 + r() * 0.1, 0.35); v.position.set(Math.cos(a) * 4.45, -0.25, -0.5 + Math.sin(a) * 4.45); v.rotation.y = r() * 3; S3.board.add(v); } }
+  if (key === 'desert') { for (let i = 0; i < 16; i++) { const v = new THREE.Mesh(GEO.box, T(['#c98a5a', '#b87a4c', '#d9a070'][i % 3])); const a = i / 16 * Math.PI * 2 + r() * 0.2; v.scale.set(0.3 + r() * 0.3, 0.2 + r() * 0.2, 0.3 + r() * 0.3); v.rotation.y = r() * 3; v.position.set(Math.cos(a) * 4.5, -0.25, -0.5 + Math.sin(a) * 4.5); S3.board.add(v); } }
+  if (key === 'city') { for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2; const v = new THREE.Mesh(GEO.box, T(i % 2 ? '#c8c0b4' : '#b0a89c')); v.scale.set(0.5, 0.16, 0.25); v.rotation.y = -a + Math.PI / 2; v.position.set(Math.cos(a) * 4.42, -0.24, -0.5 + Math.sin(a) * 4.42); S3.board.add(v); } }
   // 格子
   S3.tiles = [];
   // 格子：平常完全透明，只在拖曳／選取時淡淡浮現（像聯盟戰棋）
-  if (!GEO.cellPlane) { GEO.cellPlane = new THREE.PlaneGeometry(0.92, 0.92); GEO.cellPlane.rotateX(-Math.PI / 2); }
+  if (!GEO.cellPlane) { GEO.cellPlane = new THREE.PlaneGeometry(1.1, 1.1); GEO.cellPlane.rotateX(-Math.PI / 2); }
   for (let vr = 0; vr < CFG.ROWS; vr++) for (let vc = 0; vc < CFG.COLS; vc++) {
     const m = new THREE.MeshBasicMaterial({ map: tex('cell'), color: 0xffffff, transparent: true, opacity: 0, depthWrite: false });
     const t = new THREE.Mesh(GEO.cellPlane, m); t.renderOrder = 2;
@@ -3416,7 +3426,7 @@ function s3SetTerrain(terrain, vt, temp, height) {
   S3.ambient = S3.ambient.filter(a => !a.prop);
   S3.props = new THREE.Group(); S3.scene.add(S3.props);
   const r = rnd(7), all = Object.assign({}, terrain);
-  for (const z of temp || []) for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const c = z.c + dc, rr = z.r + dr; if (c >= 0 && c < CFG.COLS && rr >= 0 && rr < CFG.ROWS && all[rr * CFG.COLS + c] !== 'rock') all[rr * CFG.COLS + c] = z.type; }
+  for (const z of temp || []) for (let rr = 0; rr < CFG.ROWS; rr++) for (let c = 0; c < CFG.COLS; c++) if (hexD(z.c, z.r, c, rr) <= 1 && all[rr * CFG.COLS + c] !== 'rock') all[rr * CFG.COLS + c] = z.type;
   // 高度場：高台與水窪（視角座標）
   S3.hcells = []; S3.wcells = [];
   for (const k in height || {}) if (height[k]) { const c = +k % CFG.COLS, rr = Math.floor(+k / CFG.COLS), [vc, vr] = vview(c, rr, vt); S3.hcells.push(cellWorld(vc, vr)); }
@@ -3440,7 +3450,7 @@ const HILL_H = 0.42;
 const sstep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 function groundH(x, z) {
   let h = 0, w = 0;
-  for (const [cx, cz] of S3.hcells || []) { const dx = Math.max(0, Math.abs(x - cx) - 0.5), dz = Math.max(0, Math.abs(z - cz) - 0.5); const d = Math.hypot(dx, dz); if (d < 0.3) h = Math.max(h, HILL_H * (1 - sstep(0, 0.3, d))); }
+  for (const [cx, cz] of S3.hcells || []) { const ax = Math.abs(x - cx), az = Math.abs(z - cz), d = Math.max(ax, ax * 0.5 + az * 0.866) - 0.5; if (d < 0.3) h = Math.max(h, HILL_H * (1 - sstep(0, 0.3, Math.max(0, d)))); } // 六角形高台，邊緣 0.3 斜坡
   for (const [cx, cz] of S3.wcells || []) { const d = Math.hypot(x - cx, z - cz); if (d < 0.5) w = Math.min(w, -0.1 * (1 - sstep(0.22, 0.5, d))); }
   return h + w;
 }
@@ -3454,7 +3464,7 @@ function buildGround(key) {
   const pos = geo.attributes.position, n = pos.count, cols = new Float32Array(n * 3), edge = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     const x = pos.getX(i), z = pos.getZ(i) - 0.5; pos.setZ(i, z);
-    const u = Math.abs(x) / 4.2, w = Math.abs(z + 0.5) / 4.7, d = Math.pow(Math.pow(u, 5) + Math.pow(w, 5), 0.2) + (vnoise(x * 1.7 + 9, z * 1.7) - 0.5) * 0.05;
+    const u = Math.abs(x) / 4.2, w = Math.abs(z + 0.5) / 4.2, d = Math.pow(Math.pow(u, 5) + Math.pow(w, 5), 0.2) + (vnoise(x * 1.7 + 9, z * 1.7) - 0.5) * 0.05;
     edge[i] = d;
     let y = groundH(x, z);
     if (d > 0.985) y = -0.12 - (d - 0.985) * 9; // 島邊緣往下收
@@ -4272,7 +4282,7 @@ function prepCombos(team) {
     let hit = null, near = false;
     for (const a of units) if (a.u.key === def.a) for (const b of units) if (b.u.key === def.b && a.u.owner !== b.u.owner) {
       near = true;
-      const d = Math.max(Math.abs(a.k % CFG.COLS - b.k % CFG.COLS), Math.abs(Math.floor(a.k / CFG.COLS) - Math.floor(b.k / CFG.COLS)));
+      const d = hexD(a.k % CFG.COLS, Math.floor(a.k / CFG.COLS), b.k % CFG.COLS, Math.floor(b.k / CFG.COLS));
       if (d <= 1 && !hit) hit = { def, ok: true, ua: a.u.uid, ub: b.u.uid };
     }
     if (hit) res.push(hit); else if (near) res.push({ def, ok: false });
@@ -4577,7 +4587,7 @@ function handleBattleEvents(bt) {
         case 'dash': { if (!v) break; const tk = kOf(B.units[ev.tg]); v.faceK = tk; v.faceUntil = nowS() + 0.8; const from = v.pos.clone(); for (let i = 0; i < 6; i++) at(i * 0.05, () => { const vv = S3.V[k]; if (vv) sprite(ev.s === 'slide' ? 'drop' : 'puff', vv.pos.clone().add(V3(0, 0.12 + groundH(vv.pos.x, vv.pos.z), 0)), { color: ev.s === 'slide' ? 0xbfe6ff : 0xe8d8b8, scale: 0.28, scale1: 0.05, life: 0.5, opacity: 0.8 }); }); groundRing(from, 0xe8d8b8, 0.8, 0.35); break; }
         case 'grab': { const tk = kOf(B.units[ev.tg]); if (v) { v.faceK = tk; v.faceUntil = nowS() + 1.5; } at(0.45, () => { const p = posOf(tk, 0.6); if (p) burst(p, 6, { tex: 'feather', scale: 0.15, speed: 1.2, up: 1.5, g: -1, life: 0.9, spin: 4 }); }); break; }
         case 'chain': { const ids = ev.ids.map(id => kOf(B.units[id])); const d0 = hitDelay(k, 'skill'); for (let i = 0; i + 1 < ids.length; i++) at(d0 + i * 0.09, () => { const a = posOf(ids[i], i ? 0.5 : 1.0), b = posOf(ids[i + 1], 0.5); if (a && b) { lightning(a, b, 0xfff27a, 0.3); burst(b, 5, { tex: 'spark', color: 0xfff27a, scale: 0.12, add: true, speed: 2 }); } }); at(d0, () => { S3.shake = Math.max(S3.shake, 0.08); }); break; }
-        case 'wave': { const d0 = hitDelay(k, 'skill'), wu = B.units[ev.id], step = wu.team === 0 ? 1 : -1; let n = 0; for (let rr = wu.r; rr >= 0 && rr < CFG.ROWS; rr += step, n++) for (let dc = -1; dc <= 1; dc++) { const c = ev.c + dc; if (c < 0 || c >= CFG.COLS) continue; const [x, z] = bWorld(c, rr), dl = d0 + n * 0.07; at(dl, () => { burst(V3(x, 0.2 + groundH(x, z), z), 4, { tex: 'drop', scale: 0.13, speed: 1.2, up: 3, g: -7, life: 0.6 }); sprite('puff', V3(x, 0.3 + groundH(x, z), z), { color: 0x8fd3ff, scale: 0.6, scale1: 0.9, life: 0.5, opacity: 0.7 }); }); } at(d0, () => { S3.shake = Math.max(S3.shake, 0.18); stageShake(5); }); break; }
+        case 'wave': { const d0 = hitDelay(k, 'skill'), wu = B.units[ev.id], ux = ev.x !== undefined ? ev.x : hexX(wu.c, wu.r); for (let rr = 0; rr < CFG.ROWS; rr++) for (let c = 0; c < CFG.COLS; c++) { if (Math.abs(hexX(c, rr) - ux) > 1) continue; const n = Math.abs(rr - wu.r); const [x, z] = bWorld(c, rr), dl = d0 + n * 0.07; at(dl, () => { burst(V3(x, 0.2 + groundH(x, z), z), 4, { tex: 'drop', scale: 0.13, speed: 1.2, up: 3, g: -7, life: 0.6 }); sprite('puff', V3(x, 0.3 + groundH(x, z), z), { color: 0x8fd3ff, scale: 0.6, scale1: 0.9, life: 0.5, opacity: 0.7 }); }); } at(d0, () => { S3.shake = Math.max(S3.shake, 0.18); stageShake(5); }); break; }
         case 'launch': { const [x, z] = bWorld(ev.fc, ev.fr), p = V3(x, groundH(x, z) + 0.15, z); sfx && sfx('skill'); groundRing(p, 0xfff3c8, 1.2, 0.5); if (S3.arenaKey === 'desert') burst(p, 14, { color: 0xf4dcae, scale: 0.4, speed: 1.6, up: 2.5, g: 0, life: 0.9 }); else if (S3.arenaKey === 'city') burst(p, 12, { color: 0xf2f2f2, scale: 0.45, speed: 1, up: 3, g: 0, life: 1.0, delay: 0 }); else { burst(p, 10, { tex: 'spark', color: 0xffd34d, scale: 0.12, add: true, speed: 2, up: 2 }); burst(p, 6, { tex: 'leaf', scale: 0.14, speed: 1.4, up: 2, g: -3, spin: 3 }); } s3Num(k, '彈射！', 'skill', 0, 15); break; }
         case 'land': { if (!v) break; const p = v.pos.clone(); groundRing(p, ev.drop ? 0xffc070 : 0xfff3c8, ev.drop ? 1.8 : 1.4, 0.5); burst(p.clone().add(V3(0, 0.1 + groundH(p.x, p.z), 0)), 12, { color: 0xe8d8b8, scale: 0.3, speed: 2.2, up: 0.8, g: -1.5, life: 0.7 }); slash('burst', posOf(k, 0.3), { scale: ev.drop ? 0.9 : 0.6 }); hitstop(50); S3.shake = Math.max(S3.shake, ev.drop ? 0.2 : 0.12); v.land = nowS(); break; }
       }
@@ -4743,7 +4753,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.5.1 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.6 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
