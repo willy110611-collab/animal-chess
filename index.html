@@ -3521,7 +3521,8 @@ function s3Unit(k, info) {
     S3.ov.appendChild(hb);
     const blob = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: 0x2a140a, transparent: true, opacity: 0.25, depthWrite: false }));
     blob.rotation.x = -Math.PI / 2; S3.unitRoot.add(blob);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.42, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }));
+    if (!GEO.unitRing) GEO.unitRing = new THREE.RingGeometry(0.34, 0.42, 32);
+    const ring = new THREE.Mesh(GEO.unitRing, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2; S3.unitRoot.add(ring);
     v = S3.V[k] = { k, R, hb, blob, ring, unitKey: info.key, pos: V3(info.x, 0, info.z), tgt: V3(info.x, 0, info.z), yaw: 0, tyaw: 0, act: null, hitT: -9, deadT: null,
       hpShow: 1, lag: 1, star: 0, stunG: null, icon: null, seen: 0, born: nowS(), moving: false, lift: 0 };
@@ -3530,10 +3531,19 @@ function s3Unit(k, info) {
   }
   return v;
 }
+// 釋放 GPU 資源：共用幾何（GEO）與精靈的內建幾何不釋放，貼圖由 tex() 快取共用也不釋放
+function disposeObj(o) {
+  if (!o) return;
+  const shared = disposeObj.shared || (disposeObj.shared = new Set());
+  if (!shared.size || shared.n !== Object.keys(GEO).length) { shared.clear(); for (const g of Object.values(GEO)) shared.add(g); shared.n = Object.keys(GEO).length; }
+  o.traverse(c => {
+    if (c.geometry && !c.isSprite && !shared.has(c.geometry)) c.geometry.dispose();
+    if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach(m => m.dispose());
+  });
+}
 function s3Remove(k, instant) {
   const v = S3.V[k]; if (!v) return;
-  S3.unitRoot.remove(v.R.root); S3.unitRoot.remove(v.blob); S3.unitRoot.remove(v.ring);
-  if (v.stunG) S3.unitRoot.remove(v.stunG); if (v.icon) S3.unitRoot.remove(v.icon); if (v.aura) S3.unitRoot.remove(v.aura); if (v.bubble) S3.unitRoot.remove(v.bubble);
+  for (const o of [v.R.root, v.blob, v.ring, v.stunG, v.icon, v.aura, v.bubble]) if (o) { S3.unitRoot.remove(o); disposeObj(o); }
   v.hb.remove(); delete S3.V[k];
 }
 // list: [{k,key,star,owner,enemy,x,z,y,hp,maxhp,shield,mana,manaMax,sleep,stun,stealth,alive,teleport,face, color}]
@@ -3559,7 +3569,26 @@ function v3top(v) { return v.pos.clone().add(V3(0, (v.R.headTop || 1) * (v.scale
 function toScreen(p) { const q = p.clone().project(S3.cam); return [(q.x + 1) / 2 * S3.W, (1 - q.y) / 2 * S3.H, q.z]; }
 
 // ---- 每幀更新 ----
+// ---- 自動畫質：連續卡頓就降解析度與特效量，順了再慢慢升回來 ----
+const QUALITY_STEPS = [{ pr: 1.75, q: 1 }, { pr: 1.4, q: 1 }, { pr: 1.15, q: 0.75 }, { pr: 1.0, q: 0.6 }, { pr: 0.85, q: 0.45 }];
+const QUALITY_SLOW_MS = 24, QUALITY_FAST_MS = 14; // 平均每幀超過 24ms 降一級，低於 14ms 持續 6 秒升一級
+function autoQuality() {
+  const now = performance.now(), A = S3.aq || (S3.aq = { last: now, sum: 0, n: 0, lvl: 0, good: 0, t0: now });
+  const d = now - A.last; A.last = now; if (d > 250) return; // 切到背景或卡住的那一幀不算
+  A.sum += d; A.n++;
+  if (now - A.t0 < 2000) return;
+  const avg = A.sum / A.n; A.sum = 0; A.n = 0; A.t0 = now;
+  const maxPr = Math.min(QUALITY_STEPS[0].pr, window.devicePixelRatio || 1);
+  if (S3.qualityLock !== undefined) A.lvl = S3.qualityLock;
+  else if (avg > QUALITY_SLOW_MS && A.lvl < QUALITY_STEPS.length - 1) { A.lvl++; A.good = 0; }
+  else if (avg < QUALITY_FAST_MS && A.lvl > 0) { if (++A.good >= 3) { A.lvl--; A.good = 0; } }
+  else A.good = 0;
+  const st = QUALITY_STEPS[A.lvl], pr = Math.min(maxPr, st.pr);
+  S3.quality = st.q; S3.avgMs = avg;
+  if (Math.abs(S3.renderer.getPixelRatio() - pr) > 0.01) { S3.renderer.setPixelRatio(pr); S3.renderer.setSize(S3.W, S3.H, false); }
+}
 function s3Frame(dt, ctx) {
+  autoQuality();
   CLK += dt;
   const t = nowS();
   // 相機與晃動
@@ -3637,33 +3666,36 @@ function s3Frame(dt, ctx) {
     if (S3.selK === k) { v.ring.material.color.set('#ffd34d'); v.ring.scale.setScalar((v.scale || 1) * (1.05 + 0.08 * Math.sin(t * 6))); } else { v.ring.material.color.set(it.color || '#ffffff'); v.ring.scale.setScalar(v.scale || 1); }
     // 暈眩星星
     if (it.stun && !v.stunG && !gone) { v.stunG = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('star'), transparent: true, depthWrite: false })); s.scale.setScalar(0.16); v.stunG.add(s); } S3.unitRoot.add(v.stunG); }
-    if (v.stunG) { if (!it.stun || gone) { S3.unitRoot.remove(v.stunG); v.stunG = null; } else { const top = v3top(v); v.stunG.position.copy(top).add(V3(0, -0.12, 0)); v.stunG.children.forEach((s, i) => { const a = t * 5 + i * 2.1; s.position.set(Math.cos(a) * 0.28, Math.sin(t * 7 + i) * 0.03, Math.sin(a) * 0.18); }); } }
+    if (v.stunG) { if (!it.stun || gone) { S3.unitRoot.remove(v.stunG); disposeObj(v.stunG); v.stunG = null; } else { const top = v3top(v); v.stunG.position.copy(top).add(V3(0, -0.12, 0)); v.stunG.children.forEach((s, i) => { const a = t * 5 + i * 2.1; s.position.set(Math.cos(a) * 0.28, Math.sin(t * 7 + i) * 0.03, Math.sin(a) * 0.18); }); } }
     // 狀態小圖示（嘲諷、致盲、睡覺）
     const ic = gone ? null : it.sleep ? 'zz' : it.taunted ? 'exclaim' : it.blind ? 'question' : null;
-    if (ic !== v.iconKey) { if (v.icon) S3.unitRoot.remove(v.icon); v.icon = null; v.iconKey = ic; if (ic) { v.icon = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(ic), transparent: true, depthWrite: false })); v.icon.scale.setScalar(0.3); S3.unitRoot.add(v.icon); } }
+    if (ic !== v.iconKey) { if (v.icon) { S3.unitRoot.remove(v.icon); disposeObj(v.icon); } v.icon = null; v.iconKey = ic; if (ic) { v.icon = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(ic), transparent: true, depthWrite: false })); v.icon.scale.setScalar(0.3); S3.unitRoot.add(v.icon); } }
     if (v.icon) { v.icon.position.copy(v3top(v)).add(V3(0.25, 0.08 + Math.sin(t * 3) * 0.05, 0)); if (ic === 'zz') { v.icon.position.y += (t % 1.5) * 0.2; v.icon.material.opacity = 1 - (t % 1.5) / 1.5; } }
     // 增益光環
     const aura = gone ? null : it.buffAtk ? 0xffc94a : it.buffAs ? 0x7cc8ff : null;
-    if (aura !== v.auraCol) { if (v.aura) S3.unitRoot.remove(v.aura); v.aura = null; v.auraCol = aura; if (aura) { v.aura = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.9, 20, 1, true), new THREE.MeshBasicMaterial({ map: tex('beam'), color: aura, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); S3.unitRoot.add(v.aura); } }
+    if (aura !== v.auraCol) { if (v.aura) { S3.unitRoot.remove(v.aura); disposeObj(v.aura); } v.aura = null; v.auraCol = aura; if (aura) { v.aura = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.9, 20, 1, true), new THREE.MeshBasicMaterial({ map: tex('beam'), color: aura, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); S3.unitRoot.add(v.aura); } }
     if (v.aura) { v.aura.position.set(v.pos.x, 0.45 + gh, v.pos.z); v.aura.rotation.y = t; v.aura.material.opacity = 0.25 + 0.12 * Math.sin(t * 5); }
     // 護盾
     const sh = !gone && it.shield > 0;
     if (sh && !v.bubble) { v.bubble = new THREE.Mesh(GEO.sph, new THREE.MeshBasicMaterial({ color: 0xcfeaff, transparent: true, opacity: 0.22, depthWrite: false })); S3.unitRoot.add(v.bubble); }
-    if (!sh && v.bubble) { S3.unitRoot.remove(v.bubble); v.bubble = null; }
+    if (!sh && v.bubble) { S3.unitRoot.remove(v.bubble); disposeObj(v.bubble); v.bubble = null; }
     if (v.bubble) { v.bubble.position.copy(v.pos).add(V3(0, 0.5 * (v.scale || 1) + (v.R.fly || 0) + gh, 0)); v.bubble.scale.setScalar(0.62 * (v.scale || 1)); }
     // 血條
     const top = toScreen(v3top(v));
     const show = !gone && top[2] < 1;
-    v.hb.style.display = show ? '' : 'none';
+    // 頭頂血條：只在數值有變時才寫 DOM（大量單位時省很多排版時間）
+    const setS = (el, key, val) => { if (v.css[key] !== val) { v.css[key] = val; el.style[key === 'disp' ? 'display' : key === 'tf' ? 'transform' : 'width'] = val; } };
+    v.css = v.css || {};
+    setS(v.hb, 'disp', show ? '' : 'none');
     if (show) {
-      v.hb.style.transform = `translate(${top[0].toFixed(1)}px,${top[1].toFixed(1)}px)`;
+      setS(v.hb, 'tf', `translate(${Math.round(top[0])}px,${Math.round(top[1])}px)`);
       const mh = it.maxhp || 1, hp = Math.max(0, it.hp === undefined ? mh : it.hp) / mh;
       v.hpShow += (hp - v.hpShow) * Math.min(1, dt * 14);
       v.lag += (v.hpShow - v.lag) * Math.min(1, dt * (v.lag > v.hpShow ? 2.2 : 20));
-      v.el.hp.style.width = (v.hpShow * 100).toFixed(1) + '%';
-      v.el.lag.style.width = (v.lag * 100).toFixed(1) + '%';
-      v.el.sh.style.width = Math.min(100, (it.shield || 0) / mh * 100).toFixed(1) + '%';
-      v.el.mp.style.width = it.manaMax && it.manaMax < 999 ? Math.min(100, it.mana / it.manaMax * 100).toFixed(1) + '%' : '0%';
+      setS(v.el.hp, 'hpw', (v.hpShow * 100).toFixed(0) + '%');
+      setS(v.el.lag, 'lagw', (v.lag * 100).toFixed(0) + '%');
+      setS(v.el.sh, 'shw', Math.min(100, (it.shield || 0) / mh * 100).toFixed(0) + '%');
+      setS(v.el.mp, 'mpw', it.manaMax && it.manaMax < 999 ? Math.min(100, it.mana / it.manaMax * 100).toFixed(0) + '%' : '0%');
       if (v.tkMax !== mh) { v.tkMax = mh; v.el.tk.style.backgroundSize = `${Math.max(4, 300 / mh * 100)}% 100%`; }
     }
     // 死亡後移除（戰鬥中）
@@ -3680,8 +3712,10 @@ function s3Frame(dt, ctx) {
 }
 
 // ---- 特效 ----
+const FX_MAX = 260; // 同時存在的特效上限，超過就略過小粒子（效能調整參數）
 function sprite(texName, pos, o) {
   o = o || {};
+  if (S3.fx.length > FX_MAX * (S3.quality || 1) && !o.important) return { o: new THREE.Object3D(), dummy: true };
   const m = new THREE.SpriteMaterial({ map: tex(texName), color: o.color !== undefined ? o.color : 0xffffff, transparent: true, depthWrite: false, depthTest: o.depthTest !== false, opacity: o.opacity || 1, rotation: o.rot || 0, blending: o.add ? THREE.AdditiveBlending : THREE.NormalBlending });
   const s = new THREE.Sprite(m); s.position.copy(pos); s.scale.setScalar(o.scale || 0.5); s.renderOrder = 5;
   S3.fxRoot.add(s);
@@ -3691,11 +3725,13 @@ function sprite(texName, pos, o) {
 }
 function meshFx(obj, o) { S3.fxRoot.add(obj); const f = Object.assign({ o: obj, t0: nowS() + (o.delay || 0), life: 0.5 }, o); obj.visible = !o.delay; S3.fx.push(f); return f; }
 function groundRing(pos, color, size, life, delay) {
-  const m = new THREE.Mesh(new THREE.RingGeometry(0.75, 1, 40), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
+  if (!GEO.fxRing) GEO.fxRing = new THREE.RingGeometry(0.75, 1, 40);
+  const m = new THREE.Mesh(GEO.fxRing, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
   m.rotation.x = -Math.PI / 2; m.position.set(pos.x, 0.03 + groundH(pos.x, pos.z), pos.z);
   return meshFx(m, { life: life || 0.6, ring: size || 1.5, delay });
 }
 function burst(pos, n, o) {
+  n = Math.max(1, Math.round(n * (S3.quality || 1)));
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2, sp = (o.speed || 2) * (0.5 + Math.random());
     sprite(o.tex || 'puff', pos.clone(), { color: o.color, scale: (o.scale || 0.2) * (0.7 + Math.random() * 0.6), scale1: o.scale1 !== undefined ? o.scale1 : 0.02, life: (o.life || 0.5) * (0.7 + Math.random() * 0.6), vel: V3(Math.cos(a) * sp, (o.up || 1.5) * Math.random() + (o.up0 || 0), Math.sin(a) * sp), g: o.g === undefined ? -4 : o.g, add: o.add, delay: o.delay, spin: (Math.random() - .5) * (o.spin || 0) });
@@ -3714,11 +3750,13 @@ function projectile(from, to, kind, dur, o) {
   return meshFx(obj, { proj: { from: from.clone(), to: to.clone(), arc: o.arc === undefined ? 0.6 : o.arc, spin: o.spin || 0, toV: o.toV }, life: dur, delay: o.delay, onEnd: o.onEnd });
 }
 function s3FxFrame(dt, t) {
-  S3.fx = S3.fx.filter(f => {
+  // 先換成新陣列再跑：onEnd／custom 裡新增的特效會進新陣列，不會變成永遠留在場上的孤兒
+  const list = S3.fx; S3.fx = [];
+  const keep = list.filter(f => {
     if (t < f.t0) return true;
     f.o.visible = true;
     const p = (t - f.t0) / f.life;
-    if (p >= 1) { S3.fxRoot.remove(f.o); if (f.o.material) f.o.material.dispose(); if (f.onEnd) f.onEnd(); return false; }
+    if (p >= 1) { S3.fxRoot.remove(f.o); disposeObj(f.o); if (f.onEnd) f.onEnd(); return false; }
     if (f.proj) {
       const P = f.proj, to = P.toV && S3.V[P.toV] ? S3.V[P.toV].pos.clone().add(V3(0, 0.45, 0)) : P.to;
       f.o.position.lerpVectors(P.from, to, p); f.o.position.y += Math.sin(p * Math.PI) * P.arc;
@@ -3737,6 +3775,7 @@ function s3FxFrame(dt, t) {
     if (o.material) { o.material.opacity = f.op * (f.fadeIn && p < f.fadeIn ? p / f.fadeIn : 1) * (p > 0.6 ? 1 - (p - 0.6) / 0.4 : 1); if (f.spin) o.material.rotation += f.spin * dt; }
     return true;
   });
+  S3.fx = keep.concat(S3.fx);
 }
 const posOf = (k, h) => { const v = S3.V[k]; return v ? v.pos.clone().add(V3(0, (h === undefined ? 0.45 : h) * (v.scale || 1) + (v.R.fly || 0) * 0.6 + groundH(v.pos.x, v.pos.z), 0)) : null; };
 function slash(texName, at, o) { o = o || {}; return sprite(texName, at, { scale: o.scale || 0.7, scale1: (o.scale || 0.7) * 1.25, life: o.life || 0.28, rot: o.rot || 0, color: o.color, add: false, delay: o.delay, fadeIn: 0.15 }); }
@@ -3811,10 +3850,14 @@ function lightning(a, b, col, life) {
   meshFx(g, { life: life || 0.28, custom: (f, q) => { mat.opacity = q < 0.5 ? 1 : 1 - (q - 0.5) * 2; f.o.visible = Math.random() > 0.15; } });
   sprite('puff', b.clone(), { color: col || 0xfff27a, scale: 0.5, scale1: 0.1, life: 0.3, add: true });
 }
+const NUM_MAX = 36; // 同時顯示的傷害數字上限（效能調整參數）
 function s3Num(k, text, cls, delay, big) {
   const v = S3.V[k]; if (!v) return;
   setTimeout(() => {
     if (!S3.V[k]) return;
+    S3.numN = S3.numN || 0;
+    if (S3.numN > NUM_MAX * (S3.quality || 1) && !big && cls !== 'crit' && cls !== 'skill') return;
+    S3.numN++; setTimeout(() => { S3.numN--; }, 900);
     const p = toScreen(v3top(v));
     const d = document.createElement('div'); d.className = 'num ' + cls; d.textContent = text;
     d.style.left = (p[0] + (Math.random() - .5) * 26) + 'px'; d.style.top = (p[1] - 4) + 'px';
@@ -4496,7 +4539,7 @@ function handleBattleEvents(bt) {
           if (tk) { v.faceK = tk; v.faceUntil = nowS() + A.dur; }
           s3Num(k, ev.s, 'skill', 0, 15);
           sprite('ring', posOf(k, 0.5), { scale: 0.2, scale1: 1.2, life: 0.4, color: 0xfff3c8, add: true });
-          at(A.dur * A.hit, () => playFx(A.fx, k, tk, { zone: cv.zonePos[ev.id] }));
+          { const zp = cv.zonePos; at(A.dur * A.hit, () => playFx(A.fx, k, tk, { zone: zp[ev.id] })); }
           break; }
         case 'zone': { const [x, z] = bWorld(ev.c, ev.r); cv.zonePos[ev.id] = V3(x, 0.2, z);
           if (ev.kind === 'meteor') { meteorFx(V3(x, 0, z)); break; } if (ev.kind === 'water') { burst(V3(x, 0.2, z), 14, { tex: 'drop', scale: 0.14, speed: 2.4, up: 3, g: -7, life: 0.8 }); groundRing(V3(x, 0, z), 0x6fa3c8, 1.8, 0.7); } break; }
@@ -4646,6 +4689,10 @@ function onPhase() {
   featuresPhase(ph);
 }
 function loop(now) {
+  requestAnimationFrame(loop); // 先排下一幀：就算這一幀某個特效出錯，遊戲也不會整個停住
+  try { loopBody(now); } catch (e) { console.error(e); }
+}
+function loopBody(now) {
   const frozen = now < (S3.freezeUntil || 0);
   const dt = frozen ? 0 : Math.min(0.1, (now - (lastT || now)) / 1000); lastT = now;
   if (G && G.phase !== 'over' && !$('game').hidden && !REPLAY) update(G, dt * 1000);
@@ -4654,11 +4701,10 @@ function loop(now) {
     if (REPLAY) replayFrame(dt);
     else if (cv && (G.phase === 'combat' || G.phase === 'result')) { combatSync(); handleEvents(); }
     featuresFrame(dt);
-    const t = nowS(); sched = sched.filter(s => { if (t >= s.t) { s.fn(); return false; } return true; });
+    const t = nowS(); const due = []; sched = sched.filter(s => { if (t >= s.t) { due.push(s); return false; } return true; }); for (const s of due) { try { s.fn(); } catch (e) { console.error(e); } }
     hud();
     s3Frame(dt * ((REPLAY ? G.speed : (G.phase === 'combat' ? G.speed : 1)) || 1));
   }
-  requestAnimationFrame(loop);
 }
 function showOver() {
   const win = G.winner === myTeam();
@@ -4697,7 +4743,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.5 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.5.1 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
