@@ -4851,7 +4851,7 @@ function showDex(tab) {
 function boot() {
   makePortraits();
   $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = '原型 v0.7.2 · 數值會再調整';
+  $('loadNote').textContent = '原型 v0.7.3 · 數值會再調整';
   s3Init($('stage'), $('cv'), $('ov'));
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5433,7 +5433,7 @@ class MiniMqtt {
     });
   }
   sub(topic) { const id = this.pid++; this.ws.send(mqPkt(0x82, [id >> 8, id & 255], mqStr(topic).concat([0]))); }
-  pub(topic, text) { if (this.ws && this.ws.readyState === 1) this.ws.send(mqPkt(0x30, mqStr(topic), _te.encode(text))); }
+  pub(topic, text, retain) { if (this.ws && this.ws.readyState === 1) this.ws.send(mqPkt(retain ? 0x31 : 0x30, mqStr(topic), _te.encode(text))); } // retain：伺服器會保留最後一則，新訂閱的人馬上收到
   close() { this.onclose = null; try { this.ws.send(new Uint8Array([0xE0, 0])); this.ws.close(); } catch (e) {} }
   feed(chunk, onConnack) {
     const b = new Uint8Array(this.buf.length + chunk.length); b.set(this.buf); b.set(chunk, this.buf.length); this.buf = b;
@@ -5776,7 +5776,7 @@ function ladderSettle() {
   if (G.ladder) G.players.forEach(p => { const info = G.ladder[p.id]; if (!info || !info.pid || info.pid === LADDER.id) return; const tt = G.teams[p.team]; const b2 = n === 2 ? (tt.place === 1 ? LADDER_CFG.WIN2 : LADDER_CFG.LOSE2) : LADDER_CFG.PLACE4[Math.min(4, tt.place || 4)];
     const oth = G.teams.map((x, i) => i).filter(i => i !== p.team), oa = oth.reduce((a, i) => a + teamLp(G, i, meLp), 0) / oth.length;
     LADDER.seen[info.pid] = { name: info.name, lp: Math.max(0, info.lp + ladderDelta(b2, teamLp(G, p.team, meLp), oa, false)), t: Date.now() }; });
-  ladderSave();
+  ladderSave(); if (!netBlocked()) ladderPublish(); // 結算完馬上更新全球排行
   const up = ladderTier(LADDER.lp) > ladderTier(before), down = ladderTier(LADDER.lp) < ladderTier(before);
   LADDER_RES = G.ladderRes = { seed: G.seed, before, after: LADDER.lp, d: LADDER.lp - before, up, down };
   if (up) setTimeout(() => { banner('晉級！', ladderTierName(LADDER.lp), 'win'); if (typeof confetti === 'function') confetti(); }, 600);
@@ -5798,16 +5798,56 @@ function ladderFrame() {
     $('btnOutLobby').onclick = () => { if (NET.role) netLeave(); else { G = null; for (const k in S3.V) s3Remove(k); $('overlay').hidden = true; $('game').hidden = true; $('lobby').hidden = false; } };
   }
 }
+// ===== 全球天梯（公用 MQTT 伺服器的「保留訊息」當排行榜，不用註冊帳號）=====
+// 每台裝置把自己的 {名字, LP, 場數} 存成一則保留訊息；打開排行榜時訂閱全部，馬上收到每個人的最新分數，有人更新也會即時跳動。
+// 限制：任何人都能寫入（防不了作弊）；公用伺服器偶爾會清資料，所以每次開遊戲都會重新登記自己。
+const GLOBAL_LADDER = { TOPIC: 'zoochess/v1/ladder/', WAIT_MS: 2500, SHOW: 100, MAX_LP: 5000, KEEP_DAYS: 120 };
+const GL = { mq: null, rows: {}, open: false };
+function glEntry() { return { pid: LADDER.id, name: netName().slice(0, 8), lp: LADDER.lp, games: LADDER.games, wins: LADDER.wins, t: Date.now() }; }
+async function ladderPublish() { // 登記到每個連得上的伺服器（資料各自獨立，多存幾份比較不怕被清）
+  const list = netBrokers(), msg = JSON.stringify(glEntry());
+  for (let i = 0; i < list.length; i++) {
+    try { const mq = new MiniMqtt(list[i]); await mq.connect(netId()); mq.pub(GLOBAL_LADDER.TOPIC + LADDER.id, msg, true); setTimeout(() => mq.close(), 800); } catch (e) {}
+  }
+}
+function glValid(m) { return m && typeof m.pid === 'string' && m.pid.length < 30 && typeof m.name === 'string' && typeof m.lp === 'number' && m.lp >= 0 && m.lp <= GLOBAL_LADDER.MAX_LP && Date.now() - (m.t || 0) < GLOBAL_LADDER.KEEP_DAYS * 864e5; }
+async function glOpen() {
+  if (GL.mq) return;
+  const r = await netConnect(0); if (!r) { GL.err = '連不上排行榜伺服器'; glRender(); return; }
+  GL.mq = r.mq; GL.rows = {};
+  r.mq.onmsg = (topic, text) => { let m; try { m = JSON.parse(text); } catch (e) { return; } if (!glValid(m)) return; m.name = String(m.name).slice(0, 8); GL.rows[m.pid] = m; if (GL.open) { clearTimeout(GL.rt); GL.rt = setTimeout(glRender, 200); } };
+  r.mq.onclose = () => { GL.mq = null; };
+  r.mq.sub(GLOBAL_LADDER.TOPIC + '+');
+  r.mq.pub(GLOBAL_LADDER.TOPIC + LADDER.id, JSON.stringify(glEntry()), true);
+  setTimeout(() => { GL.loaded = true; glRender(); }, GLOBAL_LADDER.WAIT_MS);
+}
+function glClose() { GL.open = false; if (GL.mq) { GL.mq.close(); GL.mq = null; } }
+function glRender() {
+  const box = document.getElementById('glList'); if (!box || !GL.open) return;
+  if (GL.err && !Object.keys(GL.rows).length) { box.innerHTML = `<small>${GL.err}，先顯示本機紀錄。</small>`; return; }
+  GL.rows[LADDER.id] = glEntry();
+  const all = Object.values(GL.rows).sort((a, b) => b.lp - a.lp || b.games - a.games), myRank = all.findIndex(r => r.pid === LADDER.id) + 1;
+  document.getElementById('glRank').textContent = GL.loaded ? `你是第 ${myRank} 名／共 ${all.length} 人` : '讀取中…';
+  box.innerHTML = all.slice(0, GLOBAL_LADDER.SHOW).map((r, i) => `<div class="lprow ${r.pid === LADDER.id ? 'me' : ''}"><span>${i + 1}</span><b>${esc(r.name)}${r.pid === LADDER.id ? '（你）' : ''}</b>${tierBadge(r.lp)}<em>${r.lp}</em></div>`).join('')
+    + (myRank > GLOBAL_LADDER.SHOW ? `<div class="lprow me"><span>${myRank}</span><b>${esc(netName())}（你）</b>${tierBadge(LADDER.lp)}<em>${LADDER.lp}</em></div>` : '');
+}
+setTimeout(() => { if (!netBlocked()) ladderPublish(); }, 4000); // 每次開遊戲重新登記自己
+
 function openLadder() {
   const rows = [{ name: '你（' + esc(netName()) + '）', lp: LADDER.lp, me: true }].concat(Object.values(LADDER.seen).map(s => ({ name: esc(s.name), lp: s.lp }))).sort((a, b) => b.lp - a.lp);
-  const wr = LADDER.games ? Math.round(LADDER.wins * 100 / LADDER.games) : 0;
+  const wr = LADDER.games ? Math.round(LADDER.wins * 100 / LADDER.games) : 0, online = !netBlocked();
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯</h2>
     <div class="lpme">${tierBadge(LADDER.lp)}<b>${LADDER.lp} LP</b><small>${LADDER.games} 場・第一名 ${LADDER.wins} 次（${wr}%）・前半名次 ${LADDER.top} 次</small></div>
     <div class="lpbar"><i style="width:${LADDER.lp >= 700 ? 100 : (LADDER.lp % 100)}%"></i></div>
-    <h3>排行榜</h3><div class="lplist">${rows.map((r, i) => `<div class="lprow ${r.me ? 'me' : ''}"><span>${i + 1}</span><b>${r.name}</b>${tierBadge(r.lp)}<em>${r.lp}</em></div>`).join('')}</div>
+    <label class="rnum">排行榜上的名字<input id="glName" maxlength="8" value="${esc(netName())}"></label>
+    ${online ? `<h3>全球排行榜 <small id="glRank">讀取中…</small></h3><div class="lplist" id="glList"><small>連線中…</small></div>` : '<p class="nethint">全球排行榜要用 GitHub 網址開才看得到。</p>'}
+    <h3>一起玩過的人</h3><div class="lplist">${rows.map((r, i) => `<div class="lprow ${r.me ? 'me' : ''}"><span>${i + 1}</span><b>${r.name}</b>${tierBadge(r.lp)}<em>${r.lp}</em></div>`).join('')}</div>
     <h3>最近戰績</h3><div class="lphist">${LADDER.hist.map(h => `<span class="${h.d >= 0 ? 'up' : 'dn'}" title="${new Date(h.t).toLocaleString()}">${h.n > 2 ? '#' + h.place : h.place === 1 ? '勝' : '敗'}<i>${h.d >= 0 ? '+' : ''}${h.d}</i><small>${h.mode}</small></span>`).join('') || '<small>還沒有戰績</small>'}</div>
-    <p class="nethint">牌位：${LADDER_CFG.TIERS.join(' → ')}，每 100 LP 一階。2 隊對戰贏 +${LADDER_CFG.WIN2}／輸 ${LADDER_CFG.LOSE2}；4 隊混戰依名次 ${LADDER_CFG.PLACE4.slice(1).map(x => (x > 0 ? '+' : '') + x).join('／')}；對手越強贏越多、輸越少。練習對 AI 只算一半。排行榜列出你和連線玩過的人（存在這台裝置）。</p>`;
-  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+    <p class="nethint">牌位：${LADDER_CFG.TIERS.join(' → ')}，每 100 LP 一階。2 隊對戰贏 +${LADDER_CFG.WIN2}／輸 ${LADDER_CFG.LOSE2}；4 隊混戰依名次 ${LADDER_CFG.PLACE4.slice(1).map(x => (x > 0 ? '+' : '') + x).join('／')}；對手越強贏越多、輸越少。練習對 AI 只算一半。全球排行榜即時更新，資料放在公用伺服器上。</p>`;
+  $('overlay').hidden = false;
+  $('mX').onclick = () => { $('overlay').hidden = true; glClose(); };
+  $('glName').onchange = e => { netSetName(e.target.value.trim().slice(0, 8) || '玩家'); ladderPublish(); glRender(); };
+  if (online) { GL.open = true; GL.err = ''; GL.loaded = false; glOpen(); }
 }
 
 // ===== 小彩蛋（純外觀，不影響數值）=====
