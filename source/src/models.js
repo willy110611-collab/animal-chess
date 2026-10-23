@@ -1,0 +1,795 @@
+// ===== 3D 大頭動物：球體拼裝、卡通著色、可動骨架（面向 +z）=====
+const GEO = {};
+function geos() {
+  if (GEO.sph) return GEO;
+  GEO.sph = new THREE.SphereGeometry(1, 22, 16);
+  GEO.sphLo = new THREE.SphereGeometry(1, 12, 8);
+  GEO.cone = new THREE.ConeGeometry(1, 1, 14);
+  GEO.cyl = new THREE.CylinderGeometry(1, 1, 1, 14);
+  GEO.disc = new THREE.CircleGeometry(1, 20);
+  GEO.torus = new THREE.TorusGeometry(1, 0.22, 10, 28);
+  GEO.box = new THREE.BoxGeometry(1, 1, 1);
+  GEO.cap = new THREE.CapsuleGeometry(0.5, 1, 6, 12);
+  return GEO;
+}
+let TOON_GRAD = null;
+function toonGrad() {
+  if (TOON_GRAD) return TOON_GRAD;
+  const d = new Uint8Array([105, 105, 105, 255, 175, 175, 175, 255, 228, 228, 228, 255, 255, 255, 255, 255]);
+  TOON_GRAD = new THREE.DataTexture(d, 4, 1, THREE.RGBAFormat);
+  TOON_GRAD.minFilter = TOON_GRAD.magFilter = THREE.NearestFilter; TOON_GRAD.needsUpdate = true;
+  return TOON_GRAD;
+}
+// 每隻單位各自一套材質（受擊閃白、夜行眼睛發光）
+function Mats() {
+  const cache = {}, list = [];
+  const f = (hex, opt) => {
+    const k = hex + (opt ? JSON.stringify(opt) : '');
+    if (cache[k]) return cache[k];
+    const m = opt && opt.basic ? new THREE.MeshBasicMaterial({ color: hex, transparent: !!opt.op, opacity: opt.op || 1, depthWrite: !opt.op })
+      : new THREE.MeshToonMaterial({ color: hex, gradientMap: toonGrad(), transparent: !!(opt && opt.op), opacity: (opt && opt.op) || 1 });
+    m.userData.op = m.opacity; cache[k] = m; list.push(m); return m;
+  };
+  f.list = list; return f;
+}
+function mesh(geo, mat, p, s, r) {
+  const m = new THREE.Mesh(geo, mat);
+  if (p) m.position.set(p[0], p[1], p[2]);
+  if (s) typeof s === 'number' ? m.scale.setScalar(s) : m.scale.set(s[0], s[1], s[2]);
+  if (r) m.rotation.set(r[0], r[1], r[2]);
+  return m;
+}
+function grp(parent, p, r) { const g = new THREE.Group(); if (p) g.position.set(p[0], p[1], p[2]); if (r) g.rotation.set(r[0], r[1], r[2]); if (parent) parent.add(g); return g; }
+function saveBase(g) { g.userData.b = { p: g.position.clone(), r: g.rotation.clone(), s: g.scale.clone() }; return g; }
+function resetG(g) { const b = g.userData.b; if (!b) return; g.position.copy(b.p); g.rotation.copy(b.r); g.scale.copy(b.s); }
+
+const INK3 = 0x2e221d;
+// ---- 共用部件 ----
+function addEyes(R, head, y, dx, z, size, glowCol) {
+  const em = R.M('#241914');
+  R.eyeMat = em; R.glow = glowCol || '#ffe27a';
+  for (const s of [-1, 1]) {
+    const e = mesh(GEO.sph, em, [s * dx, y, z], [size, size * 1.15, size * 0.6]);
+    head.add(e);
+    const hl = mesh(GEO.sphLo, R.M('#ffffff', { basic: 1 }), [s * dx + size * 0.35, y + size * 0.4, z + size * 0.45], size * 0.32);
+    head.add(hl);
+  }
+}
+function addBlush(R, head, y, dx, z) {
+  const m = R.M('#ee8f7d', { basic: 1, op: 0.45 });
+  for (const s of [-1, 1]) { const b = mesh(GEO.disc, m, [s * dx, y, z], [0.055, 0.035, 1], [0, s * 0.5, 0]); head.add(b); }
+}
+function triEar(R, head, x, y, z, col, inner, h, tilt) {
+  const g = saveBase(grp(head, [x, y, z], [0, 0, -Math.sign(x) * (tilt || 0.25)]));
+  g.add(mesh(GEO.cone, R.M(col), [0, h / 2, 0], [h * 0.42, h, h * 0.28]));
+  if (inner) g.add(mesh(GEO.cone, R.M(inner), [0, h * 0.45, 0.045], [h * 0.25, h * 0.7, h * 0.12]));
+  return g;
+}
+function roundEar(R, head, x, y, z, col, inner, r) {
+  const g = saveBase(grp(head, [x, y, z]));
+  g.add(mesh(GEO.sph, R.M(col), [0, 0, 0], [r, r, r * 0.55]));
+  if (inner) g.add(mesh(GEO.sph, R.M(inner), [0, 0, r * 0.3], [r * 0.62, r * 0.62, r * 0.3]));
+  return g;
+}
+// 標準 Q 版站姿：大頭小身
+function plush(R, o) {
+  const M = R.M;
+  const body = R.body = saveBase(grp(R.yaw, [0, 0, 0]));
+  const bw = o.bodyW || 0.25, bh = o.bodyH || 0.27;
+  R.torso = saveBase(mesh(GEO.sph, M(o.fur), [0, 0.27, 0], [bw, bh, bw * 0.92])); body.add(R.torso);
+  if (o.belly) body.add(mesh(GEO.sph, M(o.belly), [0, 0.25, bw * 0.48], [bw * 0.66, bh * 0.72, bw * 0.5]));
+  // 腳
+  for (const s of [-1, 1]) {
+    const leg = saveBase(grp(body, [s * 0.12, 0.13, 0.02]));
+    leg.add(mesh(GEO.sph, M(o.limb || o.fur), [0, -0.07, 0.05], [0.085, 0.065, 0.11]));
+    if (s < 0) R.legL = leg; else R.legR = leg;
+  }
+  // 手（樞紐在肩）
+  for (const s of [-1, 1]) {
+    const arm = saveBase(grp(body, [s * (bw * 0.82), 0.37, 0.04]));
+    arm.add(mesh(GEO.sph, M(o.limb || o.fur), [0, -0.1, 0.02], [0.065, 0.12, 0.07]));
+    if (o.paw) arm.add(mesh(GEO.sph, M(o.paw), [0, -0.2, 0.04], [0.05, 0.035, 0.05]));
+    if (s < 0) R.armL = arm; else R.armR = arm;
+  }
+  // 頭
+  const hr = o.headR || 0.31;
+  R.headR = hr;
+  R.head = saveBase(grp(body, [0, 0.5, 0]));
+  R.head.add(mesh(GEO.sph, M(o.headCol || o.fur), [0, hr * 0.72, 0], [hr, hr * 0.9, hr * 0.92]));
+  R.headTop = hr * 1.55 + 0.5;
+  if (o.muzzle) R.head.add(mesh(GEO.sph, M(o.muzzle), [0, hr * 0.5, hr * 0.72], [hr * 0.42, hr * 0.3, hr * 0.32]));
+  if (o.nose) R.head.add(mesh(GEO.sph, M(o.nose), [0, hr * 0.62, hr * 0.98], [hr * 0.11, hr * 0.08, hr * 0.07]));
+  addEyes(R, R.head, hr * 0.8, hr * 0.36, hr * 0.84, hr * 0.1);
+  if (o.blush !== false) addBlush(R, R.head, hr * 0.52, hr * 0.56, hr * 0.78);
+  return body;
+}
+function bushyTail(R, parent, pts, col, tip, r0) {
+  const g = saveBase(grp(parent, [0, 0.2, -0.2]));
+  pts.forEach((p, i) => g.add(mesh(GEO.sph, R.M(i === pts.length - 1 && tip ? tip : col), p, (r0 || 0.11) * (1 - i * 0.06))));
+  R.tail = g; return g;
+}
+
+// ---- 各動物 ----
+const BUILD = {
+  hedgehog(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#5d6779'), [0, 0.27, -0.04], [0.33, 0.27, 0.34])); R.body.add(R.torso);
+    const sp = R.spikes = saveBase(grp(R.body, [0, 0.27, -0.04]));
+    const sm = M('#454d5e'), sm2 = M('#6e7890');
+    for (let i = 0; i < 34; i++) {
+      const a = (i * 2.399) % (Math.PI * 2), t = 0.15 + (i / 34) * 0.85, el = Math.acos(1 - t) * 0.95;
+      const dir = new THREE.Vector3(Math.sin(el) * Math.cos(a), Math.cos(el), Math.sin(el) * Math.sin(a));
+      if (dir.z > 0.55 && dir.y < 0.7) continue;
+      const c = mesh(GEO.cone, i % 3 ? sm : sm2, [dir.x * 0.3, dir.y * 0.25, dir.z * 0.31 - 0.02], [0.05, 0.2, 0.05]);
+      c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize()); sp.add(c);
+    }
+    R.head = saveBase(grp(R.body, [0, 0.2, 0.2]));
+    R.head.add(mesh(GEO.sph, M('#ecd29a'), [0, 0.07, 0.04], [0.21, 0.19, 0.18]));
+    R.head.add(mesh(GEO.sph, M('#ecd29a'), [0, 0.03, 0.2], [0.09, 0.075, 0.12]));
+    R.head.add(mesh(GEO.sph, M('#2e221d'), [0, 0.05, 0.32], [0.035, 0.03, 0.03]));
+    roundEar(R, R.head, -0.13, 0.2, 0.0, '#d9b97f', '#f1d9b0', 0.05); roundEar(R, R.head, 0.13, 0.2, 0.0, '#d9b97f', '#f1d9b0', 0.05);
+    addEyes(R, R.head, 0.12, 0.09, 0.19, 0.03); addBlush(R, R.head, 0.03, 0.13, 0.17);
+    for (const s of [-1, 1]) { const l = saveBase(grp(R.body, [s * 0.15, 0.06, 0.1])); l.add(mesh(GEO.sph, M('#c9ad78'), [0, -0.03, 0.03], [0.06, 0.045, 0.08])); s < 0 ? (R.armL = l) : (R.armR = l); }
+    R.headR = 0.2; R.headTop = 0.62;
+  },
+  squirrel(R) {
+    plush(R, { fur: '#c8743a', belly: '#f3dcb5', muzzle: '#f3dcb5', nose: '#3a2620', paw: '#a65d2c', headR: 0.28 });
+    triEar(R, R.head, -0.15, 0.4, -0.02, '#a65d2c', '#e9b27e', 0.17); triEar(R, R.head, 0.15, 0.4, -0.02, '#a65d2c', '#e9b27e', 0.17);
+    bushyTail(R, R.body, [[0.04, 0, 0], [0.1, 0.16, -0.1], [0.17, 0.34, -0.12], [0.22, 0.52, -0.08], [0.24, 0.68, 0.0], [0.2, 0.78, 0.08]], '#c8743a', '#e9b27e', 0.17);
+    R.prop = mesh(GEO.sph, R.M('#b07a42'), [0, -0.2, 0.08], [0.05, 0.06, 0.05]); R.armR.add(R.prop);
+  },
+  wolf(R) {
+    plush(R, { fur: '#8e959e', belly: '#e9e3d6', muzzle: '#e9e3d6', nose: '#2e221d', headR: 0.29 });
+    R.head.children[1].scale.set(0.15, 0.1, 0.17); R.head.children[1].position.z = 0.26;
+    triEar(R, R.head, -0.16, 0.4, -0.03, '#737a84', '#d9a7a0', 0.2, 0.18); triEar(R, R.head, 0.16, 0.4, -0.03, '#737a84', '#d9a7a0', 0.2, 0.18);
+    R.jaw = saveBase(grp(R.head, [0, 0.1, 0.18])); R.jaw.add(mesh(GEO.sph, R.M('#d9d1c2'), [0, 0, 0.05], [0.09, 0.03, 0.08]));
+    bushyTail(R, R.body, [[0, 0, 0], [0.04, 0.02, -0.12], [0.08, 0.08, -0.22]], '#7b828c', '#e9e3d6', 0.1);
+  },
+  frog(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#6fa35a'), [0, 0.24, 0], [0.34, 0.24, 0.3])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#e3e7b0'), [0, 0.2, 0.13], [0.24, 0.15, 0.2]));
+    R.head = saveBase(grp(R.body, [0, 0.32, 0.02]));
+    for (const s of [-1, 1]) {
+      R.head.add(mesh(GEO.sph, M('#6fa35a'), [s * 0.16, 0.12, 0.06], 0.11));
+      R.head.add(mesh(GEO.sph, M('#f7f2df'), [s * 0.16, 0.14, 0.13], [0.07, 0.07, 0.05]));
+    }
+    R.eyeMat = M('#241914'); R.glow = '#ffe27a';
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.16, 0.14, 0.17], [0.04, 0.045, 0.025]));
+    R.mouth = saveBase(mesh(GEO.torus, M('#3a2620'), [0, -0.01, 0.2], [0.14, 0.05, 0.08], [0.2, 0, 0])); R.head.add(R.mouth);
+    addBlush(R, R.head, 0.01, 0.2, 0.17);
+    for (const s of [-1, 1]) {
+      const l = saveBase(grp(R.body, [s * 0.27, 0.1, -0.04])); l.add(mesh(GEO.sph, M('#5a8a48'), [0, 0, 0], [0.13, 0.09, 0.17]));
+      l.add(mesh(GEO.sph, M('#5a8a48'), [s * 0.04, -0.08, 0.13], [0.09, 0.03, 0.07])); s < 0 ? (R.legL = l) : (R.legR = l);
+      const a = saveBase(grp(R.body, [s * 0.15, 0.12, 0.2])); a.add(mesh(GEO.sph, M('#5a8a48'), [0, -0.05, 0.02], [0.05, 0.08, 0.05])); s < 0 ? (R.armL = a) : (R.armR = a);
+    }
+    R.tongue = mesh(GEO.cap, M('#e98a9a'), [0, 0, 0], [0.05, 1, 0.05]); R.tongue.visible = false; R.yaw.add(R.tongue);
+    R.headR = 0.25; R.headTop = 0.6;
+  },
+  bat(R) {
+    const M = R.M;
+    R.fly = 0.42;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#5b4766'), [0, 0.24, 0], [0.17, 0.2, 0.16])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#8a7393'), [0, 0.22, 0.08], [0.11, 0.13, 0.09]));
+    R.head = saveBase(grp(R.body, [0, 0.4, 0]));
+    R.head.add(mesh(GEO.sph, M('#5b4766'), [0, 0.12, 0], [0.22, 0.19, 0.2]));
+    triEar(R, R.head, -0.13, 0.24, -0.02, '#4a3955', '#c98fa0', 0.2, 0.35); triEar(R, R.head, 0.13, 0.24, -0.02, '#4a3955', '#c98fa0', 0.2, 0.35);
+    addEyes(R, R.head, 0.15, 0.08, 0.17, 0.028, '#ff5a5a'); addBlush(R, R.head, 0.07, 0.13, 0.16);
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.cone, M('#ffffff'), [s * 0.035, 0.03, 0.19], [0.015, 0.04, 0.015], [Math.PI, 0, 0]));
+    // 翅膀：扇形翼膜（波浪下緣）＋沿上緣的翼骨，雙面著色，從側面看也不會變成一條線
+    const ws = new THREE.Shape(); ws.moveTo(0, 0.04); ws.lineTo(0.56, 0.14);
+    ws.quadraticCurveTo(0.5, -0.02, 0.44, -0.12); ws.quadraticCurveTo(0.38, -0.02, 0.3, -0.16); ws.quadraticCurveTo(0.22, -0.04, 0.14, -0.14); ws.quadraticCurveTo(0.06, -0.06, 0, -0.08); ws.lineTo(0, 0.04);
+    const wgeo = new THREE.ShapeGeometry(ws, 6);
+    const wmat = new THREE.MeshToonMaterial({ color: '#3f3149', gradientMap: toonGrad(), side: THREE.DoubleSide }); wmat.userData.op = 1; R.M.list.push(wmat);
+    const bmat = M('#2d2236');
+    for (const s of [-1, 1]) {
+      const w = saveBase(grp(R.body, [s * 0.13, 0.3, -0.04], [0, s * 0.35, 0]));
+      const mem = new THREE.Mesh(wgeo, wmat); mem.scale.x = s; w.add(mem);
+      const bone = (x0, y0, x1, y1, r) => { const len = Math.hypot(x1 - x0, y1 - y0); const b = mesh(GEO.cyl, bmat, [s * (x0 + x1) / 2, (y0 + y1) / 2, 0.004], [r, len, r], [0, 0, s * (Math.atan2(y1 - y0, x1 - x0) - Math.PI / 2)]); w.add(b); };
+      bone(0, 0.04, 0.56, 0.14, 0.013); bone(0.02, 0.03, 0.44, -0.1, 0.007); bone(0.02, 0.02, 0.3, -0.14, 0.007); bone(0.02, 0.01, 0.14, -0.12, 0.007);
+      w.add(mesh(GEO.sph, bmat, [s * 0.56, 0.14, 0], 0.02));
+      s < 0 ? (R.wingL = w) : (R.wingR = w);
+    }
+    for (const s of [-1, 1]) { const l = saveBase(grp(R.body, [s * 0.06, 0.06, 0])); l.add(mesh(GEO.sph, M('#3f3149'), [0, -0.02, 0], [0.04, 0.05, 0.04])); s < 0 ? (R.legL = l) : (R.legR = l); }
+    R.headR = 0.2; R.headTop = 0.85;
+  },
+  redpanda(R) {
+    plush(R, { fur: '#a8442c', limb: '#4a2a22', belly: '#4a2a22', muzzle: '#f4ead8', nose: '#2e221d', headR: 0.3 });
+    const hr = 0.3;
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, R.M('#f4ead8'), [s * 0.12, hr * 1.05, hr * 0.8], [0.05, 0.03, 0.03]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, R.M('#7a2e1e'), [s * 0.11, hr * 0.55, hr * 0.86], [0.025, 0.07, 0.02], [0, 0, s * 0.3]));
+    triEar(R, R.head, -0.18, 0.42, -0.02, '#8e3824', '#f4ead8', 0.17, 0.4); triEar(R, R.head, 0.18, 0.42, -0.02, '#8e3824', '#f4ead8', 0.17, 0.4);
+    const t = saveBase(grp(R.body, [0, 0.15, -0.2])); R.tail = t;
+    for (let i = 0; i < 6; i++) t.add(mesh(GEO.sph, R.M(i % 2 ? '#e8c49a' : '#a8442c'), [Math.sin(i * 0.5) * 0.06, i * 0.035, -i * 0.07], 0.1 - i * 0.004));
+  },
+  skunk(R) {
+    plush(R, { fur: '#2f2b33', belly: '#4a4550', muzzle: '#4a4550', nose: '#e98a9a', headR: 0.29 });
+    R.head.add(mesh(GEO.sph, R.M('#f2efe8'), [0, 0.36, 0.12], [0.05, 0.15, 0.17], [0.4, 0, 0]));
+    roundEar(R, R.head, -0.18, 0.4, -0.02, '#211e25', '#4a4550', 0.07); roundEar(R, R.head, 0.18, 0.4, -0.02, '#211e25', '#4a4550', 0.07);
+    R.body.add(mesh(GEO.sph, R.M('#f2efe8'), [0, 0.42, -0.12], [0.05, 0.14, 0.12]));
+    const t = saveBase(grp(R.body, [0, 0.18, -0.22])); R.tail = t;
+    const pts = [[0.04, 0, 0], [0.1, 0.16, -0.1], [0.17, 0.36, -0.12], [0.22, 0.56, -0.06], [0.22, 0.72, 0.04]];
+    pts.forEach((p, i) => { t.add(mesh(GEO.sph, R.M('#2f2b33'), p, 0.16 - i * 0.01)); t.add(mesh(GEO.sph, R.M('#f2efe8'), [p[0] - 0.05, p[1] + 0.02, p[2] + 0.04], [0.06, 0.11, 0.12])); });
+  },
+  croc(R) {
+    plush(R, { fur: '#5e8a4a', belly: '#d8d7a0', headR: 0.28, blush: false });
+    const hr = 0.28, M = R.M;
+    R.head.children[0].scale.set(0.27, 0.2, 0.26); R.head.children[0].position.y = 0.16;
+    R.jawU = saveBase(grp(R.head, [0, 0.16, 0.12]));
+    R.jawU.add(mesh(GEO.sph, M('#6e9a58'), [0, 0.02, 0.18], [0.2, 0.08, 0.24]));
+    for (let i = 0; i < 7; i++) R.jawU.add(mesh(GEO.cone, M('#ffffff'), [-0.15 + i * 0.05, -0.05, 0.14 + Math.cos((i - 3) / 3) * 0.1], [0.015, 0.035, 0.015], [Math.PI, 0, 0]));
+    for (const s of [-1, 1]) R.jawU.add(mesh(GEO.sph, M('#2e221d'), [s * 0.05, 0.08, 0.38], 0.015));
+    R.jaw = saveBase(grp(R.head, [0, 0.08, 0.1])); R.jaw.add(mesh(GEO.sph, M('#d8d7a0'), [0, 0, 0.16], [0.17, 0.05, 0.2]));
+    R.eyeMat = M('#241914'); R.glow = '#ffe27a';
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, M('#5e8a4a'), [s * 0.11, 0.33, 0.04], 0.075)); R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.11, 0.35, 0.1], [0.03, 0.035, 0.02])); }
+    for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#4c7339'), [0, 0.45 - i * 0.1, -0.2 - i * 0.02], 0.045));
+    const t = saveBase(grp(R.body, [0, 0.12, -0.2])); R.tail = t; t.add(mesh(GEO.cone, M('#5e8a4a'), [0, 0, -0.2], [0.13, 0.42, 0.08], [-1.45, 0, 0]));
+    R.headTop = 0.95;
+  },
+  bee(R) {
+    const M = R.M;
+    R.fly = 0.38;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#f2c14e'), [0, 0.2, -0.04], [0.2, 0.19, 0.22])); R.body.add(R.torso);
+    for (const [y, r] of [[0.24, 0.19], [0.13, 0.15]]) R.body.add(mesh(GEO.torus, M('#3a2e28'), [0, y, -0.04], [r, r, 0.22], [Math.PI / 2, 0, 0]));
+    R.body.add(mesh(GEO.cone, M('#3a2e28'), [0, 0.06, -0.18], [0.035, 0.1, 0.035], [-2.3, 0, 0]));
+    R.head = saveBase(grp(R.body, [0, 0.36, 0.03]));
+    R.head.add(mesh(GEO.sph, M('#f6cf63'), [0, 0.12, 0], [0.25, 0.23, 0.23]));
+    addEyes(R, R.head, 0.15, 0.09, 0.2, 0.033); addBlush(R, R.head, 0.07, 0.15, 0.19);
+    R.head.add(mesh(GEO.torus, M('#3a2620'), [0, 0.05, 0.215], [0.035, 0.025, 0.03], [0, 0, Math.PI]));
+    for (const s of [-1, 1]) {
+      const a = saveBase(grp(R.head, [s * 0.08, 0.3, 0.06], [0.3, 0, -s * 0.4])); a.add(mesh(GEO.cyl, M('#3a2e28'), [0, 0.08, 0], [0.012, 0.16, 0.012])); a.add(mesh(GEO.sph, M('#3a2e28'), [0, 0.17, 0], 0.03));
+      s < 0 ? (R.earL = a) : (R.earR = a);
+      const w = saveBase(grp(R.body, [s * 0.1, 0.36, -0.15])); w.add(mesh(GEO.sph, M('#dcebf2', { op: 0.75 }), [s * 0.13, 0.08, 0], [0.15, 0.1, 0.02], [0, 0, s * 0.5]));
+      s < 0 ? (R.wingL = w) : (R.wingR = w);
+    }
+    R.headR = 0.25; R.headTop = 0.85;
+  },
+  koala(R) {
+    plush(R, { fur: '#8f9fae', belly: '#c9d1d8', headR: 0.32, paw: '#76879a' });
+    R.head.add(mesh(GEO.sph, R.M('#3a3338'), [0, 0.22, 0.29], [0.07, 0.09, 0.06]));
+    roundEar(R, R.head, -0.27, 0.36, -0.02, '#8f9fae', '#ece6dc', 0.13); roundEar(R, R.head, 0.27, 0.36, -0.02, '#8f9fae', '#ece6dc', 0.13);
+  },
+  cheetah(R) {
+    plush(R, { fur: '#e3b04b', belly: '#f6e7c4', muzzle: '#f6e7c4', nose: '#2e221d', headR: 0.28, bodyW: 0.22 });
+    const sp = R.M('#5a3a1e');
+    [[0.1, 0.32, 0.17], [-0.12, 0.28, 0.15], [0.16, 0.2, 0.08], [-0.16, 0.36, 0.06], [0.05, 0.4, -0.18], [-0.08, 0.2, -0.18]].forEach(p => R.body.add(mesh(GEO.sph, sp, p, [0.025, 0.025, 0.012])));
+    [[0.16, 0.34, 0.16], [-0.17, 0.3, 0.15], [-0.08, 0.4, -0.2]].forEach(p => R.head.add(mesh(GEO.sph, sp, p, [0.022, 0.022, 0.012])));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.cap, sp, [s * 0.085, 0.15, 0.255], [0.011, 0.07, 0.011], [0.25, 0, s * 0.12]));
+    roundEar(R, R.head, -0.18, 0.4, -0.02, '#c99437', '#f6e7c4', 0.06); roundEar(R, R.head, 0.18, 0.4, -0.02, '#c99437', '#f6e7c4', 0.06);
+    const t = saveBase(grp(R.body, [0, 0.14, -0.18])); R.tail = t;
+    for (let i = 0; i < 6; i++) t.add(mesh(GEO.sph, R.M(i % 2 ? '#5a3a1e' : '#e3b04b'), [0.02 * i, 0.03 * i, -0.06 * i], 0.05));
+  },
+  octopus(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.head = saveBase(grp(R.body, [0, 0.3, 0]));
+    R.torso = saveBase(mesh(GEO.sph, M('#d46a6a'), [0, 0.2, 0], [0.3, 0.34, 0.3])); R.head.add(R.torso);
+    [[0.12, 0.42, 0.18], [-0.15, 0.36, 0.2], [0.2, 0.25, 0.18], [-0.05, 0.5, 0.1]].forEach(p => R.head.add(mesh(GEO.sph, M('#e89a8a'), p, [0.045, 0.045, 0.02])));
+    addEyes(R, R.head, 0.16, 0.11, 0.27, 0.045); addBlush(R, R.head, 0.06, 0.19, 0.24);
+    R.head.add(mesh(GEO.torus, M('#7a2e2e'), [0, 0.05, 0.29], [0.025, 0.025, 0.02]));
+    R.tents = [];
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + 0.3;
+      const t = saveBase(grp(R.body, [Math.sin(a) * 0.17, 0.18, Math.cos(a) * 0.17], [0, a, 0]));
+      const segs = [];
+      let parent = t;
+      for (let k = 0; k < 4; k++) { const s = saveBase(grp(parent, [0, -0.02, k ? 0.07 : 0])); s.add(mesh(GEO.sph, M(k % 2 ? '#c25858' : '#d46a6a'), [0, 0, 0.03], 0.065 - k * 0.011)); segs.push(s); parent = s; }
+      R.tents.push(segs);
+    }
+    R.headR = 0.3; R.headTop = 0.9;
+  },
+  owl(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#8b6a4e'), [0, 0.32, 0], [0.27, 0.34, 0.25])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#e9d6b4'), [0, 0.25, 0.12], [0.18, 0.2, 0.15]));
+    for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.cone, M('#b8946e'), [-0.06 + i * 0.06, 0.25, 0.26], [0.02, 0.03, 0.01], [0, 0, Math.PI]));
+    R.head = saveBase(grp(R.body, [0, 0.5, 0]));
+    R.head.add(mesh(GEO.sph, M('#8b6a4e'), [0, 0.15, 0], [0.29, 0.25, 0.26]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#e9d6b4'), [s * 0.11, 0.15, 0.17], [0.11, 0.11, 0.08]));
+    R.eyeMat = M('#241914'); R.glow = '#ffcf3a';
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.11, 0.15, 0.24], [0.055, 0.06, 0.03])); R.head.add(mesh(GEO.sphLo, M('#ffffff', { basic: 1 }), [s * 0.11 + 0.02, 0.18, 0.265], 0.016)); }
+    R.head.add(mesh(GEO.cone, M('#e09a3a'), [0, 0.07, 0.27], [0.03, 0.07, 0.03], [Math.PI * 0.85, 0, 0]));
+    triEar(R, R.head, -0.18, 0.32, -0.02, '#755841', null, 0.13, 0.5); triEar(R, R.head, 0.18, 0.32, -0.02, '#755841', null, 0.13, 0.5);
+    for (const s of [-1, 1]) {
+      const w = saveBase(grp(R.body, [s * 0.24, 0.42, -0.02])); w.add(mesh(GEO.sph, M('#6e523c'), [0, -0.13, 0], [0.07, 0.17, 0.13]));
+      s < 0 ? (R.wingL = w) : (R.wingR = w);
+      const l = saveBase(grp(R.body, [s * 0.09, 0.04, 0.08])); l.add(mesh(GEO.sph, M('#e09a3a'), [0, -0.02, 0.02], [0.05, 0.03, 0.06])); s < 0 ? (R.legL = l) : (R.legR = l);
+    }
+    R.armL = R.wingL; R.armR = R.wingR;
+    R.headR = 0.28; R.headTop = 0.98;
+  },
+  elephant(R) {
+    plush(R, { fur: '#8c98a6', belly: '#a3aebb', headR: 0.32, bodyW: 0.3, bodyH: 0.3 });
+    const M = R.M;
+    for (const s of [-1, 1]) {
+      const e = saveBase(grp(R.head, [s * 0.28, 0.24, -0.02], [0, s * 0.35, 0]));
+      e.add(mesh(GEO.sph, M('#76838f'), [s * 0.1, 0, 0], [0.2, 0.24, 0.04])); e.add(mesh(GEO.sph, M('#c9a9a6'), [s * 0.1, 0, 0.03], [0.14, 0.17, 0.02]));
+      s < 0 ? (R.earL = e) : (R.earR = e);
+      R.head.add(mesh(GEO.cone, M('#f4ecd8'), [s * 0.1, 0.08, 0.27], [0.025, 0.12, 0.025], [2.3, 0, -s * 0.3]));
+    }
+    R.trunk = [];
+    let parent = saveBase(grp(R.head, [0, 0.2, 0.28], [0.25, 0, 0]));
+    R.trunk.push(parent);
+    for (let i = 0; i < 5; i++) { parent.add(mesh(GEO.sph, M('#8c98a6'), [0, -0.04, 0.01], [0.075 - i * 0.008, 0.07, 0.075 - i * 0.008])); const n = saveBase(grp(parent, [0, -0.07, 0.01], [0.18, 0, 0])); R.trunk.push(n); parent = n; }
+    R.headTop = 1.0;
+  },
+  lion(R) {
+    plush(R, { fur: '#d9a24a', belly: '#f5e2b8', muzzle: '#f5e2b8', nose: '#5a3220', headR: 0.27 });
+    const mane = R.mane = saveBase(grp(R.head, [0, 0.2, -0.05]));
+    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; mane.add(mesh(GEO.sph, R.M(i % 2 ? '#9a5226' : '#b0622e'), [Math.cos(a) * 0.29, Math.sin(a) * 0.27, -0.02], 0.12)); }
+    mane.add(mesh(GEO.sph, R.M('#b0622e'), [0, 0, -0.06], [0.33, 0.31, 0.12]));
+    mane.add(mesh(GEO.sph, R.M('#9a5226'), [0, -0.02, -0.17], [0.31, 0.3, 0.16]));
+    roundEar(R, R.head, -0.18, 0.36, 0.02, '#c48d3c', '#f5e2b8', 0.06); roundEar(R, R.head, 0.18, 0.36, 0.02, '#c48d3c', '#f5e2b8', 0.06);
+    R.jaw = saveBase(grp(R.head, [0, 0.1, 0.2])); R.jaw.add(mesh(GEO.sph, R.M('#e9cf9c'), [0, 0, 0.02], [0.08, 0.03, 0.05]));
+    const t = saveBase(grp(R.body, [0, 0.12, -0.2])); R.tail = t; t.add(mesh(GEO.cyl, R.M('#c48d3c'), [0, 0.12, -0.08], [0.02, 0.3, 0.02], [-0.6, 0, 0])); t.add(mesh(GEO.sph, R.M('#9a5226'), [0, 0.25, -0.17], 0.05));
+    R.headTop = 1.05;
+  },
+  hare(R) {
+    plush(R, { fur: '#cdb79a', belly: '#efe3cf', muzzle: '#efe3cf', nose: '#c96b6b', headR: 0.26 });
+    for (const s of [-1, 1]) { const e = saveBase(grp(R.head, [s * 0.08, 0.4, -0.02], [0, 0, -s * 0.15])); e.add(mesh(GEO.sph, R.M('#b9a283'), [0, 0.17, 0], [0.05, 0.19, 0.035])); e.add(mesh(GEO.sph, R.M('#e8b8b0'), [0, 0.17, 0.02], [0.028, 0.14, 0.02])); s < 0 ? (R.earL = e) : (R.earR = e); }
+    R.headTop = 1.05;
+  },
+  boar(R) {
+    plush(R, { fur: '#6e4e3a', headR: 0.29, bodyW: 0.3, limb: '#4e3628', blush: false });
+    R.head.add(mesh(GEO.sph, R.M('#c98d7a'), [0, 0.14, 0.26], [0.1, 0.075, 0.07]));
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, R.M('#2e221d'), [s * 0.035, 0.15, 0.32], 0.015)); R.head.add(mesh(GEO.cone, R.M('#f4ecd8'), [s * 0.1, 0.12, 0.25], [0.02, 0.09, 0.02], [0, 0, -s * 0.4])); }
+    triEar(R, R.head, -0.17, 0.36, 0, '#5a3f2e', null, 0.11, 0.6); triEar(R, R.head, 0.17, 0.36, 0, '#5a3f2e', null, 0.11, 0.6);
+    for (let i = 0; i < 6; i++) R.head.add(mesh(GEO.cone, R.M('#4e3628'), [0, 0.43 - i * 0.03, -0.05 - i * 0.06], [0.03, 0.09, 0.03], [-0.5 - i * 0.2, 0, 0]));
+  },
+};
+// ---- v0.5 新動物 ----
+Object.assign(BUILD, {
+  penguin(R) {
+    plush(R, { fur: '#2f3440', belly: '#f4f1ea', headR: 0.28, limb: '#2f3440', bodyW: 0.27, bodyH: 0.29 });
+    const M = R.M, hr = 0.28;
+    R.head.add(mesh(GEO.sph, M('#f4f1ea'), [0, hr * 0.62, hr * 0.5], [0.22, 0.17, 0.14]));
+    R.head.add(mesh(GEO.cone, M('#f0a030'), [0, hr * 0.55, hr * 1.02], [0.045, 0.09, 0.035], [Math.PI / 2, 0, 0]));
+    for (const a of [R.armL, R.armR]) { a.children[0].scale.set(0.035, 0.15, 0.085); a.children[0].position.y = -0.12; }
+    for (const l of [R.legL, R.legR]) { l.children[0].material = M('#f0a030'); l.children[0].scale.set(0.08, 0.03, 0.12); }
+    R.body.add(mesh(GEO.sph, M('#f2c14e'), [0, 0.47, 0.17], [0.09, 0.03, 0.05]));
+    R.headTop = 0.98;
+  },
+  rhino(R) {
+    plush(R, { fur: '#8e8a86', belly: '#aaa49d', headR: 0.29, bodyW: 0.31, bodyH: 0.29, limb: '#7a7672', blush: false });
+    const M = R.M;
+    R.head.add(mesh(GEO.sph, M('#9c9893'), [0, 0.13, 0.22], [0.17, 0.13, 0.17]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#5a5450'), [s * 0.05, 0.12, 0.38], [0.015, 0.02, 0.01]));
+    R.horn = saveBase(grp(R.head, [0, 0.2, 0.3], [0.35, 0, 0]));
+    R.horn.add(mesh(GEO.cone, M('#e8dcc0'), [0, 0.1, 0], [0.065, 0.22, 0.065]));
+    R.horn.add(mesh(GEO.cone, M('#e8dcc0'), [0, 0.03, -0.12], [0.04, 0.1, 0.04]));
+    triEar(R, R.head, -0.17, 0.4, -0.04, '#7a7672', '#d9b0a8', 0.13, 0.5); triEar(R, R.head, 0.17, 0.4, -0.04, '#7a7672', '#d9b0a8', 0.13, 0.5);
+    for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.sph, M('#7f7b77'), [0, 0.42 - i * 0.08, -0.22], [0.2, 0.03, 0.06]));
+    const t = saveBase(grp(R.body, [0, 0.16, -0.26])); R.tail = t; t.add(mesh(GEO.cyl, M('#7a7672'), [0, -0.04, -0.03], [0.015, 0.12, 0.015], [-0.4, 0, 0])); t.add(mesh(GEO.sph, M('#4a4542'), [0, -0.1, -0.05], 0.025));
+    R.headTop = 1.0;
+  },
+  chameleon(R) {
+    plush(R, { fur: '#6cbf5c', belly: '#d8ef9a', headR: 0.27, limb: '#58a84a', blush: true });
+    const M = R.M;
+    R.head.add(mesh(GEO.cone, M('#58a84a'), [0, 0.42, -0.08], [0.16, 0.2, 0.08], [-0.5, 0, 0]));
+    for (const s of [-1, 1]) {
+      R.head.add(mesh(GEO.sph, M('#6cbf5c'), [s * 0.2, 0.24, 0.12], [0.1, 0.1, 0.1]));
+      R.head.add(mesh(GEO.sph, M('#f7f2df'), [s * 0.24, 0.25, 0.16], [0.045, 0.05, 0.04]));
+    }
+    for (let i = 0; i < 5; i++) R.body.add(mesh(GEO.cone, M('#4f9a40'), [0, 0.5 - i * 0.07, -0.2 - i * 0.02], [0.025, 0.05, 0.025], [-0.6, 0, 0]));
+    [[0.12, 0.3, 0.2], [-0.15, 0.24, 0.17], [0.18, 0.2, 0.05]].forEach(p => R.body.add(mesh(GEO.sph, M('#f2b84a'), p, [0.03, 0.03, 0.015])));
+    const t = saveBase(grp(R.body, [0, 0.12, -0.24])); R.tail = t;
+    t.add(mesh(new THREE.TorusGeometry(0.1, 0.035, 8, 20, Math.PI * 1.6), M('#58a84a'), [0, 0.04, -0.08], 1, [0, Math.PI / 2, 0]));
+    R.tongue = mesh(GEO.cap, M('#e98a9a'), [0, 0, 0], [0.05, 1, 0.05]); R.tongue.visible = false; R.yaw.add(R.tongue);
+    R.headTop = 1.02;
+  },
+  fox(R) {
+    plush(R, { fur: '#e07a34', belly: '#fbeedd', muzzle: '#fbeedd', nose: '#2e221d', headR: 0.28, limb: '#4a2e22', bodyW: 0.23 });
+    R.head.children[1].scale.set(0.13, 0.09, 0.17); R.head.children[1].position.z = 0.25;
+    triEar(R, R.head, -0.16, 0.4, -0.03, '#d06a28', '#3a2620', 0.24, 0.22); triEar(R, R.head, 0.16, 0.4, -0.03, '#d06a28', '#3a2620', 0.24, 0.22);
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, R.M('#fbeedd'), [s * 0.14, 0.12, 0.17], [0.09, 0.07, 0.07]));
+    R.jaw = saveBase(grp(R.head, [0, 0.1, 0.2])); R.jaw.add(mesh(GEO.sph, R.M('#f2dcc4'), [0, 0, 0.03], [0.07, 0.025, 0.07]));
+    bushyTail(R, R.body, [[0, 0, 0], [0.06, 0.08, -0.12], [0.12, 0.2, -0.2], [0.15, 0.34, -0.22], [0.14, 0.46, -0.18]], '#e07a34', '#fbeedd', 0.15);
+  },
+  eagle(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#6b4a32'), [0, 0.3, 0], [0.25, 0.3, 0.24])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#8a6444'), [0, 0.26, 0.11], [0.16, 0.2, 0.14]));
+    R.head = saveBase(grp(R.body, [0, 0.5, 0.02]));
+    R.head.add(mesh(GEO.sph, M('#f4efe6'), [0, 0.14, 0], [0.25, 0.23, 0.24]));
+    R.head.add(mesh(GEO.sph, M('#f4efe6'), [0, 0.0, -0.04], [0.2, 0.1, 0.2]));
+    R.beak = saveBase(grp(R.head, [0, 0.1, 0.22]));
+    R.beak.add(mesh(GEO.sph, M('#f2c14e'), [0, 0.0, 0.02], [0.07, 0.055, 0.08]));
+    R.beak.add(mesh(GEO.cone, M('#e0a020'), [0, -0.03, 0.08], [0.035, 0.07, 0.03], [Math.PI * 0.75, 0, 0]));
+    addEyes(R, R.head, 0.19, 0.1, 0.2, 0.032); addBlush(R, R.head, 0.09, 0.15, 0.19);
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#3a2620'), [s * 0.1, 0.25, 0.19], [0.06, 0.015, 0.02], [0, 0, s * -0.35]));
+    for (const s of [-1, 1]) {
+      const w = saveBase(grp(R.body, [s * 0.22, 0.44, -0.02]));
+      w.add(mesh(GEO.sph, M('#5a3c28'), [s * 0.04, -0.12, -0.02], [0.08, 0.2, 0.15]));
+      for (let i = 0; i < 3; i++) w.add(mesh(GEO.sph, M(i % 2 ? '#3f2a1c' : '#4a3222'), [s * 0.05, -0.28 - i * 0.04, -0.06 - i * 0.04], [0.05, 0.08, 0.06]));
+      s < 0 ? (R.wingL = w) : (R.wingR = w);
+      const l = saveBase(grp(R.body, [s * 0.09, 0.05, 0.06])); l.add(mesh(GEO.sph, M('#f2c14e'), [0, -0.02, 0.03], [0.05, 0.03, 0.06]));
+      for (let i = -1; i <= 1; i++) l.add(mesh(GEO.cone, M('#2e221d'), [i * 0.025, -0.03, 0.09], [0.012, 0.035, 0.012], [Math.PI / 2, 0, 0]));
+      s < 0 ? (R.legL = l) : (R.legR = l);
+    }
+    R.armL = R.wingL; R.armR = R.wingR;
+    const t = saveBase(grp(R.body, [0, 0.14, -0.2])); R.tail = t; t.add(mesh(GEO.sph, M('#f4efe6'), [0, 0, -0.08], [0.13, 0.03, 0.12], [-0.4, 0, 0]));
+    R.headR = 0.25; R.headTop = 0.98;
+  },
+  eel(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.torus, M('#3c6e8f'), [0, 0.1, 0], [0.22, 0.22, 0.4], [Math.PI / 2, 0, 0])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#3c6e8f'), [0, 0.08, 0], [0.17, 0.08, 0.17]));
+    R.segs = []; let parent = saveBase(grp(R.body, [0, 0.14, 0.12]));
+    R.segs.push(parent);
+    for (let i = 0; i < 4; i++) { parent.add(mesh(GEO.sph, M(i % 2 ? '#356585' : '#3c6e8f'), [0, 0.06, 0], [0.11 - i * 0.004, 0.09, 0.11 - i * 0.004])); parent.add(mesh(GEO.sph, M('#f2d24a'), [0.06, 0.06, 0.07], 0.022)); const n = saveBase(grp(parent, [0, 0.11, -0.005])); R.segs.push(n); parent = n; }
+    R.head = saveBase(grp(parent, [0, 0.02, 0]));
+    R.head.add(mesh(GEO.sph, M('#4a82a6'), [0, 0.12, 0.02], [0.2, 0.17, 0.2]));
+    R.head.add(mesh(GEO.sph, M('#d8e8c0'), [0, 0.05, 0.12], [0.12, 0.06, 0.1]));
+    addEyes(R, R.head, 0.15, 0.09, 0.17, 0.035, '#ffef6a'); addBlush(R, R.head, 0.07, 0.14, 0.16);
+    R.head.add(mesh(GEO.cone, M('#2f5a76'), [0, 0.3, -0.05], [0.07, 0.14, 0.03], [-0.4, 0, 0]));
+    for (const s of [-1, 1]) { const f = saveBase(grp(R.head, [s * 0.18, 0.08, 0])); f.add(mesh(GEO.sph, M('#2f5a76'), [s * 0.04, 0, 0], [0.06, 0.03, 0.05])); s < 0 ? (R.earL = f) : (R.earR = f); }
+    R.headR = 0.2; R.headTop = 0.95;
+  },
+  gorilla(R) {
+    plush(R, { fur: '#3a3536', belly: '#6a5e58', headR: 0.29, bodyW: 0.33, bodyH: 0.3, limb: '#2f2a2b', paw: '#5a4e48', blush: false });
+    const M = R.M;
+    R.head.add(mesh(GEO.sph, M('#7a6a62'), [0, 0.17, 0.17], [0.19, 0.15, 0.15]));
+    R.head.add(mesh(GEO.sph, M('#2f2a2b'), [0, 0.27, 0.19], [0.2, 0.045, 0.08]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#2e221d'), [s * 0.035, 0.13, 0.31], [0.018, 0.012, 0.01]));
+    roundEar(R, R.head, -0.27, 0.22, 0, '#3a3536', '#6a5e58', 0.06); roundEar(R, R.head, 0.27, 0.22, 0, '#3a3536', '#6a5e58', 0.06);
+    for (const a of [R.armL, R.armR]) { a.children[0].scale.set(0.1, 0.17, 0.1); a.children[0].position.y = -0.14; if (a.children[1]) { a.children[1].scale.set(0.08, 0.06, 0.08); a.children[1].position.y = -0.3; } }
+    R.body.add(mesh(GEO.sph, M('#9aa0a8'), [0, 0.32, -0.22], [0.2, 0.15, 0.06]));
+    R.headTop = 1.02;
+  },
+  whale(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#4a78a8'), [0, 0.34, 0], [0.4, 0.34, 0.44])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#e9eef2'), [0, 0.22, 0.12], [0.3, 0.2, 0.33]));
+    for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#c8d4de'), [0, 0.12 + i * 0.05, 0.36 - i * 0.02], [0.22 - i * 0.03, 0.008, 0.04]));
+    R.head = saveBase(grp(R.body, [0, 0.36, 0.2]));
+    addEyes(R, R.head, 0.06, 0.17, 0.17, 0.045); addBlush(R, R.head, -0.03, 0.24, 0.15);
+    R.head.add(mesh(GEO.torus, M('#2f4f72'), [0, -0.1, 0.25], [0.08, 0.04, 0.05], [0, 0, Math.PI]));
+    R.blow = saveBase(grp(R.head, [0, 0.32, -0.12])); R.blow.add(mesh(GEO.sph, M('#2f4f72'), [0, 0, 0], [0.04, 0.015, 0.03]));
+    for (const s of [-1, 1]) { const f = saveBase(grp(R.body, [s * 0.36, 0.2, 0.08], [0, 0, s * 0.6])); f.add(mesh(GEO.sph, M('#3f6a96'), [s * 0.1, -0.04, 0], [0.14, 0.04, 0.09])); s < 0 ? (R.armL = f) : (R.armR = f); }
+    const t = saveBase(grp(R.body, [0, 0.3, -0.42])); R.tail = t;
+    t.add(mesh(GEO.sph, M('#4a78a8'), [0, 0.05, -0.08], [0.14, 0.12, 0.16]));
+    for (const s of [-1, 1]) t.add(mesh(GEO.sph, M('#3f6a96'), [s * 0.13, 0.2, -0.16], [0.16, 0.04, 0.09], [0.5, 0, -s * 0.5]));
+    R.headR = 0.4; R.headTop = 0.85;
+  },
+  peacock(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.fan = saveBase(grp(R.body, [0, 0.25, -0.2]));
+    for (let i = 0; i < 11; i++) {
+      const a = (i / 10 - 0.5) * 2.6, f = grp(R.fan, [0, 0, 0], [0, 0, a]);
+      f.add(mesh(GEO.sph, M('#3f8a5a'), [0, 0.42, 0], [0.09, 0.32, 0.02]));
+      f.add(mesh(GEO.sph, M('#d8b54a'), [0, 0.62, 0.012], [0.06, 0.07, 0.01]));
+      f.add(mesh(GEO.sph, M('#2a5aa8'), [0, 0.62, 0.02], [0.035, 0.04, 0.01]));
+    }
+    R.torso = saveBase(mesh(GEO.sph, M('#2f6fb0'), [0, 0.25, 0], [0.2, 0.22, 0.2])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#3f84c4'), [0, 0.24, 0.09], [0.13, 0.15, 0.12]));
+    R.head = saveBase(grp(R.body, [0, 0.42, 0.04]));
+    R.head.add(mesh(GEO.sph, M('#2f6fb0'), [0, 0.13, 0], [0.22, 0.2, 0.2]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#f4f1ea'), [s * 0.09, 0.14, 0.15], [0.07, 0.035, 0.03]));
+    addEyes(R, R.head, 0.14, 0.09, 0.18, 0.028); addBlush(R, R.head, 0.07, 0.14, 0.17);
+    R.head.add(mesh(GEO.cone, M('#d8b090'), [0, 0.08, 0.21], [0.03, 0.06, 0.025], [Math.PI / 2, 0, 0]));
+    for (let i = -1; i <= 1; i++) { R.head.add(mesh(GEO.cyl, M('#2a4f80'), [i * 0.04, 0.38, -0.02], [0.006, 0.14, 0.006], [0, 0, i * 0.3])); R.head.add(mesh(GEO.sph, M('#2a5aa8'), [i * 0.06, 0.46, -0.02], 0.025)); }
+    for (const s of [-1, 1]) { const w = saveBase(grp(R.body, [s * 0.18, 0.32, -0.02])); w.add(mesh(GEO.sph, M('#a88a5a'), [s * 0.02, -0.08, 0], [0.06, 0.13, 0.1])); s < 0 ? (R.wingL = w) : (R.wingR = w);
+      const l = saveBase(grp(R.body, [s * 0.07, 0.06, 0.04])); l.add(mesh(GEO.cyl, M('#8a7a6a'), [0, -0.01, 0], [0.012, 0.1, 0.012])); l.add(mesh(GEO.sph, M('#8a7a6a'), [0, -0.05, 0.03], [0.04, 0.015, 0.05])); s < 0 ? (R.legL = l) : (R.legR = l); }
+    R.armL = R.wingL; R.armR = R.wingR;
+    R.headR = 0.22; R.headTop = 1.05;
+  },
+  komodo(R) {
+    plush(R, { fur: '#7b7356', belly: '#a39a76', headR: 0.27, bodyW: 0.3, bodyH: 0.25, limb: '#6a6248', blush: false });
+    const M = R.M;
+    R.head.children[0].scale.set(0.26, 0.2, 0.3); R.head.children[0].position.y = 0.17;
+    R.jawU = saveBase(grp(R.head, [0, 0.16, 0.14])); R.jawU.add(mesh(GEO.sph, M('#857c5e'), [0, 0.01, 0.12], [0.17, 0.08, 0.17]));
+    for (const s of [-1, 1]) R.jawU.add(mesh(GEO.sph, M('#2e221d'), [s * 0.04, 0.04, 0.28], 0.012));
+    R.jaw = saveBase(grp(R.head, [0, 0.1, 0.13])); R.jaw.add(mesh(GEO.sph, M('#b0a682'), [0, 0, 0.1], [0.14, 0.04, 0.15]));
+    R.eyeMat = M('#241914'); R.glow = '#ffe27a';
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, M('#7b7356'), [s * 0.12, 0.29, 0.06], 0.07)); R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.13, 0.3, 0.12], [0.03, 0.035, 0.02])); }
+    R.tongue = mesh(GEO.cap, M('#e8c24a'), [0, 0, 0], [0.03, 1, 0.03]); R.tongue.visible = false; R.yaw.add(R.tongue);
+    [[0.12, 0.3, 0.15], [-0.14, 0.26, 0.12], [0.18, 0.2, 0.0], [-0.1, 0.38, -0.12], [0.08, 0.34, -0.18]].forEach(p => R.body.add(mesh(GEO.sph, M('#5e573f'), p, [0.035, 0.035, 0.015])));
+    const t = saveBase(grp(R.body, [0, 0.12, -0.22])); R.tail = t; t.add(mesh(GEO.cone, M('#7b7356'), [0, 0, -0.22], [0.14, 0.48, 0.1], [-1.45, 0, 0]));
+    R.headTop = 0.95;
+  },
+});
+BUILD.minibee = R => BUILD.bee(R);
+// 中立物件
+BUILD.chest = R => {
+  const M = R.M; R.body = saveBase(grp(R.yaw)); R.head = saveBase(grp(R.body, [0, 0.3, 0]));
+  R.torso = saveBase(mesh(GEO.box, M('#9a5a2e'), [0, 0.17, 0], [0.62, 0.34, 0.44])); R.body.add(R.torso);
+  R.head.add(mesh(GEO.cyl, M('#b06a36'), [0, 0.04, 0], [0.31, 0.62, 0.22], [0, 0, Math.PI / 2]));
+  for (const x of [-0.24, 0.24]) R.body.add(mesh(GEO.box, M('#f2c14e'), [x, 0.2, 0.001], [0.06, 0.42, 0.46]));
+  R.body.add(mesh(GEO.box, M('#f2c14e'), [0, 0.28, 0.23], [0.1, 0.12, 0.03]));
+  R.headR = 0.3; R.headTop = 0.6;
+};
+BUILD.crate = R => {
+  const M = R.M; R.body = saveBase(grp(R.yaw)); R.head = saveBase(grp(R.body, [0, 0.5, 0]));
+  R.torso = saveBase(mesh(GEO.box, M('#c49a5a'), [0, 0.25, 0], [0.5, 0.5, 0.5])); R.body.add(R.torso);
+  for (const [x, z] of [[0, 0.255], [0, -0.255]]) { R.body.add(mesh(GEO.box, M('#8a6a3a'), [x, 0.25, z], [0.5, 0.08, 0.01])); R.body.add(mesh(GEO.box, M('#8a6a3a'), [x, 0.25, z], [0.08, 0.5, 0.01])); }
+  R.headR = 0.25; R.headTop = 0.6;
+};
+// 小小英雄：圓滾滾的小雞
+BUILD.chick = R => {
+  const M = R.M; R.body = saveBase(grp(R.yaw));
+  R.torso = saveBase(mesh(GEO.sph, M('#f7d24a'), [0, 0.24, 0], [0.24, 0.23, 0.22])); R.body.add(R.torso);
+  R.body.add(mesh(GEO.sph, M('#fbe6a0'), [0, 0.2, 0.12], [0.15, 0.13, 0.1]));
+  R.head = saveBase(grp(R.body, [0, 0.4, 0])); R.head.add(mesh(GEO.sph, M('#f7d24a'), [0, 0.1, 0], 0.18));
+  R.head.add(mesh(GEO.cone, M('#f08a3a'), [0, 0.08, 0.19], [0.05, 0.09, 0.04], [Math.PI / 2, 0, 0]));
+  addEyes(R, R.head, 0.14, 0.07, 0.15, 0.025); addBlush(R, R.head, 0.06, 0.11, 0.14);
+  for (let i = 0; i < 3; i++) R.head.add(mesh(GEO.sph, M('#f2b830'), [-0.03 + i * 0.03, 0.29 + (i === 1 ? 0.03 : 0), 0], [0.03, 0.06, 0.03]));
+  for (const s of [-1, 1]) { const w = saveBase(grp(R.body, [s * 0.22, 0.28, 0])); w.add(mesh(GEO.sph, M('#f2c02e'), [s * 0.03, -0.04, 0], [0.06, 0.11, 0.08])); s < 0 ? (R.armL = w) : (R.armR = w);
+    const l = saveBase(grp(R.body, [s * 0.08, 0.04, 0.02])); l.add(mesh(GEO.sph, M('#f08a3a'), [0, -0.01, 0.04], [0.05, 0.02, 0.07])); s < 0 ? (R.legL = l) : (R.legR = l); }
+  R.headR = 0.18; R.headTop = 0.75;
+};
+
+// 建立一隻：回傳 rig
+function buildAnimal(key) {
+  geos();
+  const R = { key, M: Mats(), root: new THREE.Group(), fly: 0 };
+  R.yaw = saveBase(grp(R.root));
+  (BUILD[key] || BUILD.hare)(R);
+  for (const k of ['armL', 'armR', 'legL', 'legR', 'head', 'body', 'tail', 'earL', 'earR', 'wingL', 'wingR', 'jaw', 'jawU', 'mane', 'spikes', 'torso', 'mouth', 'horn', 'beak', 'fan', 'blow']) if (R[k]) saveBase(R[k]);
+  R.root.traverse(o => { if (o.isMesh) { o.castShadow = false; o.userData.unit = true; } });
+  if (key === 'minibee') R.root.scale.setScalar(0.55);
+  mergeRig(R);
+  R.groups = []; R.root.traverse(o => { if (o.userData.b) R.groups.push(o); });
+  return R;
+}
+
+// 同一個骨架節點底下的靜態網格合併成一個（頂點色），每隻約 10 次繪製
+function mergeRig(R) {
+  const keep = new Set([R.torso, R.mouth, R.prop, R.tongue].filter(Boolean));
+  const vmat = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: toonGrad() });
+  vmat.userData.op = 1;
+  const nodes = []; R.root.traverse(o => { if (!o.isMesh) nodes.push(o); });
+  for (const n of nodes) {
+    const list = n.children.filter(c => c.isMesh && !keep.has(c) && c.visible && c.material.isMeshToonMaterial && !c.material.transparent && c.material.side !== THREE.DoubleSide && c.material !== R.eyeMat);
+    if (list.length < 2) continue;
+    let cnt = 0; const gs = [];
+    for (const c of list) { c.updateMatrix(); const g = (c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone()); g.applyMatrix4(c.matrix); gs.push([g, c.material.color]); cnt += g.attributes.position.count; }
+    const pos = new Float32Array(cnt * 3), nor = new Float32Array(cnt * 3), col = new Float32Array(cnt * 3); let off = 0;
+    for (const [g, c] of gs) { const k = g.attributes.position.count; pos.set(g.attributes.position.array, off * 3); nor.set(g.attributes.normal.array, off * 3); for (let i = 0; i < k; i++) { col[(off + i) * 3] = c.r; col[(off + i) * 3 + 1] = c.g; col[(off + i) * 3 + 2] = c.b; } off += k; g.dispose(); }
+    const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); mg.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); mg.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    for (const c of list) n.remove(c);
+    const mm = new THREE.Mesh(mg, vmat); mm.userData.unit = true; n.add(mm);
+  }
+  // 其餘同材質（眼睛、眼神光、腮紅）也合併
+  for (const n of nodes) {
+    const by = new Map();
+    for (const c of n.children) if (c.isMesh && !keep.has(c) && c.material !== vmat && c.visible) { if (!by.has(c.material)) by.set(c.material, []); by.get(c.material).push(c); }
+    for (const [m, list] of by) {
+      if (list.length < 2) continue;
+      let cnt = 0; const gs = [];
+      for (const c of list) { c.updateMatrix(); const g = (c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone()); g.applyMatrix4(c.matrix); gs.push(g); cnt += g.attributes.position.count; }
+      const pos = new Float32Array(cnt * 3), nor = new Float32Array(cnt * 3); let off = 0;
+      for (const g of gs) { pos.set(g.attributes.position.array, off * 3); nor.set(g.attributes.normal.array, off * 3); off += g.attributes.position.count; g.dispose(); }
+      const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); mg.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      for (const c of list) n.remove(c);
+      n.add(new THREE.Mesh(mg, m));
+    }
+  }
+  R.mats = [vmat].concat(R.M.list);
+}
+
+// ===== 動作 =====
+const ease = { out: p => 1 - (1 - p) * (1 - p), inOut: p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2, back: p => 1 + 2.70158 * Math.pow(p - 1, 3) + 1.70158 * Math.pow(p - 1, 2) };
+const bell = (p, a, b) => p < a ? 0 : p > b ? 0 : Math.sin((p - a) / (b - a) * Math.PI);
+const ramp = (p, a, b) => p <= a ? 0 : p >= b ? 1 : (p - a) / (b - a);
+// 爪擊：手從左上舉起往右下揮（s = 1 右手，-1 左手）
+function clawSwing(R, p, s, big) {
+  const arm = s > 0 ? R.armR : R.armL; if (!arm) return;
+  const up = ramp(p, 0, 0.4), down = ramp(p, 0.4, 0.62), back = ramp(p, 0.75, 1);
+  const k = ease.out(up) * (1 - down), sw = ease.inOut(down) * (1 - back);
+  arm.rotation.x += -2.6 * k + 1.1 * sw - 0.3 * (1 - back) * down;
+  arm.rotation.z += s * (0.9 * k - 1.1 * sw) * (big ? 1.3 : 1);
+  R.body.rotation.y += s * (0.35 * k - 0.5 * sw);
+  R.body.position.z += 0.12 * sw;
+}
+function lunge(R, p, dist, at) { const f = bell(p, at || 0.25, 0.85); R.body.position.z += f * dist; R.body.rotation.x += f * 0.35; return f; }
+function hopUp(R, p, h) { R.body.position.y += Math.sin(Math.min(1, p) * Math.PI) * h; }
+
+// dur 秒；hit = 命中時間點（0..1）；fx = 特效種類（由場景播放）
+const ACT = {
+  hedgehog: {
+    atk: { dur: 0.42, hit: 0.5, fx: 'bump', fn(R, p) { R.spikes.scale.setScalar(1 + bell(p, 0.2, 0.7) * 0.3); lunge(R, p, 0.32); } },
+    skill: { dur: 1.5, hit: 0.35, fx: 'spikeBurst', fn(R, p) { const k = bell(p, 0, 1); R.head.scale.setScalar(1 - 0.8 * Math.min(1, k * 2)); R.spikes.scale.setScalar(1 + 0.45 * Math.min(1, k * 2)); R.body.rotation.x += ease.inOut(p) * Math.PI * 4; R.body.position.y += 0.08 * k; } },
+  },
+  squirrel: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'acorn', fn(R, p) { R.armR.rotation.x += -2.8 * bell(p, 0, 0.55) + 1.2 * bell(p, 0.45, 0.85); R.prop.visible = p < 0.48 || p > 0.9; R.tail.rotation.x += 0.4 * bell(p, 0.3, 0.8); R.body.rotation.x += 0.15 * bell(p, 0.4, 0.8); } },
+    skill: { dur: 1.0, hit: 0.3, fx: 'acornVolley', fn(R, p) { for (let i = 0; i < 3; i++) { const a = i % 2 ? R.armL : R.armR; a.rotation.x += -2.6 * bell(p, i * 0.28, i * 0.28 + 0.3); } R.tail.rotation.x += 0.6 * Math.sin(p * 18) * bell(p, 0, 1); hopUp(R, p, 0.12); R.prop.visible = false; } },
+  },
+  wolf: {
+    atk: { dur: 0.42, hit: 0.5, fx: 'bite', fn(R, p) { lunge(R, p, 0.4, 0.2); R.jaw.rotation.x += 0.7 * bell(p, 0.25, 0.5); R.head.rotation.x += 0.2 * bell(p, 0.3, 0.7); } },
+    skill: { dur: 1.3, hit: 0.35, fx: 'howl', fn(R, p) { const k = bell(p, 0, 1); R.body.rotation.x -= 0.25 * k; R.head.rotation.x -= 0.9 * Math.min(1, k * 1.6); R.jaw.rotation.x += 0.6 * Math.min(1, k * 1.6); R.armL.rotation.x -= 0.5 * k; R.armR.rotation.x -= 0.5 * k; R.head.rotation.z += 0.08 * Math.sin(p * 30) * k; } },
+  },
+  frog: {
+    atk: { dur: 0.45, hit: 0.45, fx: 'tongue', fn(R, p) { R.body.scale.y = 1 - 0.2 * bell(p, 0, 0.35); R.mouth.scale.y *= 1 + 1.5 * bell(p, 0.3, 0.8); } },
+    skill: { dur: 0.9, hit: 0.45, fx: 'tongueGrab', fn(R, p) { R.body.scale.y = 1 - 0.3 * bell(p, 0, 0.3); hopUp(R, ramp(p, 0.25, 0.65), 0.35); R.legL.rotation.x += 1.2 * bell(p, 0.25, 0.6); R.legR.rotation.x += 1.2 * bell(p, 0.25, 0.6); R.mouth.scale.y *= 1 + 1.8 * bell(p, 0.35, 0.9); } },
+  },
+  bat: {
+    atk: { dur: 0.45, hit: 0.5, fx: 'biteDrain', fn(R, p) { const f = bell(p, 0.1, 0.9); R.body.position.z += f * 0.45; R.body.position.y -= f * 0.25; R.body.rotation.x += f * 0.6; } },
+    skill: { dur: 1.0, hit: 0.6, fx: 'bigBite', fn(R, p) { R.wingL.rotation.y += 1.2 * bell(p, 0, 0.55); R.wingR.rotation.y -= 1.2 * bell(p, 0, 0.55); R.body.rotation.y += ease.inOut(ramp(p, 0, 0.5)) * Math.PI * 2; const f = bell(p, 0.45, 1); R.body.position.z += f * 0.5; R.body.position.y -= f * 0.2; } },
+  },
+  redpanda: {
+    atk: { dur: 0.45, hit: 0.55, fx: 'claw1', fn(R, p) { clawSwing(R, p, 1); } },
+    skill: { dur: 1.3, hit: 0.3, fx: 'taunt', fn(R, p) { const k = Math.min(1, bell(p, 0, 1) * 2); R.body.position.y += 0.14 * k; R.body.scale.y *= 1 + 0.2 * k; R.armL.rotation.z -= 2.3 * k; R.armR.rotation.z += 2.3 * k; R.armL.rotation.x -= 0.5 * k; R.armR.rotation.x -= 0.5 * k; R.tail.rotation.x -= 0.6 * k; R.body.rotation.z += 0.06 * Math.sin(p * 25) * k; } },
+  },
+  skunk: {
+    atk: { dur: 0.5, hit: 0.5, fx: 'stinkBall', fn(R, p) { R.tail.rotation.x += 1.0 * bell(p, 0.2, 0.7); R.body.rotation.y += 0.4 * bell(p, 0, 0.6); } },
+    skill: { dur: 1.4, hit: 0.5, fx: 'gasSpray', fn(R, p) { const k = Math.min(1, bell(p, 0, 1) * 2.2); R.body.rotation.x += 1.9 * k; R.body.position.y += 0.22 * k; R.body.position.z -= 0.1 * k; R.armL.rotation.x -= 2.6 * k; R.armR.rotation.x -= 2.6 * k; R.tail.rotation.x += 0.5 * k + 0.15 * Math.sin(p * 30) * k; } },
+  },
+  croc: {
+    atk: { dur: 0.45, hit: 0.55, fx: 'bite', fn(R, p) { R.jawU.rotation.x -= 0.9 * bell(p, 0, 0.55); R.jaw.rotation.x += 0.4 * bell(p, 0, 0.55); lunge(R, p, 0.3, 0.35); } },
+    skill: { dur: 1.3, hit: 0.3, fx: 'deathRoll', fn(R, p) { R.jawU.rotation.x -= 0.8 * bell(p, 0, 0.25); const f = bell(p, 0.15, 1); R.body.position.z += f * 0.45; R.body.rotation.z += ease.inOut(ramp(p, 0.2, 0.9)) * Math.PI * 4; R.body.position.y += 0.15 * f; } },
+  },
+  bee: {
+    atk: { dur: 0.4, hit: 0.5, fx: 'sting', fn(R, p) { const f = bell(p, 0.15, 0.9); R.body.position.z += f * 0.5; R.body.rotation.x += f * 0.9; } },
+    skill: { dur: 1.2, hit: 0.55, fx: 'swarm', fn(R, p) { const k = bell(p, 0, 1); R.body.rotation.z += 0.5 * Math.sin(p * 40) * k; R.body.rotation.y += ease.inOut(p) * Math.PI * 2; R.body.position.x += 0.1 * Math.sin(p * 20) * k; } },
+  },
+  minibee: { atk: { dur: 0.35, hit: 0.5, fx: 'sting', fn(R, p) { const f = bell(p, 0.1, 0.9); R.body.position.z += f * 0.4; R.body.rotation.x += f * 0.9; } } },
+  koala: {
+    atk: { dur: 0.55, hit: 0.6, fx: 'slam', fn(R, p) { const up = bell(p, 0, 0.6), dn = bell(p, 0.5, 0.85); R.armL.rotation.x -= 2.8 * up - 0.6 * dn; R.armR.rotation.x -= 2.8 * up - 0.6 * dn; R.body.rotation.x += 0.4 * dn - 0.15 * up; R.body.position.z += 0.12 * dn; } },
+    skill: { dur: 1.1, hit: 0.62, fx: 'bodySlam', fn(R, p) { R.body.scale.y *= 1 - 0.25 * bell(p, 0, 0.25); hopUp(R, ramp(p, 0.2, 0.62), 0.6); R.body.position.z += 0.3 * ramp(p, 0.2, 0.62) * (1 - ramp(p, 0.8, 1)); R.body.rotation.x += 0.5 * bell(p, 0.4, 0.8); R.armL.rotation.z -= 1.4 * bell(p, 0.2, 0.7); R.armR.rotation.z += 1.4 * bell(p, 0.2, 0.7); R.body.scale.y *= 1 - 0.3 * bell(p, 0.6, 0.8); } },
+    wake: { dur: 1.0, hit: 0.3, fx: 'wake', fn(R, p) { hopUp(R, ramp(p, 0, 0.4), 0.35); R.armL.rotation.z -= 1.8 * bell(p, 0.2, 1); R.armR.rotation.z += 1.8 * bell(p, 0.2, 1); R.body.rotation.z += 0.1 * Math.sin(p * 40) * bell(p, 0.3, 1); } },
+  },
+  cheetah: {
+    atk: { dur: 0.32, hit: 0.58, fx: 'claw3', fn(R, p) { clawSwing(R, p, -1); } },
+    skill: { dur: 0.9, hit: 0.5, fx: 'crossSlash', fn(R, p) { R.body.rotation.x += 0.6 * bell(p, 0, 0.4); hopUp(R, ramp(p, 0.3, 0.7), 0.4); clawSwing(R, ramp(p, 0.3, 0.75), -1, true); clawSwing(R, ramp(p, 0.4, 0.85), 1, true); } },
+  },
+  octopus: {
+    atk: { dur: 0.5, hit: 0.5, fx: 'inkBall', fn(R, p) { R.head.scale.setScalar(1 + 0.12 * bell(p, 0, 0.45) - 0.08 * bell(p, 0.45, 0.7)); R.head.rotation.x += 0.25 * bell(p, 0.4, 0.8); } },
+    skill: { dur: 1.2, hit: 0.55, fx: 'inkCloud', fn(R, p) { const inf = bell(p, 0, 0.6); R.head.scale.setScalar(1 + 0.35 * inf - 0.15 * bell(p, 0.55, 0.8)); R.body.position.y += 0.15 * inf; for (const t of R.tents) t[0].rotation.x -= 1.0 * inf; } },
+  },
+  owl: {
+    atk: { dur: 0.5, hit: 0.5, fx: 'feather', fn(R, p) { R.wingR.rotation.z += 1.4 * bell(p, 0, 0.5); R.wingR.rotation.x -= 0.8 * bell(p, 0.3, 0.7); R.head.rotation.z += 0.2 * bell(p, 0.2, 0.6); } },
+    skill: { dur: 1.3, hit: 0.55, fx: 'swoop', fn(R, p) { const f = bell(p, 0.1, 1); R.body.position.y += 0.7 * f; R.body.position.z += 0.9 * bell(p, 0.25, 0.95); R.wingL.rotation.z -= 1.6 * Math.abs(Math.sin(p * 14)) * f; R.wingR.rotation.z += 1.6 * Math.abs(Math.sin(p * 14)) * f; R.body.rotation.x += 0.7 * bell(p, 0.4, 0.7); R.legL.rotation.x -= 1.2 * bell(p, 0.45, 0.65); R.legR.rotation.x -= 1.2 * bell(p, 0.45, 0.65); } },
+  },
+  elephant: {
+    atk: { dur: 0.6, hit: 0.6, fx: 'trunkSlap', fn(R, p) { const up = bell(p, 0, 0.55), sw = bell(p, 0.45, 0.85); R.trunk.forEach((t, i) => { t.rotation.x += -0.35 * up + 0.25 * sw; t.rotation.z += 0.25 * sw * (i ? 1 : 0); }); R.head.rotation.x += 0.2 * sw - 0.15 * up; } },
+    skill: { dur: 1.4, hit: 0.62, fx: 'stomp', fn(R, p) { const rear = bell(p, 0, 0.62); R.body.rotation.x -= 0.6 * rear; R.body.position.y += 0.2 * rear; R.armL.rotation.x -= 1.6 * rear; R.armR.rotation.x -= 1.6 * rear; R.trunk.forEach(t => t.rotation.x -= 0.4 * rear); R.earL.rotation.y -= 0.6 * rear; R.earR.rotation.y += 0.6 * rear; R.body.scale.y *= 1 - 0.15 * bell(p, 0.6, 0.75); } },
+  },
+  lion: {
+    atk: { dur: 0.48, hit: 0.58, fx: 'claw3big', fn(R, p) { clawSwing(R, p, 1, true); } },
+    skill: { dur: 1.3, hit: 0.4, fx: 'roar', fn(R, p) { const pre = bell(p, 0, 0.4), ro = Math.min(1, bell(p, 0.3, 1) * 1.6); R.head.rotation.x -= 0.4 * pre - 0.15 * ro; R.body.position.z += 0.15 * ro; R.jaw.rotation.x += 0.8 * ro; R.mane.scale.setScalar(1 + 0.3 * ro); R.head.rotation.z += 0.05 * Math.sin(p * 50) * ro; R.armL.rotation.x -= 0.6 * ro; R.armR.rotation.x -= 0.6 * ro; } },
+  },
+  hare: { atk: { dur: 0.45, hit: 0.55, fx: 'kick', fn(R, p) { hopUp(R, p, 0.25); R.legL.rotation.x -= 1.5 * bell(p, 0.35, 0.8); R.legR.rotation.x -= 1.5 * bell(p, 0.35, 0.8); R.body.position.z += 0.25 * bell(p, 0.2, 0.9); } } },
+  boar: { atk: { dur: 0.5, hit: 0.6, fx: 'bump', fn(R, p) { R.body.position.z -= 0.12 * bell(p, 0, 0.45); lunge(R, p, 0.45, 0.4); R.head.rotation.x += 0.4 * bell(p, 0.45, 0.85); } } },
+};
+
+// ---- v0.5 新動物動作 ----
+Object.assign(ACT, {
+  penguin: {
+    atk: { dur: 0.42, hit: 0.55, fx: 'flipper', fn(R, p) { clawSwing(R, p, 1); R.body.rotation.z += 0.12 * bell(p, 0.3, 0.8); } },
+    skill: { dur: 0.9, hit: 0.55, fx: 'slideHit', fn(R, p) { const k = bell(p, 0, 1), lay = Math.min(1, k * 2.2); R.body.rotation.x += 1.35 * lay; R.body.position.y += 0.05 * lay - 0.02; R.armL.rotation.z -= 1.2 * lay; R.armR.rotation.z += 1.2 * lay; R.body.position.z += 0.35 * bell(p, 0.3, 0.8); R.body.rotation.z += 0.12 * Math.sin(p * 30) * lay; } },
+  },
+  rhino: {
+    atk: { dur: 0.5, hit: 0.58, fx: 'headbutt', fn(R, p) { R.body.position.z -= 0.1 * bell(p, 0, 0.4); lunge(R, p, 0.42, 0.38); R.head.rotation.x += 0.5 * bell(p, 0.35, 0.8); R.horn.rotation.x -= 0.2 * bell(p, 0.4, 0.7); } },
+    skill: { dur: 0.95, hit: 0.5, fx: 'rhinoCharge', fn(R, p) { const pre = bell(p, 0, 0.35), run = bell(p, 0.25, 0.85); R.body.rotation.x += 0.35 * run - 0.15 * pre; R.head.rotation.x += 0.45 * run; R.legL.rotation.x += 1.0 * Math.sin(p * 40) * run; R.legR.rotation.x -= 1.0 * Math.sin(p * 40) * run; R.body.position.z += 0.5 * bell(p, 0.35, 0.75); R.body.position.y += 0.06 * Math.abs(Math.sin(p * 40)) * run; } },
+  },
+  chameleon: {
+    atk: { dur: 0.45, hit: 0.5, fx: 'tongue', fn(R, p) { R.head.position.z += 0.05 * bell(p, 0.2, 0.7); R.body.rotation.x += 0.15 * bell(p, 0.1, 0.6); R.tail.rotation.x += 0.4 * bell(p, 0, 0.8); } },
+    skill: { dur: 1.0, hit: 0.55, fx: 'chamStrike', fn(R, p) { R.body.scale.y *= 1 - 0.18 * bell(p, 0, 0.4); R.head.rotation.x -= 0.25 * bell(p, 0.2, 0.5); R.head.position.z += 0.08 * bell(p, 0.45, 0.8); R.tail.rotation.x += 0.8 * bell(p, 0, 1); } },
+  },
+  fox: {
+    atk: { dur: 0.38, hit: 0.55, fx: 'bite', fn(R, p) { lunge(R, p, 0.38, 0.22); R.jaw.rotation.x += 0.6 * bell(p, 0.3, 0.6); R.tail.rotation.x += 0.3 * bell(p, 0.2, 0.8); } },
+    skill: { dur: 1.0, hit: 0.72, fx: 'pounce', fn(R, p) { R.body.scale.y *= 1 - 0.25 * bell(p, 0, 0.25); const air = ramp(p, 0.18, 0.75); hopUp(R, air, 0.9); R.body.rotation.x += -0.6 * bell(p, 0.18, 0.45) + 1.4 * bell(p, 0.5, 0.82); R.armL.rotation.x -= 2.0 * bell(p, 0.45, 0.8); R.armR.rotation.x -= 2.0 * bell(p, 0.45, 0.8); R.tail.rotation.x -= 0.8 * bell(p, 0.2, 0.8); } },
+  },
+  eagle: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'talonShot', fn(R, p) { const f = bell(p, 0, 0.6); R.wingL.rotation.z -= 1.4 * f; R.wingR.rotation.z += 1.4 * f; R.body.position.y += 0.12 * f; R.head.rotation.x += 0.35 * bell(p, 0.4, 0.8); R.beak.rotation.x += 0.3 * bell(p, 0.4, 0.7); } },
+    skill: { dur: 1.5, hit: 0.3, fx: 'grabLift', fn(R, p) { const up = bell(p, 0, 1); R.body.position.y += 1.2 * Math.min(1, up * 1.4); R.body.position.z += 0.4 * bell(p, 0.1, 0.5); const fl = Math.abs(Math.sin(p * 26)); R.wingL.rotation.z -= (0.6 + 1.2 * fl) * up; R.wingR.rotation.z += (0.6 + 1.2 * fl) * up; R.legL.rotation.x -= 1.0 * up; R.legR.rotation.x -= 1.0 * up; R.body.rotation.x += 0.5 * bell(p, 0.75, 1); } },
+  },
+  eel: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'zap', fn(R, p) { const k = bell(p, 0, 0.7); R.segs.forEach((s, i) => { s.rotation.x += (i % 2 ? -0.2 : 0.25) * k; s.rotation.z += 0.15 * Math.sin(p * 40 + i) * k; }); R.head.rotation.x += 0.3 * bell(p, 0.4, 0.8); } },
+    skill: { dur: 1.1, hit: 0.5, fx: 'chainZap', fn(R, p) { const k = bell(p, 0, 1); R.segs.forEach((s, i) => { s.rotation.z += 0.35 * Math.sin(p * 55 + i * 1.3) * k; s.rotation.x -= 0.12 * k; }); R.head.scale.setScalar(1 + 0.15 * bell(p, 0.35, 0.6)); R.earL.rotation.z += 0.6 * k; R.earR.rotation.z -= 0.6 * k; } },
+  },
+  gorilla: {
+    atk: { dur: 0.6, hit: 0.62, fx: 'fistSlam', fn(R, p) { const up = bell(p, 0, 0.6), dn = bell(p, 0.5, 0.85); R.armL.rotation.x -= 2.9 * up - 0.7 * dn; R.armR.rotation.x -= 2.9 * up - 0.7 * dn; R.body.rotation.x += 0.45 * dn - 0.2 * up; R.body.position.z += 0.15 * dn; R.body.position.y += 0.08 * up; } },
+    skill: { dur: 1.5, hit: 0.75, fx: 'chestBeat', fn(R, p) { const beat = bell(p, 0, 0.62); R.body.rotation.x -= 0.25 * beat; R.armL.rotation.x -= (1.4 + 0.5 * Math.sin(p * 40)) * beat; R.armR.rotation.x -= (1.4 - 0.5 * Math.sin(p * 40)) * beat; R.armL.rotation.z += 0.6 * beat; R.armR.rotation.z -= 0.6 * beat; R.head.rotation.x -= 0.4 * beat; const sl = bell(p, 0.6, 0.95); R.armL.rotation.x -= 2.6 * bell(p, 0.55, 0.72) - 0.6 * sl; R.armR.rotation.x -= 2.6 * bell(p, 0.55, 0.72) - 0.6 * sl; R.body.rotation.x += 0.5 * sl; R.body.scale.y *= 1 - 0.12 * bell(p, 0.72, 0.85); } },
+  },
+  whale: {
+    atk: { dur: 0.6, hit: 0.55, fx: 'spout', fn(R, p) { R.body.rotation.x -= 0.18 * bell(p, 0, 0.5); R.body.scale.y *= 1 + 0.08 * bell(p, 0.3, 0.6); R.tail.rotation.x += 0.4 * bell(p, 0, 0.7); } },
+    skill: { dur: 1.5, hit: 0.55, fx: 'tidal', fn(R, p) { const rear = bell(p, 0, 0.6); R.body.rotation.x -= 0.55 * rear; R.body.position.y += 0.35 * rear; R.armL.rotation.z -= 0.8 * rear; R.armR.rotation.z += 0.8 * rear; R.tail.rotation.x += 0.9 * bell(p, 0.1, 0.7); R.body.scale.y *= 1 - 0.15 * bell(p, 0.55, 0.7); } },
+  },
+  peacock: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'feather', fn(R, p) { R.fan.scale.y *= 1 + 0.3 * bell(p, 0, 0.6); R.body.rotation.y += 0.5 * bell(p, 0, 0.5) - 0.3 * bell(p, 0.45, 0.8); R.head.rotation.x += 0.2 * bell(p, 0.4, 0.8); } },
+    skill: { dur: 1.6, hit: 0.45, fx: 'fanOpen', fn(R, p) { const o = Math.min(1, bell(p, 0, 1) * 1.8); R.fan.scale.setScalar(1 + 0.8 * o); R.fan.rotation.x -= 0.5 * o; R.fan.position.y += 0.15 * o; R.fan.rotation.z += 0.06 * Math.sin(p * 40) * o; R.body.position.y += 0.06 * o; R.head.rotation.x -= 0.2 * o; } },
+  },
+  komodo: {
+    atk: { dur: 0.48, hit: 0.58, fx: 'bite', fn(R, p) { R.jawU.rotation.x -= 0.7 * bell(p, 0, 0.55); R.jaw.rotation.x += 0.35 * bell(p, 0, 0.55); lunge(R, p, 0.32, 0.35); R.tail.rotation.y += 0.4 * bell(p, 0.2, 0.9); } },
+    skill: { dur: 1.1, hit: 0.5, fx: 'venomBite', fn(R, p) { R.jawU.rotation.x -= 1.0 * bell(p, 0, 0.5); R.jaw.rotation.x += 0.5 * bell(p, 0, 0.5); R.body.position.z -= 0.12 * bell(p, 0, 0.35); lunge(R, p, 0.5, 0.35); R.body.rotation.y += 0.4 * Math.sin(p * 30) * bell(p, 0.5, 0.9); R.tail.rotation.y += 0.6 * Math.sin(p * 20) * bell(p, 0.3, 1); } },
+  },
+});
+// 每幀姿勢：st = {t 秒, moving, sleep, stun, act:{kind,p}, dead:p, hit:p, night, face}
+function poseRig(R, st) {
+  for (const g of R.groups) resetG(g);
+  const t = st.t + R.phase;
+  // 待機呼吸
+  const br = Math.sin(t * 2.4);
+  if (R.torso) R.torso.scale.y *= 1 + 0.03 * br;
+  R.head.position.y += 0.008 * br;
+  R.head.rotation.z += 0.04 * Math.sin(t * 1.1);
+  if (R.tail) { R.tail.rotation.y += 0.25 * Math.sin(t * 2); R.tail.rotation.z += 0.08 * Math.sin(t * 1.3); }
+  if (R.earL) { const tw = Math.max(0, Math.sin(t * 0.9) - 0.92) * 6; R.earL.rotation.z += 0.3 * tw; R.earR.rotation.z -= 0.2 * tw; }
+  if (R.tents) R.tents.forEach((seg, i) => seg.forEach((s, k) => { s.rotation.x += 0.25 * Math.sin(t * 2.2 + i + k * 0.8); }));
+  if (R.trunk) R.trunk.forEach((s, k) => { s.rotation.z += 0.08 * Math.sin(t * 1.6 + k * 0.6); });
+  if (R.segs) R.segs.forEach((s, k) => { s.rotation.z += 0.12 * Math.sin(t * 2.4 + k * 0.9); s.rotation.x += 0.05 * Math.sin(t * 1.7 + k); });
+  if (R.fan) { R.fan.rotation.z += 0.03 * Math.sin(t * 1.3); R.fan.scale.y *= 1 + 0.03 * Math.sin(t * 2.1); }
+  if (R.earL && R.key === 'elephant') { R.earL.rotation.y += 0.15 * Math.sin(t * 2); R.earR.rotation.y -= 0.15 * Math.sin(t * 2); }
+  if (R.fly) {
+    R.body.position.y += R.fly + 0.05 * Math.sin(t * 4);
+    const fl = R.key === 'bat' ? Math.sin(t * 14) * 0.7 : Math.sin(t * 60) * 0.5;
+    if (R.wingL) { R.wingL.rotation.z += fl; R.wingR.rotation.z -= fl; }
+  }
+  // 貓頭鷹偶爾轉頭 180°
+  if (R.key === 'owl' && !st.act) { const c = (t % 9); R.head.rotation.y += c > 7 ? Math.sin((c - 7) / 2 * Math.PI) * Math.PI * 0.95 : 0; }
+  // 移動：擠壓與伸展（起步壓扁、空中拉長、落地回彈）
+  if (st.moveP !== null && st.moveP !== undefined) {
+    const k = st.moveP, sy = 1 - 0.13 * bell(k, 0, 0.22) + 0.12 * bell(k, 0.18, 0.78) - 0.12 * bell(k, 0.75, 1);
+    R.body.scale.y *= sy; R.body.scale.x *= 1 - (sy - 1) * 0.6; R.body.scale.z *= 1 - (sy - 1) * 0.6;
+    if (R.legL && !R.fly) { R.legL.rotation.x += 0.6 * Math.sin(k * Math.PI * 2); R.legR.rotation.x -= 0.6 * Math.sin(k * Math.PI * 2); }
+    R.body.rotation.x += 0.12 * bell(k, 0.1, 0.9);
+  }
+  if (st.land !== null && st.land !== undefined) { const k = st.land, sq = 0.16 * Math.sin(k * Math.PI) * (1 - k) - 0.05 * Math.sin(k * Math.PI * 2) * k; R.body.scale.y *= 1 - sq; R.body.scale.x *= 1 + sq * 0.6; R.body.scale.z *= 1 + sq * 0.6; }
+  if (st.moving) {
+    const ph = t * 13;
+    R.body.position.y += Math.abs(Math.sin(ph)) * (R.fly ? 0.03 : 0.08);
+    R.body.rotation.z += 0.08 * Math.sin(ph);
+    if (R.legL && !R.fly) { R.legL.rotation.x += 0.7 * Math.sin(ph); R.legR.rotation.x -= 0.7 * Math.sin(ph); }
+    if (R.armL && !R.wingL) { R.armL.rotation.x -= 0.5 * Math.sin(ph); R.armR.rotation.x += 0.5 * Math.sin(ph); }
+  }
+  if (st.sleep) {
+    R.body.rotation.x += 0.35; R.body.position.y -= 0.05; R.head.rotation.x += 0.45;
+    R.armL.rotation.x -= 1.0; R.armR.rotation.x -= 1.0; R.armL.rotation.z += 0.5; R.armR.rotation.z -= 0.5;
+    R.torso.scale.y *= 1 + 0.05 * Math.sin(t * 1.2);
+  }
+  if (st.act) { const A = (ACT[R.key] || {})[st.act.kind]; if (A) A.fn(R, Math.min(1, st.act.p)); if (st.act.kind === 'atk' && R.melee) { R.body.position.z -= 0.1 * bell(st.act.p, 0, 0.24); R.body.scale.z *= 1 - 0.08 * bell(st.act.p, 0, 0.24); } }
+  if (st.stun) R.head.rotation.z += 0.18 * Math.sin(t * 6);
+  if (st.hit > 0) { const k = Math.sin(st.hit * Math.PI); R.body.scale.x *= 1 + 0.12 * k; R.body.scale.y *= 1 - 0.12 * k; R.body.position.z -= 0.06 * k; }
+  if (st.dead !== undefined) { const d = Math.min(1, st.dead); R.body.rotation.z += 0.5 * ease.out(Math.min(1, d * 3)) * (R.phase > 1.5 ? 1 : -1); R.yaw.rotation.y += ease.inOut(d) * Math.PI * 4; R.body.position.y += 0.25 * ease.out(d); const sc = 1 - ramp(d, 0.35, 1); R.yaw.scale.setScalar(Math.max(0.001, sc)); }
+  else R.yaw.scale.setScalar(1);
+  if (st.victory) hopUp(R, (t * 1.6) % 1, 0.25);
+}
+function setFlash(R, k) {
+  for (const m of R.mats) if (m.emissive) { m.emissive.setRGB(k, k * 0.95, k * 0.9); if (m === R.mats[0] && R.skinGlow) m.emissive.add(R.skinGlow); }
+}
+function setNightEyes(R, on) {
+  if (!R.eyeMat) return;
+  R.eyeMat.color.set(on ? R.glow : '#241914');
+}
+// 體型：費用越高越大，星級再放大
+const ART_SCALE = { 0: 1.0, 1: 1.0, 2: 1.07, 3: 1.14, 4: 1.22, 5: 1.32 };
+function animalScale(key, star) {
+  const A = ANIMALS[key] || EXTRA[key];
+  let s = ART_SCALE[A.cost] || 0.95;
+  if (key === 'boar') s = 1.15; if (key === 'minibee') s = 1.1;
+  return s * (1 + (star - 1) * 0.08);
+}
+
+// 造型：整隻動物染色（乘色＋微亮）
+const SKINS = {
+  base: { name: '原色', tint: '#ffffff', glow: '#000000' },
+  gold: { name: '黃金', tint: '#ffe08a', glow: '#2a1a00' },
+  night: { name: '夜影', tint: '#8a86b8', glow: '#000000' },
+  snow: { name: '雪白', tint: '#ffffff', glow: '#3a3a40' },
+  sakura: { name: '櫻花', tint: '#ffc0d0', glow: '#1a0008' },
+  jade: { name: '翡翠', tint: '#a8e0b8', glow: '#001a08' },
+};
+function applySkin(R, id) {
+  const sk = SKINS[id] || SKINS.base;
+  const m = R.mats[0]; if (!m) return;
+  m.color.set(sk.tint); m.emissive = new THREE.Color(sk.glow); R.skinGlow = m.emissive.clone();
+}
+// 3 星進化外觀：皇冠＋金色光環
+function addEvolveLook(R) {
+  if (R.crown) return;
+  const g = new THREE.Group(), gm = new THREE.MeshToonMaterial({ color: '#f2c14e', gradientMap: toonGrad(), emissive: new THREE.Color('#3a2400') });
+  g.add(mesh(GEO.cyl, gm, [0, 0, 0], [0.13, 0.06, 0.13]));
+  for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; g.add(mesh(GEO.cone, gm, [Math.cos(a) * 0.11, 0.07, Math.sin(a) * 0.11], [0.035, 0.09, 0.035])); g.add(mesh(GEO.sph, new THREE.MeshBasicMaterial({ color: ['#ff5a5a', '#5ac8ff', '#9be07a', '#ffd34d', '#d88aff'][i] }), [Math.cos(a) * 0.11, 0.13, Math.sin(a) * 0.11], 0.02)); }
+  g.position.set(0, (R.headTop || 1) - 0.42, 0);
+  R.head.add(g); R.crown = g;
+}
