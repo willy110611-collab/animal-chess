@@ -26,7 +26,7 @@ const CFG = {
   ENCOUNTER_ROUNDS: [2, 7, 12, 18],                     // 遭遇事件回合
   BANK_INTEREST_MAX: 3,                                 // 隊伍金庫利息上限
   AUG_ROUNDS: [4, 9, 14],                               // 海克斯三選一的回合（每場三次）
-  AUG_TIER_ODDS: [[34, 33, 33], [34, 33, 33], [34, 33, 33]], // 每次選擇時 銀／金／彩 機率（%），目前三者平均隨機
+  AUG_TIER_ODDS: [[55, 35, 10], [30, 50, 20], [10, 45, 45]], // 第 1、2、3 次海克斯的 銀／金／彩 機率（%）；太強的彩色另有「最早回合」限制
   STAR_MUL: [0, 100, 180, 320],                         // 星級生命與攻擊倍率（%）
   GIFT_GOLD_MAX: 5,
   MAX_ROUND: 0,           // 0 = 不限回合，打到一隊血量歸零為止
@@ -264,21 +264,21 @@ const AUGMENTS = [
   { id: 'scapegoat', tier: 2, name: '替罪之身', hook: 'kill', desc: '你的 3 費以上棋子第一次將被擊殺時，由身邊最近的 1、2 費友軍代替陣亡，核心回復 30% 生命。' },
   { id: 'lastStand', tier: 2, name: '絕處逢生', hook: 'start', desc: '團隊血量低於 40 時，你的棋子攻擊與攻速 +25%。' },
   { id: 'lunge', tier: 2, name: '疾風突刺', hook: 'start', desc: '你的近戰棋子射程 +1。' },
-  { id: 'beastking', tier: 3, name: '百獸之王', hook: 'start', desc: '你場上費用最高的棋子成為獸王：體型 1.2 倍，生命與攻擊 +80%，開場能量 +30。' },
+  { id: 'beastking', tier: 3, minRound: 9, name: '百獸之王', hook: 'start', desc: '你場上費用最高的棋子成為獸王：體型 1.2 倍，生命與攻擊 +80%，開場能量 +30。' },
   { id: 'shift', tier: 3, name: '乾坤大挪移', hook: 'tick', desc: '戰鬥第 3 秒與第 12 秒，你血量最低的棋子與最健康的棋子互換位置，並各回復 50% 生命。' },
-  { id: 'soulfeed', tier: 3, name: '噬魂進化', hook: 'kill', desc: '你的棋子每擊殺一次，本場攻擊 +15%、生命上限 +10%。' },
+  { id: 'soulfeed', tier: 3, minRound: 9, name: '噬魂進化', hook: 'kill', desc: '你的棋子每擊殺一次，本場攻擊 +15%、生命上限 +10%。' },
   { id: 'domain', tier: 3, name: '絕對領域', hook: 'hit', desc: '敵人站在我方後兩排時，攻擊與護甲 −40%，每秒受到 30 真實傷害。' },
   { id: 'mutation', tier: 3, name: '基因突變', hook: 'start', desc: '你的每隻棋子都獲得 +25 護甲魔抗與 10% 護盾。' },
   { id: 'ark', tier: 3, name: '最後的方舟', hook: 'econ', desc: '團隊血量 +20；本局接下來前 2 次敗北不扣血。' },
   { id: 'rewind', tier: 3, name: '時間回溯', hook: 'tick', desc: '戰鬥第 12 秒，你存活的棋子生命回到開場時的數值，並獲得 20% 護盾。' },
   { id: 'meteor', tier: 3, name: '天降隕石', hook: 'tick', desc: '每 6 秒轟炸敵人最密集的一圈（中心＋周圍 6 格），造成 200 魔法傷害。' },
   { id: 'plague', tier: 3, name: '鼠疫肆虐', hook: 'tick', desc: '戰鬥中敵方全體每 4 秒攻擊與護甲 −6%（可疊加）。' },
-  { id: 'beastgod', tier: 3, name: '獸神降臨', hook: 'econ', desc: '立即獲得一隻 2 星的 5 費動物。' },
+  { id: 'beastgod', tier: 3, minRound: 14, name: '獸神降臨', hook: 'econ', desc: '立即獲得一隻 2 星的 5 費動物。' },
   { id: 'bind', tier: 3, name: '地靈束縛', hook: 'start', desc: '戰鬥開始時，敵方 2 隻前排棋子被定身 2.5 秒。' },
-  { id: 'armsrace', tier: 3, name: '軍備競賽', hook: 'econ', desc: '立即升 1 級並獲得 20 金；人口上限額外 +1（最多 10）。' },
-  { id: 'mirror', tier: 3, name: '鏡像分身', hook: 'start', desc: '開場複製你場上費用最高的棋子（生命 50%），分身存活不會讓敵方扣你血。' },
+  { id: 'armsrace', tier: 3, minRound: 9, name: '軍備競賽', hook: 'econ', desc: '立即升 1 級並獲得 20 金；人口上限額外 +1（最多 10）。' },
+  { id: 'mirror', tier: 3, minRound: 9, name: '鏡像分身', hook: 'start', desc: '開場複製你場上費用最高的棋子（生命 50%），分身存活不會讓敵方扣你血。' },
   { id: 'carnival', tier: 3, name: '生死狂歡', hook: 'kill', desc: '你的棋子每擊殺一次，你全部棋子回復 5% 生命並獲得 10 能量。' },
-  { id: 'necro', tier: 3, name: '通靈轉生', hook: 'kill', desc: '每場戰鬥你前 2 隻陣亡的棋子，1 秒後以全滿生命復活，並獲得 50 能量。' },
+  { id: 'necro', tier: 3, minRound: 9, name: '通靈轉生', hook: 'kill', desc: '每場戰鬥你前 2 隻陣亡的棋子，1 秒後以全滿生命復活，並獲得 50 能量。' },
 ];
 const AUG = {}; for (const a of AUGMENTS) AUG[a.id] = a;
 const AUG_TIER_NAME = ['', '銀色', '金色', '彩色'];
@@ -523,7 +523,7 @@ function findCombos(B) {
     const as = B.units.filter(u => u.team === team && u.key === cb.a);
     const bs = B.units.filter(u => u.team === team && u.key === cb.b);
     let done = false;
-    for (const a of as) { if (done) break; for (const b of bs) if (a.owner !== b.owner && dist(a, b) <= (B.flags.bond ? 2 : 1)) { B.combos.push({ cb, a: a.id, b: b.id, team, fired: false }); done = true; break; } }
+    for (const a of as) { if (done) break; for (const b of bs) if ((a.owner !== b.owner || B.flags.solo) && a !== b && dist(a, b) <= (B.flags.bond ? 2 : 1)) { B.combos.push({ cb, a: a.id, b: b.id, team, fired: false }); done = true; break; } }
   }
 }
 
@@ -1211,13 +1211,15 @@ function createGame(opt) {
   const G = {
     seed: opt.seed >>> 0, rng: makeRng(opt.seed), round: 0, phase: 'lobby', timer: 0, rules, portal: null, portalVote: null, weather: 'sunny', stormLeft: 0,
     draft: null, encounter: null, migration: null, pings: [], lootLog: [], speed: 1,
-    teams: Array.from({ length: opt.players.length >> 1 }, (_, t) => ({ hp: rules.teamHp, streak: 0, ark: 0, bank: 0, captain: t * 2, out: false, place: 0 })),
+    solo: !!(opt.solo || rules.solo), // 單人混戰：每人自己一隊
+    teams: Array.from({ length: (opt.solo || rules.solo) ? opt.players.length : opt.players.length >> 1 }, (_, t) => ({ hp: rules.teamHp, streak: 0, ark: 0, bank: 0, captain: (opt.solo || rules.solo) ? t : t * 2, out: false, place: 0 })),
     players: opt.players.map((p, i) => ({
-      id: i, name: p.name, team: i >> 1, slot: i % 2, ai: !!p.ai, out: false,
+      id: i, name: p.name, team: (opt.solo || rules.solo) ? i : i >> 1, slot: (opt.solo || rules.solo) ? 0 : i % 2, ai: !!p.ai, out: false,
       gold: CFG.START_GOLD, xp: 0, level: CFG.START_LEVEL, bench: new Array(CFG.BENCH).fill(null),
       items: [], ready: false, giftedGold: 0, lastIncome: null, shop: [], locked: false,
       augs: [], augChoice: null, augRolled: [], popBonus: 0, discount: 0, freeRoll: 0, killGold: 0, reserved: {}, avoidCells: {}, vote: null, firstRollFree: false,
     })),
+    meta: opt.meta || [], // 伺服器整理的高勝率玩家陣容（電腦模仿用；開局分配完就刪掉，不進畫面同步）
     board: {}, pool: {}, terrain: {}, height: {}, arena: 'jungle', arenaStart: 0, uid: 1, battles: [], log: [], winner: -1, lastResult: null, acc: 0,
   };
   const poolMul = G.teams.length > 2 ? CFG.POOL_8P_PCT : 100; // 8 人局卡池放大
@@ -1331,7 +1333,7 @@ function act(G, pid, a) {
       return 'ok';
     }
     case 'move': {
-      const o = ownUnits(G, pid).find(o => o.u.uid === a.uid); if (!o) return 'bad';
+      const o = ownUnits(G, pid).find(o => o.u.uid === a.uid); if (!o) return moveMateUnit(G, pid, a); // 不是自己的：可能是在搬電腦隊友的棋子
       if (a.to.zone === 'bench') {
         const i = a.to.i, other = P.bench[i];
         if (o.zone === 'bench') { P.bench[o.i] = other; P.bench[i] = o.u; return 'ok'; }
@@ -1344,8 +1346,15 @@ function act(G, pid, a) {
       const occ = G.board[cell];
       if (occ && G.players[occ.owner].team !== P.team) return 'enemy_cell';
       if (occ && occ.owner !== pid) {
-        // 跟隊友的棋子互換：只限場上對場上
-        if (G.players[occ.owner].team !== P.team || o.zone !== 'board') return 'teammate_cell';
+        // 跟隊友的棋子互換：只限電腦隊友（真人隊友的棋子不能動）
+        const Mo = G.players[occ.owner];
+        if (Mo.team !== P.team || !Mo.ai) return 'teammate_cell';
+        if (o.zone === 'bench') { // 從備戰席放到電腦隊友的位置：電腦的棋子讓到它的備戰席
+          if (G.phase !== 'prep' || boardCount(G, pid) >= popCap(P)) return 'teammate_cell';
+          const sl = Mo.bench.indexOf(null); if (sl < 0) return 'teammate_cell';
+          delete G.board[cell]; Mo.bench[sl] = occ; occ.pinned = false; P.bench[o.i] = null; G.board[cell] = o.u; return 'ok';
+        }
+        occ.pinned = true;
         G.board[o.cell] = occ; G.board[cell] = o.u; G.log.push({ k: 'swap', pid, uid: o.u.uid, other: occ.uid }); return 'ok';
       }
       if (o.zone === 'board') { delete G.board[o.cell]; if (occ) G.board[o.cell] = occ; G.board[cell] = o.u; return 'ok'; }
@@ -1373,7 +1382,7 @@ function act(G, pid, a) {
       u.items.push(it); P.items.splice(a.idx, 1); G.log.push({ k: 'equip', pid, item: it, uid: u.uid }); return 'ok';
     }
     case 'gift': {
-      const T = teammate(G, pid);
+      const T = teammate(G, pid); if (!T) return 'bad';
       if (a.gold) {
         const g = Math.min(a.gold, P.gold, CFG.GIFT_GOLD_MAX - P.giftedGold); if (g <= 0) return 'limit';
         P.gold -= g; T.gold += g; P.giftedGold += g; G.log.push({ k: 'gift', pid, to: T.id, s: g + ' 金' }); return 'ok';
@@ -1398,7 +1407,7 @@ function act(G, pid, a) {
     case 'encounter': if (!G.encounter || !G.encounter.pending || G.teams[P.team].captain !== pid) return 'bad'; resolveEncounter(G, a.choice); return 'ok';
     case 'deposit': { const n = Math.min(a.n || 1, P.gold); if (n <= 0) return 'no_gold'; P.gold -= n; G.teams[P.team].bank += n; G.log.push({ k: 'bank', pid, n }); return 'ok'; }
     case 'withdraw': { const T = G.teams[P.team], n = Math.min(a.n || 1, T.bank); if (n <= 0) return 'bank_empty'; T.bank -= n; P.gold += n; G.log.push({ k: 'bank', pid, n: -n }); return 'ok'; }
-    case 'captain': { const T = G.teams[P.team]; if (T.captain !== pid) return 'not_captain'; T.captain = teammate(G, pid).id; G.log.push({ k: 'captain', pid, to: T.captain }); return 'ok'; }
+    case 'captain': { const T = G.teams[P.team]; if (T.captain !== pid || !teammate(G, pid)) return 'not_captain'; T.captain = teammate(G, pid).id; G.log.push({ k: 'captain', pid, to: T.captain }); return 'ok'; }
     case 'cmd': {
       if (!G.rules.commands || G.phase !== 'combat') return 'bad';
       const bt = G.battles.find(b => b.teams.includes(P.team)); if (!bt) return 'bad';
@@ -1409,21 +1418,23 @@ function act(G, pid, a) {
     case 'augroll': {
       if (!P.augChoice || P.augRolled[a.i] || !P.augChoice[a.i]) return 'bad';
       const tier = AUG[P.augChoice[a.i]].tier;
-      const pool = AUGMENTS.filter(x => x.tier === tier && !P.augs.includes(x.id) && !P.augChoice.includes(x.id)).map(x => x.id);
+      const pool = AUGMENTS.filter(x => x.tier === tier && !P.augs.includes(x.id) && !P.augChoice.includes(x.id) && augOk(G, x)).map(x => x.id);
       if (!pool.length) return 'bad';
       P.augChoice[a.i] = pool[G.rng(pool.length)]; P.augRolled[a.i] = true; return 'ok';
     }
     case 'ping': {
-      const T = teammate(G, pid);
+      const T = teammate(G, pid) || { ai: false };
       G.pings.push({ pid, kind: a.kind, cell: a.cell, key: a.key, t: G.round });
       if (T.ai) {
-        if (a.kind === 'want' && a.key) T.reserved[a.key] = true;
-        if (a.kind === 'place' && a.cell !== undefined) T.avoidCells[a.cell] = true;
+        if (a.kind === 'want' && a.key) { T.reserved[a.key] = true; aiSay(G, T.id, pid, `好，${ANIMALS[a.key].name}讓給你`); const mine = ownUnits(G, T.id).find(o => o.u.key === a.key && o.u.star === 1); if (mine && act(G, T.id, { t: 'gift', uid: mine.u.uid }) === 'ok') aiSay(G, T.id, pid, `我這隻${ANIMALS[a.key].name}先給你`); }
+        if (a.kind === 'place' && a.cell !== undefined) { T.avoidCells[a.cell] = true; aiSay(G, T.id, pid, '收到，那格留給你'); }
+        if (a.kind === 'danger') aiSay(G, T.id, pid, '了解，我會小心那邊');
+        if (a.kind === 'rally') aiSay(G, T.id, pid, '好，往那邊集合');
         if (a.kind === 'buy' && a.key) {
           const i = T.shop.indexOf(a.key);
           if (i >= 0 && T.gold >= ANIMALS[a.key].cost && P.bench.indexOf(null) >= 0 && act(G, T.id, { t: 'buy', slot: i }) === 'ok') {
             const bought = ownUnits(G, T.id).filter(o => o.zone === 'bench' && o.u.key === a.key).pop();
-            if (bought) act(G, T.id, { t: 'gift', uid: bought.u.uid });
+            if (bought && act(G, T.id, { t: 'gift', uid: bought.u.uid }) === 'ok') aiSay(G, T.id, pid, `買好了，${ANIMALS[a.key].name}給你！`);
           } else G.log.push({ k: 'pingfail', pid, to: T.id, key: a.key });
         }
       }
@@ -1431,6 +1442,19 @@ function act(G, pid, a) {
     }
   }
   return 'bad';
+}
+// 真人可以搬動 AI 隊友場上的棋子（只限準備階段、只在我方半場）；搬過的棋子 AI 不會再自己移回去
+function moveMateUnit(G, pid, a) {
+  const P = G.players[pid], M = teammate(G, pid);
+  if (!M || !M.ai || P.ai || G.phase !== 'prep' || !a.to || a.to.zone !== 'board') return 'bad';
+  const o = ownUnits(G, M.id).find(x => x.u.uid === a.uid && x.zone === 'board'); if (!o) return 'bad';
+  const cell = a.to.cell;
+  if (!inHalf(P.team, cell) || G.terrain[cellBase(cell)] === 'rock') return 'bad_cell';
+  const occ = G.board[cell];
+  if (occ && G.players[occ.owner].team !== P.team) return 'enemy_cell';
+  delete G.board[o.cell]; if (occ) { G.board[o.cell] = occ; if (occ.owner === M.id) occ.pinned = true; }
+  G.board[cell] = o.u; o.u.pinned = true;
+  G.log.push({ k: 'swap', pid, uid: o.u.uid, other: occ ? occ.uid : 0, mate: true }); return 'ok';
 }
 function addXp(P, n) {
   P.xp += n;
@@ -1478,6 +1502,9 @@ function rollTerrain(G) {
 
 // ---- 回合流程 ----
 function startGame(G) {
+  // 電腦模仿玩家：從高勝率的玩家陣容裡挑一套當目標（依勝率加權）
+  for (const P of G.players) if (P.ai) P.target = metaPick(G);
+  delete G.meta;
   G.round = 0; G.arenaStart = G.rng(ARENA_ORDER.length);
   if (G.rules.portals) {
     const pool = PORTALS.map(p => p.id), opts = []; while (opts.length < 3) opts.push(pool.splice(G.rng(pool.length), 1)[0]);
@@ -1559,6 +1586,7 @@ function terrainFor(G, team) {
   return t;
 }
 function startCombat(G) {
+  for (const P of G.players) if (!P.ai && !P.out) P.lastComp = compOf(G, P.id); // 記下真人這回合的陣容（結束時給伺服器學）
   const R = G.round, seed = (G.seed ^ Math.imul(R, 2654435761)) >>> 0;
   G.battles = [];
   if (isPve(R)) {
@@ -1659,6 +1687,8 @@ function update(G, dt) {
     if (G.draft) aiDraftTurns(G);
     const waiting = humans.some(p => p.augChoice) || G.portalVote || G.draft || (G.encounter && G.encounter.pending) || G.paused;
     if (!waiting) G.timer -= dt; // 有人在選擇時暫停倒數
+    if (G.timer <= 5000 && G.aiLate !== G.round) { G.aiLate = G.round; for (const P of G.players) if (P.ai && !P.out) aiLate(G, P.id); } // 準備最後 5 秒：電腦隊友再看一次真人隊友的擺法
+    if (G.aiMid !== G.round && G.timer < G.rules.prepSec * 600) { G.aiMid = G.round; for (const P of G.players) if (P.ai && !P.out) aiHelpMate(G, P.id); } // 準備到一半：AI 隊友看玩家買了什麼，再幫一次
     if (G.timer <= 0 || (humans.length && humans.every(p => p.ready))) {
       for (const P of G.players) if (P.augChoice) act(G, P.id, { t: 'aug', id: P.augChoice[0] });
       if (G.portalVote) resolvePortal(G);
@@ -1682,91 +1712,214 @@ function update(G, dt) {
 }
 
 // ---- AI ----
+function aiSay(G, from, to, text) { G.log.push({ k: 'aichat', pid: from, to, text }); }
+// AI 隊友主動幫忙：送玩家湊三星的棋子、幫買、玩家沒錢時送金幣，並朝玩家的羈絆湊陣容
+function aiHelpMate(G, pid) {
+  const P = G.players[pid], H = teammate(G, pid);
+  if (!H || H.ai || H.out) return {};
+  const hc = {}; for (const o of ownUnits(G, H.id)) if (o.u.star === 1) hc[o.u.key] = (hc[o.u.key] || 0) + 1;
+  let gave = 0;
+  // 1. 我手上有玩家正在湊的 1 星棋子 → 送過去（玩家已有 2 隻優先，其次 1 隻且是玩家標記想要的）
+  for (const o of ownUnits(G, pid)) {
+    if (gave >= 2) break;
+    const k = o.u.key; if (o.u.star !== 1 || !(hc[k] >= 2 || (hc[k] >= 1 && P.reserved[k]))) continue;
+    if (H.bench.indexOf(null) < 0) break;
+    if (act(G, pid, { t: 'gift', uid: o.u.uid }) === 'ok') { aiSay(G, pid, H.id, `送你一隻${ANIMALS[k].name}，湊三星！`); hc[k]++; gave++; }
+  }
+  // 2. 商店有玩家差一隻就升星的 → 幫買再送
+  for (let i = 0; i < P.shop.length && gave < 2; i++) {
+    const k = P.shop[i]; if (!k || hc[k] !== 2 || P.gold < ANIMALS[k].cost || H.bench.indexOf(null) < 0) continue;
+    if (act(G, pid, { t: 'buy', slot: i }) !== 'ok') continue;
+    const b = ownUnits(G, pid).filter(o => o.zone === 'bench' && o.u.key === k && o.u.star === 1).pop();
+    if (b && act(G, pid, { t: 'gift', uid: b.u.uid }) === 'ok') { aiSay(G, pid, H.id, `商店剛好有${ANIMALS[k].name}，幫你買了`); gave++; }
+  }
+  // 3. 玩家快沒錢、我很有錢 → 送金幣
+  if (H.gold < 4 && P.gold >= 16 && P.giftedGold < CFG.GIFT_GOLD_MAX) { const g = Math.min(CFG.GIFT_GOLD_MAX - P.giftedGold, 5); if (act(G, pid, { t: 'gift', gold: g }) === 'ok') aiSay(G, pid, H.id, `你錢不多，先拿 ${g} 金去用`); }
+  // 4. 玩家主力羈絆（場上最多的那個）→ 我買棋子時加分
+  const tr = {}; for (const k in G.board) { const u = G.board[k]; if (u.owner === H.id) for (const t of ANIMALS[u.key].traits) tr[t] = (tr[t] || 0) + 1; }
+  return tr;
+}
+// ---- AI（v0.12：會跟玩家配合、照陣容買、會存利息、懂站位）----
+// 數值都可以在 AI_CFG 調整
+const AI_CFG = {
+  LEVEL_AT: { 2: 3, 4: 4, 6: 5, 10: 6, 14: 7, 19: 8, 25: 9 }, // 第幾回合起想要升到幾級（普通難度）
+  SAVE: 50,                // 血量健康時存到多少金（吃滿利息）
+  ROLL_HP: 40,             // 團隊血量低於這個就開始刷新找牌
+  ROLL_KEEP: { easy: 999, normal: 20, hard: 10 }, // 刷新時至少留多少金
+  ROLL_LEVEL: { easy: 99, normal: 7, hard: 6 },    // 到幾級開始固定刷新（找 3、4 費二星）
+};
+const aiRoleOf = key => { const A = ANIMALS[key]; if (!A) return 'fighter'; const r = A.role || ''; return r.includes('坦') ? 'tank' : r.includes('刺客') ? 'assassin' : A.rng >= 2 ? 'carry' : 'fighter'; };
+const aiHumanMate = (G, pid) => { const T = teammate(G, pid); return T && !T.ai && !T.out ? T : null; };
+// 隊伍的羈絆計畫：看我和隊友場上＋備戰席已經有的種類，挑最有希望的 2～3 個羈絆
+const META_CFG = { USE_PCT: 70, TARGET_BUY: 18, TARGET_KEEP: 10 }; // 有玩家陣容時照著打的機率%、買目標棋子加分、留著目標棋子加分
+function compOf(G, pid) {
+  const P = G.players[pid], list = [];
+  for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid) continue; const [c, r] = cellRC(+k), [lc, lr] = toLocal(SIDE(P.team), c, r); list.push([u.key, u.star, lc, lr]); }
+  return list;
+}
+function metaPick(G) {
+  const L = (G.meta || []).filter(m => m.units && m.units.length >= 3); if (!L.length || G.rng(100) >= META_CFG.USE_PCT) return null;
+  let tot = 0; for (const m of L) tot += Math.max(1, Math.round((m.wr || 0.5) * 100)); let r = G.rng(tot);
+  for (const m of L) { r -= Math.max(1, Math.round((m.wr || 0.5) * 100)); if (r < 0) return { id: m.id, units: m.units }; }
+  return null;
+}
+function aiPlan(G, pid) {
+  const P = G.players[pid], seen = {}, cnt = {};
+  if (P.target) for (const [k] of P.target.units) if (ANIMALS[k]) for (const t of ANIMALS[k].traits) cnt[t] = (cnt[t] || 0) + (G.round >= 6 ? 1.5 : 0.6); // 目標陣容的羈絆
+  const add = (key, w) => { if (!ANIMALS[key] || seen[key]) return; seen[key] = 1; for (const t of ANIMALS[key].traits) cnt[t] = (cnt[t] || 0) + w; };
+  for (const k in G.board) { const u = G.board[k]; if (G.players[u.owner].team === P.team) add(u.key, u.owner === pid ? 1.2 : 1); }
+  for (const u of P.bench) if (u) add(u.key, 0.8);
+  const order = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+  const plan = {}; order.slice(0, 3).forEach((t, i) => { plan[t] = 3 - i; });
+  return plan;
+}
+function aiUnitValue(G, pid, u, plan) {
+  const A = ANIMALS[u.key]; if (!A) return 0;
+  let v = A.cost * u.star * u.star * 10 + u.items.length * 8;
+  for (const t of A.traits) v += (plan[t] || 0) * 4;
+  const P = G.players[pid]; if (P.target && P.target.units.some(x => x[0] === u.key)) v += META_CFG.TARGET_KEEP;
+  return v;
+}
+function aiPickAug(G, P) {
+  const R = G.round, T = G.teams[P.team];
+  const plan = aiPlan(G, P.id);
+  const score = id => {
+    const a = AUG[id]; let s = 10 + G.rng(6);
+    if (a.hook === 'econ') s += R <= 9 ? 8 : -4;
+    if (id === 'ark' && T.hp < 50) s += 12;
+    if (id === 'lastStand' && T.hp < 50) s += 8;
+    if (id === 'howl' && plan.pack) s += 10;
+    if ((id === 'amphibious' || id === 'wavestep') && plan.water) s += 8;
+    if (id === 'fortress' || id === 'mutation' || id === 'beastking') s += 4;
+    return s;
+  };
+  return P.augChoice.slice().sort((a, b) => score(b) - score(a))[0];
+}
 function aiPrep(G, pid) {
-  const P = G.players[pid], R = G.round, T = teammate(G, pid);
-  const lvlAdj = G.rules.aiLevel === 'easy' ? -1 : G.rules.aiLevel === 'hard' ? 1 : 0;
-  const target = Math.max(2, Math.min(CFG.MAX_LEVEL, 2 + Math.floor(R / 3) + lvlAdj));
-  const reserve = R >= 6 ? 10 : 0;
-  const mate = teammate(G, pid);
-  if (P.augChoice) act(G, pid, { t: 'aug', id: P.augChoice[G.rng(P.augChoice.length)] });
-  while (P.level < target && P.gold >= CFG.XP_COST + Math.min(reserve, 4)) act(G, pid, { t: 'level' });
-  // 隊伍羈絆偏好
-  const teamKeys = {}; for (const k in G.board) if (G.players[G.board[k].owner].team === P.team) teamKeys[G.board[k].key] = 1;
-  const traitHave = {}; for (const k in teamKeys) for (const t of ANIMALS[k].traits) traitHave[t] = (traitHave[t] || 0) + 1;
-  // 依商店購買；有錢時刷新找對子
+  const P = G.players[pid], R = G.round, lv = G.rules.aiLevel || 'normal', T = G.teams[P.team];
+  if (P.out) return;
+  if (P.augChoice) act(G, pid, { t: 'aug', id: aiPickAug(G, P) });
+  const human = aiHumanMate(G, pid);
+  // 1) 想要的等級
+  let target = 2; for (const r in AI_CFG.LEVEL_AT) if (R >= +r) target = AI_CFG.LEVEL_AT[r];
+  target = Math.max(2, Math.min(CFG.MAX_LEVEL, target + (lv === 'easy' ? -1 : lv === 'hard' ? 1 : 0) + (T.hp < AI_CFG.ROLL_HP ? 1 : 0)));
+  const healthy = T.hp >= 50, save = lv === 'easy' ? 10 : (R >= 6 && healthy ? Math.min(AI_CFG.SAVE, 10 * Math.floor(P.gold / 10)) : 0);
+  while (P.level < target && P.gold >= CFG.XP_COST && P.gold - CFG.XP_COST >= Math.min(save, 20)) if (act(G, pid, { t: 'level' }) !== 'ok') break;
+  // 2) 先照顧真人隊友：他快湊滿三隻的，我手上有就送他
+  const mateTr = aiHelpMate(G, pid); // 回應真人隊友（送棋子、送錢、幫買）—— 互動用 v0.12 甲版
+  // 3) 買牌
+  const plan = aiPlan(G, pid);
+  const keepGold = () => (P.level >= target || P.level >= CFG.MAX_LEVEL) ? Math.min(save, 50) : save;
   const buyPass = () => {
     for (let loop = 0; loop < CFG.SHOP_SIZE; loop++) {
-      const own = ownUnits(G, pid);
-      const cnt = {}; for (const o of own) if (o.u.star === 1) cnt[o.u.key] = (cnt[o.u.key] || 0) + 1;
-      let best = -1, bs = -1;
+      const own = ownUnits(G, pid), cnt = {};
+      for (const o of own) if (o.u.star === 1) cnt[o.u.key] = (cnt[o.u.key] || 0) + 1;
+      const benchFree = P.bench.filter(x => !x).length;
+      let best = -1, bs = 0;
       P.shop.forEach((k, i) => {
         if (!k || G.pool[k] <= 0 || P.reserved[k]) return;
         const A = ANIMALS[k], c = cnt[k] || 0;
-        if (P.gold < A.cost + (c >= 2 ? 0 : reserve)) return;
-        if (own.length >= P.level + 4 && c < 2) return;
-        let s = A.cost * 10 + c * 25 + G.rng(12);
-        for (const t of A.traits) s += (traitHave[t] || 0) * 4;
+        if (P.gold < A.cost) return;
+        const merges = c >= 2;
+        if (!merges && P.gold - A.cost < keepGold()) return;
+        if (!merges && benchFree <= 1) return;
+        let s = A.cost * 6 + c * 22 + G.rng(8) + (P.target && P.target.units.some(x => x[0] === k) ? META_CFG.TARGET_BUY : 0);
+        for (const t of A.traits) s += (plan[t] || 0) * 7 + (mateTr[t] || 0) * 3; // 跟著真人隊友的羈絆湊
+        if (A.cost > P.level - 1 && !c) s -= 8; // 太貴、還湊不起來的先不急
+        if (own.length >= popCap(P) + 4 && !c) s -= 30;
         if (s > bs) { bs = s; best = i; }
       });
-      if (best < 0 || act(G, pid, { t: 'buy', slot: best }) !== 'ok') break;
+      if (best < 0 || bs < 12) break;
+      if (act(G, pid, { t: 'buy', slot: best }) !== 'ok') break;
     }
   };
   buyPass();
-  const rollFloor = G.rules.aiLevel === 'easy' ? 999 : G.rules.aiLevel === 'hard' ? (R >= 10 ? 10 : 30) : (R >= 12 ? 20 : 50);
-  for (let n = 0; n < 6 && P.gold >= rollFloor + rerollCost(P) && P.level >= target; n++) { act(G, pid, { t: 'reroll' }); buyPass(); }
-  // 備戰區滿：賣最弱
-  while (P.bench.indexOf(null) < 0) {
-    const own = ownUnits(G, pid).filter(o => o.zone === 'bench').sort((a, b) => power(a.u) - power(b.u));
-    act(G, pid, { t: 'sell', uid: own[0].u.uid });
-  }
+  // 4) 刷新：血少或到了固定刷新的等級
+  const keep = AI_CFG.ROLL_KEEP[lv] || 20, rollLv = AI_CFG.ROLL_LEVEL[lv] || 7;
+  const wantRoll = T.hp < AI_CFG.ROLL_HP || P.level >= rollLv || (lv === 'hard' && R >= 12);
+  for (let n = 0; n < 12 && wantRoll && P.gold >= keep + rerollCost(P) && (T.hp < AI_CFG.ROLL_HP || P.gold >= Math.max(keep, 30)); n++) { if (act(G, pid, { t: 'reroll' }) !== 'ok') break; buyPass(); }
+  // 5) 備戰席太滿：賣最沒用的（不賣有對子的）
+  const sellWorst = () => {
+    const cnt = {}; for (const o of ownUnits(G, pid)) if (o.u.star === 1) cnt[o.u.key] = (cnt[o.u.key] || 0) + 1;
+    const cand = ownUnits(G, pid).filter(o => o.zone === 'bench').sort((a, b) => (aiUnitValue(G, pid, a.u, plan) + (cnt[a.u.key] >= 2 && a.u.star === 1 ? 60 : 0)) - (aiUnitValue(G, pid, b.u, plan) + (cnt[b.u.key] >= 2 && b.u.star === 1 ? 60 : 0)));
+    if (cand[0]) act(G, pid, { t: 'sell', uid: cand[0].u.uid });
+  };
+  for (let g = 0; g < 10 && P.bench.filter(x => !x).length < 1; g++) sellWorst();
   aiPlace(G, pid);
-  // 裝備：給最強的棋子
-  for (let i = P.items.length - 1; i >= 0; i--) {
-    const own = ownUnits(G, pid).filter(o => o.zone === 'board').sort((a, b) => power(b.u) - power(a.u));
-    for (const o of own) if (act(G, pid, { t: 'equip', idx: i, uid: o.u.uid }) === 'ok') break;
-  }
+  // 6) 場上用不到、又不在計畫裡的低費卡，後期賣掉換錢
+  if (R >= 10) for (const o of ownUnits(G, pid).filter(o => o.zone === 'bench' && o.u.star === 1 && ANIMALS[o.u.key].cost <= 2)) { const same = ownUnits(G, pid).filter(x => x.u.key === o.u.key && x.u.star === 1).length; if (same < 2 && !ANIMALS[o.u.key].traits.some(t => plan[t])) act(G, pid, { t: 'sell', uid: o.u.uid }); }
+  aiItems(G, pid);
   P.ready = true;
+}
+function aiItems(G, pid) {
+  const P = G.players[pid];
+  const board = ownUnits(G, pid).filter(o => o.zone === 'board' && !o.u.summon);
+  if (!board.length) return;
+  const score = (o, role) => ANIMALS[o.u.key].cost * o.u.star * o.u.star + (aiRoleOf(o.u.key) === role ? 6 : 0) - o.u.items.length * 2;
+  const carry = board.slice().sort((a, b) => score(b, 'carry') - score(a, 'carry'))[0];
+  const tank = board.slice().sort((a, b) => score(b, 'tank') - score(a, 'tank'))[0];
+  const DEF = { acorn: 1, shell: 1, dew: 1 };
+  for (let i = P.items.length - 1; i >= 0; i--) {
+    const it = P.items[i]; if (CONSUMABLES[it]) continue;
+    let order;
+    if (EMBLEMS[it]) order = board.filter(o => !ANIMALS[o.u.key].traits.includes(EMBLEMS[it].trait)).sort((a, b) => score(b, 'carry') - score(a, 'carry'));
+    else if (MATS[it]) {
+      const pair = board.find(o => o.u.items.some(x => MATS[x] && RECIPE[[x, it].sort().join('+')])); // 能合成就先合成
+      const main = DEF[it] ? tank : carry;
+      order = [pair && (pair === main || pair.u.items.length < CFG.MAX_ITEMS) ? pair : null, main, carry, tank].filter(Boolean).concat(board);
+    } else order = [ITEMS[it] && /受到傷害|護盾|生命|護甲|閃避|免疫/.test(ITEMS[it].desc) ? tank : carry, carry, tank].concat(board);
+    for (const o of order) if (act(G, pid, { t: 'equip', idx: i, uid: o.u.uid }) === 'ok') break;
+  }
 }
 function aiPlace(G, pid) {
   const P = G.players[pid];
-  // 先全部收回
-  for (const k in G.board) if (G.board[k].owner === pid) { const u = G.board[k]; delete G.board[k]; const s = P.bench.indexOf(null); if (s >= 0) P.bench[s] = u; else { P.bench.push(u); } }
-  const list = ownUnits(G, pid).filter(o => o.zone === 'bench').sort((a, b) => power(b.u) - power(a.u)).slice(0, popCap(P));
+  const inMine = k => inHalf(P.team, +k);
+  // 被真人隊友移動過的棋子（pinned）留在原地；其他的先收回重新排
+  for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid) continue; if (u.pinned && inMine(k)) continue; delete G.board[k]; const s = P.bench.indexOf(null); if (s >= 0) P.bench[s] = u; else P.bench.push(u); }
+  const plan = aiPlan(G, pid);
+  const onBoard = boardCount(G, pid);
+  const list = ownUnits(G, pid).filter(o => o.zone === 'bench').sort((a, b) => aiUnitValue(G, pid, b.u, plan) - aiUnitValue(G, pid, a.u, plan)).slice(0, Math.max(0, popCap(P) - onBoard));
   const free = [];
   for (let r = 0; r < CFG.ROWS_HALF; r++) for (let c = 0; c < CFG.COLS; c++) {
     const [gc, gr] = toGlobal(SIDE(P.team), c, r), k = teamCell(P.team, gr * CFG.COLS + gc);
     if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock' && !P.avoidCells[k]) free.push({ k, c, r });
   }
-  const centerScore = f => { const [c, r] = cellRC(f.k); return Math.abs(hexX(c, r) - ((CFG.COLS - 1) / 2 + 0.25)); };
+  const mid = (CFG.COLS - 1) / 2 + 0.25;
+  const centerScore = f => { const [c, r] = cellRC(f.k); return Math.abs(hexX(c, r) - mid); };
+  // 先放坦克、戰士，再放輸出、刺客（後排的才知道要躲在誰後面）
+  const rank = { tank: 0, fighter: 1, carry: 2, assassin: 3 };
+  list.sort((a, b) => rank[aiRoleOf(a.u.key)] - rank[aiRoleOf(b.u.key)]);
+  const front = CFG.ROWS_HALF - 1; // r：0 後排 … ROWS_HALF−1 最前排（本地座標）
   for (const o of list) {
-    const A = ANIMALS[o.u.key];
-    // 合體技：靠近隊友的搭檔
+    const A = ANIMALS[o.u.key], role = aiRoleOf(o.u.key);
     let spot = null;
+    if (P.target) { const tp = P.target.units.find(x => x[0] === o.u.key); if (tp) spot = free.find(f => f.c === tp[2] && f.r === tp[3]) || null; } // 照玩家陣容的站位
+    // 合體技：靠近搭檔（隊友的或自己的）
     for (const cb of COMBOS) {
       const partner = cb.a === o.u.key ? cb.b : cb.b === o.u.key ? cb.a : null; if (!partner) continue;
       for (const k in G.board) {
-        const pu = G.board[k]; if (pu.key !== partner || pu.owner === pid || G.players[pu.owner].team !== P.team) continue;
+        const pu = G.board[k]; if (pu.key !== partner || G.players[pu.owner].team !== P.team || (pu.owner === pid && !G.solo)) continue;
         const [pc, pr] = cellRC(+k);
         const adj = free.filter(f => { const [fc, fr] = cellRC(f.k); return hexD(fc, fr, pc, pr) <= 1; });
-        adj.sort((x, y) => (A.rng === 1 ? y.r - x.r : x.r - y.r) || centerScore(x) - centerScore(y) || x.c - y.c);
-        spot = adj[0];
-        if (spot) break;
+        adj.sort((x, y) => (A.rng === 1 ? y.r - x.r : x.r - y.r) || centerScore(x) - centerScore(y));
+        spot = adj[0]; if (spot) break;
       }
       if (spot) break;
     }
     if (!spot && G.rules.frontline && G.teams.length === 2 && (o.u.key === 'bat' || o.u.key === 'cheetah') && intruders(G, pid) < 1 && G.rng(2)) {
       const row = SIDE(P.team) === 0 ? CFG.ROWS_HALF : CFG.ROWS_HALF - 1;
-      for (const c of CENTER_COLS()) { const k = teamCell(P.team, row * CFG.COLS + c); if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock') { if (act(G, pid, { t: 'move', uid: o.u.uid, to: { zone: 'board', cell: k } }) === 'ok') { spot = 'done'; } break; } }
+      for (const c of CENTER_COLS()) { const k = teamCell(P.team, row * CFG.COLS + c); if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock') { if (act(G, pid, { t: 'move', uid: o.u.uid, to: { zone: 'board', cell: k } }) === 'ok') spot = 'done'; break; } }
       if (spot === 'done') continue;
     }
     if (!spot) {
-      const front = A.rng === 1 && o.u.key !== 'bat';
-      // 地形加權：遠程愛高台／暗影，近戰刺客愛彈射，大家都避開灼燒
       const tScore = f => { const tt = G.terrain[f.k], hi = (G.height || {})[f.k]; let s = 0;
-        if (tt === 'burn') s += 1.5; if (A.rng >= 2 && (hi || tt === 'shadow' || tt === 'tree')) s -= 1.2; if (tt === 'bounce') s += A.rng >= 2 || A.role === '坦' ? 2 : -0.8; return s; };
-      const rowS = f => front ? (CFG.ROWS_HALF - 1 - f.r) : f.r;
-      const cand = free.slice().sort((a, b) => (rowS(a) + tScore(a)) - (rowS(b) + tScore(b)) || centerScore(a) - centerScore(b) || a.c - b.c);
-      if (A.rng === 1 && (o.u.key === 'bat' || o.u.key === 'cheetah')) cand.sort((a, b) => b.r - a.r || centerScore(a) - centerScore(b));
+        if (tt === 'burn') s += 1.5; if (A.rng >= 2 && (hi || tt === 'shadow' || tt === 'tree')) s -= 1.2; if (tt === 'bounce') s += A.rng >= 2 || role === 'tank' ? 2 : -0.8; if (tt === 'water' && A.traits.includes('water')) s -= 0.8; return s; };
+      // 想站的列：坦克最前、戰士第二排、輸出後排（射程越遠越後面）、刺客後排角落（開場會跳）
+      const wantRow = role === 'tank' ? front : role === 'fighter' ? Math.max(0, front - 1) : role === 'assassin' ? 0 : Math.max(0, Math.min(front - 1, front - A.rng));
+      const sideBias = f => role === 'assassin' ? -Math.abs(f.c - (CFG.COLS - 1) / 2) * 0.35 : role === 'carry' ? centerScore(f) * 0.25 : centerScore(f) * 0.15;
+      // 輸出躲在坦克後面：同一欄前方有隊友比較好
+      const covered = f => { if (role !== 'carry') return 0; for (const k in G.board) { const u = G.board[k]; if (G.players[u.owner].team !== P.team) continue; const [c, r] = cellRC(+k), [lc, lr] = toLocal(SIDE(P.team), c, r); if (Math.abs(lc - f.c) <= 1 && lr > f.r) return -0.6; } return 0; };
+      const cand = free.slice().sort((a, b) => (Math.abs(a.r - wantRow) + tScore(a) + sideBias(a) + covered(a)) - (Math.abs(b.r - wantRow) + tScore(b) + sideBias(b) + covered(b)) || a.c - b.c);
       spot = cand[0];
     }
     if (!spot) break;
@@ -1774,6 +1927,12 @@ function aiPlace(G, pid) {
     act(G, pid, { t: 'move', uid: o.u.uid, to: { zone: 'board', cell: spot.k } });
   }
   compactBench(G, P);
+}
+// 準備階段最後幾秒：AI 隊友再看一次真人隊友的擺法（讓開被標記的位置、補位）
+function aiLate(G, pid) {
+  const P = G.players[pid], human = aiHumanMate(G, pid); if (!human || P.out) return;
+  aiHelpMate(G, pid);
+  aiPlace(G, pid); aiItems(G, pid);
 }
 function compactBench(G, P) {
   const extra = P.bench.slice(CFG.BENCH).filter(Boolean);
@@ -1791,14 +1950,15 @@ const popCap = P => Math.min(10, P.level + P.popBonus);
 const rerollCost = P => P.freeRoll > 0 ? 0 : P.discount > 0 ? 1 : CFG.REROLL_COST;
 function augMap(G) { const m = {}; for (const P of G.players) m[P.id] = P.augs.slice(); return m; }
 function lowMap(G) { const m = {}; for (const P of G.players) m[P.id] = G.teams[P.team].hp < 40; return m; }
+const augOk = (G, a) => !(a.minRound > G.round) && !(a.solo === false && G.solo); // 太強的海克斯只在後面回合出現
 function offerAugments(G) {
   const idx = CFG.AUG_ROUNDS.indexOf(G.round), odds = CFG.AUG_TIER_ODDS[Math.min(idx, CFG.AUG_TIER_ODDS.length - 1)];
   let r = G.rng(100), tier = 1; for (let i = 0; i < 3; i++) { if (r < odds[i]) { tier = i + 1; break; } r -= odds[i]; }
-  if (G.portal === 'prismatic' && idx === 0) tier = 3;
+  if (G.portal === 'prismatic' && idx === 0) tier = 3; // 傳送門「海克斯狂熱」：第一次就彩色（但仍受每個海克斯的最早回合限制）
   G.augTier = tier;
   for (const P of G.players) {
     if (P.out) continue;
-    const pool = AUGMENTS.filter(a => a.tier === tier && !P.augs.includes(a.id)).map(a => a.id);
+    const pool = AUGMENTS.filter(a => a.tier === tier && !P.augs.includes(a.id) && augOk(G, a)).map(a => a.id);
     const pick = [];
     while (pick.length < 3 && pool.length) pick.push(pool.splice(G.rng(pool.length), 1)[0]);
     P.augChoice = pick; P.augRolled = [];
@@ -1821,7 +1981,7 @@ function applyAugNow(G, P, id) {
 function pveOf(R) { const dc = (CFG.COLS - 7) >> 1, dr = CFG.ROWS_HALF - 4; return (PVE[R] || PVE[23]).map(([k, c, r]) => [k, c + dc, r + dr]); } // PVE 座標以 7×4 半場寫，換算到目前棋盤（置中、前排對齊）
 
 // ===== 天氣、遭遇、選秀、掉落、消耗品、中立物件 =====
-function battleFlags(G) { return { eternalnight: G.portal === 'eternalnight', bond: G.portal === 'bond' }; }
+function battleFlags(G) { return { eternalnight: G.portal === 'eternalnight', bond: G.portal === 'bond', solo: !!G.solo }; }
 function rollWeather(G) {
   if (!G.rules.weather) { G.weather = 'sunny'; return; }
   let list = ARENA_WEATHER[G.arena] || ['sunny'];
@@ -1975,10 +2135,11 @@ const SV = {
   REG_PER_IP_DAY: 5,     // 同一個 IP 一天最多註冊幾個帳號（擋大量分身）
   LOGIN_FAIL_HOUR: 10,   // 同一帳號一小時最多輸錯幾次
   MM_SAME_TZ: 2, MM_WIDEN_MS: 20000,
-  LADDER: { WIN2: 24, LOSE2: -18, PLACE4: [0, 36, 16, -10, -24], ELO_SPAN: 250 },
+  META: { MIN_UNITS: 4, MAX: 300, SEND: 60, MIN_GAMES: 6, MIN_WR: 0.35, KEEP_DAYS: 30 }, // 電腦模仿陣容庫：最多幾套、每次給電腦幾套、用過幾場後勝率低於多少就刪、多久沒更新就刪
+  LADDER: { WIN2: 24, LOSE2: -18, PLACE4: [0, 36, 16, -10, -24], ELO_SPAN: 250, SOLO_TOP: 36 }, // SOLO_TOP：單人混戰第 1 名基本分（最後一名 −36，中間平均分配）
 };
 const AI_NAMES_S = ['阿熊', '野狼幫甲', '野狼幫乙', '河馬團甲', '河馬團乙', '鴨鴨隊甲', '鴨鴨隊乙', '狸貓'];
-const MM_ORDER_S = { 4: [0, 2, 1, 3], 8: [0, 2, 4, 6, 1, 3, 5, 7] };
+const MM_ORDER_S = { 4: [0, 2, 1, 3], 8: [0, 2, 4, 6, 1, 3, 5, 7], solo: [0, 1, 2, 3, 4, 5, 6, 7], duel: [0, 1] };
 const te = new TextEncoder();
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
 const rand = n => hex(crypto.getRandomValues(new Uint8Array(n)));
@@ -2003,11 +2164,12 @@ export default {
       if (p === '/api/me') return json(req, await acc.me(tok));
       if (p === '/api/rename' && req.method === 'POST') { const b = await req.json(); return json(req, await acc.rename(tok, String(b.name || ''))); }
       if (p === '/api/logout' && req.method === 'POST') return json(req, await acc.logout(tok));
-      if (p === '/api/ladder') return json(req, await acc.ladder(tok));
+      if (p === '/api/ladder') return json(req, await acc.ladder(tok, url.searchParams.get('mode') || 'duo'));
+      if (p === '/api/meta') return json(req, { ok: true, list: await acc.getMeta() });
       if (p === '/api/ping') return json(req, { ok: true, t: Date.now(), colo: (req.cf && req.cf.colo) || '' });
       if (req.headers.get('Upgrade') === 'websocket') {
         let m;
-        if (p === '/ws/new') { const code = roomCode(); return env.ROOM.get(env.ROOM.idFromName(code)).fetch(new Request(url.origin + '/ws?code=' + code + '&mode=' + (url.searchParams.get('mode') === '8' ? 8 : 4), req)); }
+        if (p === '/ws/new') { const code = roomCode(), solo = url.searchParams.get('solo') === '1', md = solo ? Math.max(2, Math.min(8, +url.searchParams.get('mode') || 8)) : (url.searchParams.get('mode') === '8' ? 8 : 4); return env.ROOM.get(env.ROOM.idFromName(code)).fetch(new Request(url.origin + '/ws?code=' + code + '&mode=' + md + (solo ? '&solo=1' : ''), req)); }
         if ((m = p.match(/^\/ws\/room\/([A-Z0-9]{4})$/))) return env.ROOM.get(env.ROOM.idFromName(m[1])).fetch(new Request(url.origin + '/ws?code=' + m[1], req));
         if (p === '/ws/mm') return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch(req);
       }
@@ -2025,13 +2187,16 @@ export class Accounts extends DurableObject {
       CREATE TABLE IF NOT EXISTS fails (user TEXT, t INTEGER);
       CREATE TABLE IF NOT EXISTS matches (id TEXT PRIMARY KEY, t INTEGER, data TEXT);
       CREATE INDEX IF NOT EXISTS users_lp ON users(lp DESC);`);
+    // v0.12：單人天梯分開計分（舊資料表補欄位）
+    this.sql.exec('CREATE TABLE IF NOT EXISTS meta (id TEXT PRIMARY KEY, data TEXT, n INTEGER, games INTEGER DEFAULT 1, wins INTEGER DEFAULT 1, t INTEGER)');
+    for (const c of ['lp1', 'games1', 'wins1']) { try { this.sql.exec(`ALTER TABLE users ADD COLUMN ${c} INTEGER DEFAULT 0`); } catch (e) {} }
   }
   async hashPw(pass, salt) {
     const k = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveBits']);
     return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: te.encode(salt), iterations: SV.PBKDF2_ITER }, k, 256));
   }
   row(q, ...a) { const r = this.sql.exec(q, ...a).toArray(); return r[0] || null; }
-  pub(u) { return u ? { uid: u.uid, user: u.user, name: u.name, lp: u.lp, games: u.games, wins: u.wins } : null; }
+  pub(u) { return u ? { uid: u.uid, user: u.user, name: u.name, lp: u.lp, games: u.games, wins: u.wins, lp1: u.lp1 || 0, games1: u.games1 || 0, wins1: u.wins1 || 0 } : null; }
   newSession(uid) { const tok = rand(24); this.sql.exec('INSERT INTO sessions VALUES (?,?,?)', tok, uid, Date.now() + SV.SESSION_DAYS * 864e5); return tok; }
   async register(user, pass, name, ip) {
     user = user.trim().toLowerCase(); name = name.trim().slice(0, 8);
@@ -2063,17 +2228,40 @@ export class Accounts extends DurableObject {
   async me(tok) { const u = this.verify(tok); return u ? { ok: true, me: u } : { err: '請重新登入' }; }
   async logout(tok) { this.sql.exec('DELETE FROM sessions WHERE tok=?', String(tok)); return { ok: true }; }
   async rename(tok, name) { const u = this.verify(tok); name = name.trim().slice(0, 8); if (!u) return { err: '請重新登入' }; if (!name) return { err: '請填暱稱' }; this.sql.exec('UPDATE users SET name=? WHERE uid=?', name, u.uid); return { ok: true, me: this.verify(tok) }; }
-  async ladder(tok) {
-    const top = this.sql.exec('SELECT uid, name, lp, games, wins FROM users WHERE games>0 ORDER BY lp DESC, games DESC LIMIT 100').toArray();
-    const total = this.row('SELECT COUNT(*) AS n FROM users WHERE games>0').n;
+  async ladder(tok, mode) {
+    const [L, Gm, W] = mode === 'solo' ? ['lp1', 'games1', 'wins1'] : ['lp', 'games', 'wins'];
+    const top = this.sql.exec(`SELECT uid, name, ${L} AS lp, ${Gm} AS games, ${W} AS wins FROM users WHERE ${Gm}>0 ORDER BY ${L} DESC, ${Gm} DESC LIMIT 100`).toArray();
+    const total = this.row(`SELECT COUNT(*) AS n FROM users WHERE ${Gm}>0`).n;
     const u = this.verify(tok); let rank = 0;
-    if (u && u.games) rank = this.row('SELECT COUNT(*) AS n FROM users WHERE games>0 AND (lp>? OR (lp=? AND games>?))', u.lp, u.lp, u.games).n + 1;
-    return { ok: true, top, total, me: u, rank };
+    const ul = u ? (mode === 'solo' ? u.lp1 : u.lp) : 0, ug = u ? (mode === 'solo' ? u.games1 : u.games) : 0;
+    if (u && ug) rank = this.row(`SELECT COUNT(*) AS n FROM users WHERE ${Gm}>0 AND (${L}>? OR (${L}=? AND ${Gm}>?))`, ul, ul, ug).n + 1;
+    return { ok: true, top, total, me: u, rank, mode: mode === 'solo' ? 'solo' : 'duo' };
+  }
+  // ---- 電腦模仿玩家：高勝率陣容庫 ----
+  // 收進「打出好名次的真人陣容」；電腦用過後回報名次。勝率 =（好名次+1）/（場數+2）；勝率太低或太舊的慢慢淘汰
+  async metaAdd(comps, results) {
+    const now = Date.now();
+    for (const c of comps || []) {
+      if (!Array.isArray(c.units) || c.units.length < SV.META.MIN_UNITS || c.units.length > 12) continue;
+      const units = c.units.filter(u => Array.isArray(u) && typeof u[0] === 'string' && u[0].length < 20).map(u => [u[0], +u[1] || 1, +u[2] || 0, +u[3] || 0]);
+      const id = units.map(u => u[0]).sort().join(',');
+      if (this.row('SELECT id FROM meta WHERE id=?', id)) this.sql.exec('UPDATE meta SET data=?, games=games+1, wins=wins+1, t=? WHERE id=?', JSON.stringify(units), now, id);
+      else this.sql.exec('INSERT INTO meta (id,data,n,games,wins,t) VALUES (?,?,?,1,1,?)', id, JSON.stringify(units), +c.n || 2, now);
+    }
+    for (const r of results || []) if (r && r.id) this.sql.exec('UPDATE meta SET games=games+1, wins=wins+? WHERE id=?', r.good ? 1 : 0, String(r.id));
+    const M = SV.META;
+    this.sql.exec('DELETE FROM meta WHERE games>=? AND (wins*1.0/games)<?', M.MIN_GAMES, M.MIN_WR);
+    this.sql.exec('DELETE FROM meta WHERE t<?', now - M.KEEP_DAYS * 864e5);
+    this.sql.exec('DELETE FROM meta WHERE id NOT IN (SELECT id FROM meta ORDER BY (wins+1.0)/(games+2) DESC, t DESC LIMIT ?)', M.MAX);
+    return { ok: true };
+  }
+  async getMeta() {
+    return this.sql.exec('SELECT id, data, games, wins FROM meta ORDER BY (wins+1.0)/(games+2) DESC LIMIT ?', SV.META.SEND).toArray().map(r => ({ id: r.id, units: JSON.parse(r.data), wr: Math.round((r.wins + 1) / (r.games + 2) * 100) / 100, games: r.games }));
   }
   // 一場（或一隊被淘汰時）結算：plist = [{uid, team, place}]，teamsLp 由這裡查
-  async settle(matchId, n, plist, teamOfAll) {
-    const res = {};
-    const lpOf = uid => { const u = this.row('SELECT lp FROM users WHERE uid=?', uid); return u ? u.lp : 0; };
+  async settle(matchId, n, plist, teamOfAll, solo) {
+    const res = {}, LC = solo ? 'lp1' : 'lp', GC = solo ? 'games1' : 'games', WC = solo ? 'wins1' : 'wins';
+    const lpOf = uid => { const u = this.row(`SELECT ${LC} AS v FROM users WHERE uid=?`, uid); return u ? (u.v || 0) : 0; };
     const humans = teamOfAll.map(x => ({ uid: x.uid, team: x.team, lp: lpOf(x.uid) }));
     const avg = a => a.reduce((s, v) => s + v, 0) / Math.max(1, a.length);
     const allAvg = avg(humans.map(h => h.lp));
@@ -2081,15 +2269,15 @@ export class Accounts extends DurableObject {
     for (const p of plist) {
       const key = matchId + ':' + p.uid;
       if (this.row('SELECT id FROM matches WHERE id=?', key)) continue; // 同一場只算一次
-      const L = SV.LADDER, base = n === 2 ? (p.place === 1 ? L.WIN2 : L.LOSE2) : L.PLACE4[Math.min(4, p.place)];
+      const L = SV.LADDER, base = n === 2 ? (p.place === 1 ? L.WIN2 : L.LOSE2) : solo ? Math.round(L.SOLO_TOP - (p.place - 1) * 2 * L.SOLO_TOP / (n - 1)) : L.PLACE4[Math.min(4, p.place)];
       const opp = avg(Array.from({ length: n }, (_, t) => t).filter(t => t !== p.team).map(teamLp));
       const diff = Math.max(-500, Math.min(500, opp - teamLp(p.team))) / L.ELO_SPAN;
       let d = base > 0 ? base * (1 + 0.5 * diff) : base * (1 - 0.5 * diff);
       d = Math.round(Math.max(base > 0 ? 3 : -60, Math.min(base > 0 ? 60 : -3, d)));
       const before = lpOf(p.uid), after = Math.max(0, before + d);
-      this.sql.exec('UPDATE users SET lp=?, games=games+1, wins=wins+? WHERE uid=?', after, p.place === 1 ? 1 : 0, p.uid);
-      this.sql.exec('INSERT INTO matches VALUES (?,?,?)', key, Date.now(), JSON.stringify({ n, place: p.place, d: after - before }));
-      res[p.uid] = { before, after, d: after - before, place: p.place };
+      this.sql.exec(`UPDATE users SET ${LC}=?, ${GC}=${GC}+1, ${WC}=${WC}+? WHERE uid=?`, after, p.place === 1 ? 1 : 0, p.uid);
+      this.sql.exec('INSERT INTO matches VALUES (?,?,?)', key, Date.now(), JSON.stringify({ n, solo: !!solo, place: p.place, d: after - before }));
+      res[p.uid] = { before, after, d: after - before, place: p.place, solo: !!solo };
     }
     return res;
   }
@@ -2102,7 +2290,8 @@ export class Room extends DurableObject {
   async fetch(req) {
     const url = new URL(req.url);
     if (!this.code) this.code = url.searchParams.get('code') || '';
-    if (!this.seats) { const n = +url.searchParams.get('mode') || 0; if (n) this.seats = Array(n).fill(null); }
+    if (!this.seats) { const n = +url.searchParams.get('mode') || 0; if (n) this.seats = Array(n).fill(null); this.solo = url.searchParams.get('solo') === '1'; }
+    if (!this.metaReq) { this.metaReq = true; this.acc().getMeta().then(m => { this.meta = m; }).catch(() => {}); }
     const pair = new WebSocketPair(); const ws = pair[1]; ws.accept();
     const c = { ws, uid: null, seat: -1, last: Date.now() };
     this.conns.add(c);
@@ -2113,10 +2302,10 @@ export class Room extends DurableObject {
     return new Response(null, { status: 101, webSocket: pair[0] });
   }
   // 配對大廳先呼叫：設定人數與座位表，人到齊自動開打
-  async setup(mode, seatOf) { this.seats = Array(mode).fill(null); this.mm = { seatOf, t0: Date.now() }; this.ensureTimer(); return { ok: true }; }
+  async setup(mode, seatOf, solo) { this.solo = !!solo; this.seats = Array(mode).fill(null); this.mm = { seatOf, t0: Date.now() }; this.ensureTimer(); return { ok: true }; }
   send(c, m) { try { c.ws.send(JSON.stringify(m)); } catch (e) {} }
   bcast(m) { const s = JSON.stringify(m); for (const c of this.conns) if (c.uid) try { c.ws.send(s); } catch (e) {} }
-  roomMsg() { return { k: 'room', code: this.code, seats: this.seats, owner: this.seats ? this.seats.findIndex(s => s && s.uid === this.owner) : -1, ranked: !!this.mm }; }
+  roomMsg() { return { k: 'room', code: this.code, seats: this.seats, owner: this.seats ? this.seats.findIndex(s => s && s.uid === this.owner) : -1, ranked: !!this.mm, solo: !!this.solo }; }
   async onMsg(c, m) {
     if (m.k === 'ping') { this.send(c, { k: 'pong', t: m.t }); return; }
     if (m.k === 'hello') {
@@ -2127,12 +2316,17 @@ export class Room extends DurableObject {
       c.uid = u.uid;
       let seat = this.seats.findIndex(s => s && s.uid === u.uid);
       if (seat < 0) {
-        if (this.G) { this.send(c, { k: 'full', why: '遊戲已經開始了' }); c.uid = null; return; }
-        if (this.mm) { seat = this.mm.seatOf[u.uid]; if (seat === undefined) { this.send(c, { k: 'full', why: '這是配對房，你不在名單上' }); c.uid = null; return; } }
-        else seat = this.seats.findIndex(s => !s);
-        if (seat < 0 || this.seats[seat]) { this.send(c, { k: 'full', why: '房間滿了' }); c.uid = null; return; }
-        this.seats[seat] = { uid: u.uid, name: u.name, lp: u.lp };
-        if (!this.owner) this.owner = u.uid;
+        if (this.G && this.mm && this.mm.seatOf[u.uid] !== undefined && !this.seats[this.mm.seatOf[u.uid]]) { // 配對成員晚到：接回原本保留的位置（原本由電腦代打）
+          seat = this.mm.seatOf[u.uid]; this.seats[seat] = { uid: u.uid, name: u.name, lp: u.lp };
+          const P = this.G.players[seat]; if (P && !P.out) { P.ai = false; P.name = u.name; this.G.humanAt[seat] = true; this.G.ladder[seat] = { lp: u.lp, pid: u.uid, name: u.name }; this.G.ranked = this.isRanked(); }
+        } else if (this.G) { this.send(c, { k: 'full', why: '遊戲已經開始了' }); c.uid = null; return; }
+        else {
+          if (this.mm) { seat = this.mm.seatOf[u.uid]; if (seat === undefined) { this.send(c, { k: 'full', why: '這是配對房，你不在名單上' }); c.uid = null; return; } }
+          else seat = this.seats.findIndex(s => !s);
+          if (seat < 0 || this.seats[seat]) { this.send(c, { k: 'full', why: '房間滿了' }); c.uid = null; return; }
+          this.seats[seat] = { uid: u.uid, name: u.name, lp: u.lp };
+          if (!this.owner) this.owner = u.uid;
+        }
       }
       c.seat = seat;
       this.send(c, { k: 'seat', seat });
@@ -2144,7 +2338,7 @@ export class Room extends DurableObject {
     if (m.k === 'bye') { this.conns.delete(c); this.drop(c); try { c.ws.close(); } catch (e) {} return; }
     if (!this.G) {
       if (m.k === 'seat' && !this.mm) { const to = +m.seat; if (to >= 0 && to < this.seats.length && !this.seats[to]) { this.seats[to] = this.seats[c.seat]; this.seats[c.seat] = null; c.seat = to; this.send(c, { k: 'seat', seat: to }); this.bcast(this.roomMsg()); } }
-      else if (m.k === 'mode' && c.uid === this.owner && !this.mm) this.setMode(+m.n === 8 ? 8 : 4);
+      else if (m.k === 'mode' && c.uid === this.owner && !this.mm) { const solo = !!m.solo; const n = solo ? Math.max(2, Math.min(8, +m.n || 8)) : (+m.n === 8 ? 8 : 4); this.solo = solo; this.setMode(n, true); }
       else if (m.k === 'start' && c.uid === this.owner) this.start();
       return;
     }
@@ -2154,8 +2348,8 @@ export class Room extends DurableObject {
       this.send(c, { k: 'res', id: m.id, r }); this.snapAcc = 1e9;
     }
   }
-  setMode(n) {
-    if (n === this.seats.length) return;
+  setMode(n, force) {
+    if (n === this.seats.length) { if (force) this.bcast(this.roomMsg()); return; }
     if (n < this.seats.length) {
       for (let i = n; i < this.seats.length; i++) if (this.seats[i]) { const f = this.seats.slice(0, n).findIndex(x => !x); if (f < 0) return; this.seats[f] = this.seats[i]; this.seats[i] = null; for (const c of this.conns) if (c.seat === i) { c.seat = f; this.send(c, { k: 'seat', seat: f }); } }
       this.seats = this.seats.slice(0, n);
@@ -2170,7 +2364,7 @@ export class Room extends DurableObject {
   start() {
     if (this.G) return;
     const players = this.seats.map((s, i) => s ? { name: s.name, ai: false } : { name: AI_NAMES_S[i] || 'AI', ai: true });
-    this.G = createGame({ seed: (Date.now() & 0x7fffffff), rules: Object.assign({}, DEFAULT_RULES, { teams: this.seats.length >> 1 }), players });
+    this.G = createGame({ seed: (Date.now() & 0x7fffffff), rules: Object.assign({}, DEFAULT_RULES, { teams: this.solo ? this.seats.length : this.seats.length >> 1, solo: !!this.solo }), players, solo: !!this.solo, meta: this.meta || [] });
     const G = this.G; G.online = true; G.server = true; G.humanAt = players.map(p => !p.ai);
     G.ladder = this.seats.map(s => s ? { lp: s.lp || 0, pid: s.uid, name: s.name } : null);
     G.ranked = this.isRanked();
@@ -2195,6 +2389,7 @@ export class Room extends DurableObject {
     const G = this.G;
     if (G.phase !== 'over') update(G, dt);
     this.settleOuts();
+    if (G.phase === 'over' && !this.metaDone) { this.metaDone = true; this.metaReport(); }
     const bk = G.round + G.phase + G.battles.length;
     if (G.phase === 'combat' && this.battleKey !== bk && G.battles.length && G.battles[0].input) this.sendBattles();
     this.snapAcc = (this.snapAcc || 0) + dt;
@@ -2207,6 +2402,12 @@ export class Room extends DurableObject {
     this.btAcc = (this.btAcc || 0) + dt;
     if (G.phase === 'combat' && this.btAcc >= SV.BTICK_MS) { this.btAcc = 0; this.bcast({ k: 'tick', round: G.round, t: G.battles.map(b => b.B.t), cmds: G.battles.map(b => b.B.cmdLog || []), speed: 1 }); }
   }
+  metaReport() {
+    const G = this.G, n = G.teams.length, top = n <= 3 ? 1 : 2, good = t => (G.teams[t].place || 99) <= top;
+    const comps = G.players.filter((P, i) => G.humanAt[i] && good(P.team) && P.lastComp).map(P => ({ units: P.lastComp, n }));
+    const results = G.players.filter(P => P.ai && P.target).map(P => ({ id: P.target.id, good: (G.teams[P.team].place || 99) <= Math.max(1, Math.floor(n / 2)) }));
+    if (comps.length || results.length) this.acc().metaAdd(comps, results).catch(() => {});
+  }
   // 天梯：某隊名次確定（被淘汰或比賽結束）就結算那一隊的真人
   settleOuts() {
     const G = this.G; if (!G.ranked) return;
@@ -2216,7 +2417,7 @@ export class Room extends DurableObject {
     const all = this.seats.map((s, i) => s ? { uid: s.uid, team: G.players[i].team } : null).filter(Boolean);
     const plist = all.filter(x => ready.includes(x.team)).map(x => ({ uid: x.uid, team: x.team, place: G.teams[x.team].place }));
     if (!plist.length) return;
-    this.acc().settle(this.code + ':' + G.seed, G.teams.length, plist, all).then(res => {
+    this.acc().settle(this.code + ':' + G.seed, G.teams.length, plist, all, !!G.solo).then(res => {
       for (const c of this.conns) if (c.uid && res[c.uid]) this.send(c, Object.assign({ k: 'lp', seed: G.seed }, res[c.uid]));
     }).catch(() => {});
   }
@@ -2224,7 +2425,7 @@ export class Room extends DurableObject {
 
 // ===================== 排位配對 =====================
 export class Lobby extends DurableObject {
-  constructor(ctx, env) { super(ctx, env); this.q = { 4: new Map(), 8: new Map() }; this.timer = 0; }
+  constructor(ctx, env) { super(ctx, env); this.q = { 4: new Map(), 8: new Map(), solo: new Map(), duel: new Map() }; this.timer = 0; }
   async fetch(req) {
     const pair = new WebSocketPair(); const ws = pair[1]; ws.accept();
     const c = { ws, uid: null };
@@ -2238,14 +2439,15 @@ export class Lobby extends DurableObject {
     if (m.k === 'q') {
       const u = await this.env.ACC.get(this.env.ACC.idFromName('main')).verify(String(m.token || ''));
       if (!u) { try { c.ws.send(JSON.stringify({ k: 'err', why: '請先登入帳號' })); } catch (e) {} return; }
-      c.uid = u.uid; const mode = m.mode === 8 ? 8 : 4;
+      c.uid = u.uid; const mode = ['solo', 'duel'].includes(m.mode) ? m.mode : m.mode === 8 ? 8 : 4;
       for (const q of Object.values(this.q)) q.delete(u.uid);
       this.q[mode].set(u.uid, { c, uid: u.uid, tz: Math.max(-12, Math.min(14, +m.tz || 0)), t: Date.now(), name: u.name });
     } else if (m.k === 'cancel') { for (const q of Object.values(this.q)) q.delete(c.uid); }
   }
   match() {
     const now = Date.now();
-    for (const mode of [4, 8]) {
+    for (const mode of [4, 8, 'solo', 'duel']) {
+      const need = mode === 'solo' ? 8 : mode === 'duel' ? 2 : mode;
       const q = this.q[mode];
       for (const [uid, x] of q) if (x.c.ws.readyState !== 1) q.delete(uid);
       const n = q.size;
@@ -2255,13 +2457,13 @@ export class Lobby extends DurableObject {
         const others = all.slice(1).map(x => ({ x, near: Math.abs(x.tz - lead.tz) <= SV.MM_SAME_TZ })).sort((a, b) => (b.near - a.near) || (a.x.t - b.x.t));
         const nearN = others.filter(o => o.near).length, wide = now - lead.t >= SV.MM_WIDEN_MS;
         let pick = null;
-        if (nearN >= mode - 1) pick = others.filter(o => o.near).slice(0, mode - 1);
-        else if (wide) pick = others.slice(0, mode - 1);
+        if (nearN >= need - 1) pick = others.filter(o => o.near).slice(0, need - 1);
+        else if (wide) pick = others.slice(0, need - 1);
         if (!pick) break;
         const members = [lead].concat(pick.map(o => o.x)), seatOf = {};
         members.forEach((x, i) => { seatOf[x.uid] = MM_ORDER_S[mode][i]; q.delete(x.uid); });
         const code = roomCode();
-        this.env.ROOM.get(this.env.ROOM.idFromName(code)).setup(mode, seatOf).then(() => {
+        this.env.ROOM.get(this.env.ROOM.idFromName(code)).setup(need, seatOf, mode === 'solo' || mode === 'duel').then(() => {
           for (const x of members) try { x.c.ws.send(JSON.stringify({ k: 'match', room: code, n: members.length })); } catch (e) {}
         }).catch(() => {});
       }
