@@ -5,8 +5,10 @@ import { DurableObject } from 'cloudflare:workers';
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'http://localhost:8123', 'http://127.0.0.1:8123'],
+  VERSION: '__VER__',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
+  SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）
   BTICK_MS: 200,         // 戰鬥中多久送一次 tick
   JOIN_WAIT_MS: 15000,   // 配對成功後最多等成員進房多久
   IDLE_CLOSE_MS: 120000, // 房間沒人多久關掉
@@ -46,7 +48,7 @@ export default {
       if (p === '/api/logout' && req.method === 'POST') return json(req, await acc.logout(tok));
       if (p === '/api/ladder') return json(req, await acc.ladder(tok, url.searchParams.get('mode') || 'duo'));
       if (p === '/api/meta') return json(req, { ok: true, list: await acc.getMeta() });
-      if (p === '/api/ping') return json(req, { ok: true, t: Date.now(), colo: (req.cf && req.cf.colo) || '' });
+      if (p === '/api/ping') return json(req, { ok: true, t: Date.now(), v: SV.VERSION, colo: (req.cf && req.cf.colo) || '' });
       if (req.headers.get('Upgrade') === 'websocket') {
         let m;
         if (p === '/ws/new') { const code = roomCode(), solo = url.searchParams.get('solo') === '1', md = solo ? Math.max(2, Math.min(8, +url.searchParams.get('mode') || 8)) : (url.searchParams.get('mode') === '8' ? 8 : 4); return env.ROOM.get(env.ROOM.idFromName(code)).fetch(new Request(url.origin + '/ws?code=' + code + '&mode=' + md + (solo ? '&solo=1' : ''), req)); }
@@ -277,7 +279,9 @@ export class Room extends DurableObject {
       this.snapAcc = 0;
       const log = G.log.slice(this.logSent || 0);
       const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input') ? undefined : v);
-      if (s !== this.lastSnap || log.length) { this.lastSnap = s; this.bcast({ k: 'snap', s, log, logFrom: this.logSent || 0 }); this.logSent = G.log.length; }
+      // 只有內容真的變了才送（倒數計時與戰鬥進度每格都在變，比對時不算；客人自己會倒數），另外每隔一段時間保底送一次校正
+      const cmp = s.replace(/"(timer|acc)":-?[0-9.e+-]+/g, '');
+      if (cmp !== this.lastSnap || log.length || now - (this.snapAt || 0) >= SV.SNAP_KEEPALIVE_MS) { this.lastSnap = cmp; this.snapAt = now; this.bcast({ k: 'snap', s, log, logFrom: this.logSent || 0 }); this.logSent = G.log.length; }
     }
     this.btAcc = (this.btAcc || 0) + dt;
     if (G.phase === 'combat' && this.btAcc >= SV.BTICK_MS) { this.btAcc = 0; this.bcast({ k: 'tick', round: G.round, t: G.battles.map(b => b.B.t), cmds: G.battles.map(b => b.B.cmdLog || []), speed: 1 }); }

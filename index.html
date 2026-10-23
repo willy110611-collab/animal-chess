@@ -5340,7 +5340,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.2'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.4'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5958,6 +5958,10 @@ const NET_CFG = {
   TICK_MS: 200,                // 戰鬥中多久送一次 tick
   EXTRAP_TICKS: 30,            // 沒收到房主 tick 時，最多自己往前推幾個 tick（原本 10，網路一抖就停格）
   BUFFER_TICKS: 12,            // 客人的戰鬥落後房主幾個 tick 播放（吸收網路延遲，12 = 0.6 秒）
+  CATCHUP_PCT: 25,             // 客人戰鬥落後太多時，最多加快幾 % 追上（平滑追趕，不瞬移）
+  SNAP_JUMP_TICKS: 40,         // 落後超過幾個 tick 才直接跳過去（例如切回 App）
+  PREDICT: ['buy', 'sell', 'move', 'level', 'equip', 'lock'], // 這些操作先在自己手機上做出來，不等伺服器回覆
+  SNAP_KEEPALIVE_MS: 2000,     // 畫面沒變時，最久多久還是送一次（校正倒數計時）
   TAKEOVER_GAP_MS: 6000,       // 房主斷線時，候補順位每往後一位多等幾毫秒才接手
   MM_PING_MS: 2000,            // 排位配對：多久廣播一次「我在排」
   MM_STALE_MS: 7000,           // 多久沒消息就當作對方取消排隊
@@ -6001,11 +6005,11 @@ class MiniMqtt {
 }
 function netBrokers() { let o = null; try { o = localStorage.getItem('zoo_broker'); } catch (e) {} return o ? [o] : NET_CFG.BROKERS; }
 const netId = () => 'zc' + Math.random().toString(36).slice(2, 12);
-const NET = { epoch: 0, hostSeat: 0, mm: null, role: null, mq: null, myId: '', lastHeard: 0, timers: [], conns: [], host: null, code: '', seats: null, mySeat: 0, lastSnap: '', snapAcc: 0, tickAcc: 0, logSent: 0, battleKey: '', battles: [], hostT: [], hostAt: 0, cmds: [], speed: 1, pending: {}, reqId: 1, name: '' };
+const NET = { epoch: 0, hostSeat: 0, mm: null, role: null, mq: null, myId: '', lastHeard: 0, timers: [], conns: [], host: null, code: '', seats: null, mySeat: 0, lastSnap: '', snapAcc: 0, tickAcc: 0, logSent: 0, battleKey: '', battles: [], hostT: [], hostAt: 0, cmds: [], speed: 1, pending: {}, pred: [], playT: [], reqId: 1, name: '' };
 const AI_NAMES = ['阿熊', '野狼幫甲', '野狼幫乙', '河馬團甲', '河馬團乙', '鴨鴨隊甲', '鴨鴨隊乙'];
 function netName() { try { return localStorage.getItem('zoo_name') || '玩家'; } catch (e) { return '玩家'; } }
 function netSetName(n) { try { localStorage.setItem('zoo_name', n); } catch (e) {} }
-function netReset() { for (const t of NET.timers || []) clearInterval(t); NET.timers = []; clearInterval(NET.pingT); NET.pingT = 0; if (NET.ws) { const w = NET.ws; NET.ws = null; try { w.close(); } catch (e) {} } NET.srv = false; NET.ownerSeat = -1; NET.ranked = false; NET.code = ''; NET.tries = 0; NET.epoch = 0; NET.hostSeat = 0; NET.mmSeats = null; NET.started = false; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; }
+function netReset() { for (const t of NET.timers || []) clearInterval(t); NET.timers = []; clearInterval(NET.pingT); NET.pingT = 0; if (NET.ws) { const w = NET.ws; NET.ws = null; try { w.close(); } catch (e) {} } NET.srv = false; NET.ownerSeat = -1; NET.ranked = false; NET.code = ''; NET.tries = 0; NET.epoch = 0; NET.hostSeat = 0; NET.mmSeats = null; NET.started = false; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; NET.pred = []; NET.playT = []; }
 function netLeave() {
   try { if (NET.role === 'client' && NET.host) NET.host.send({ k: 'bye' }); } catch (e) {}
   const r = document.getElementById('netRtt'); if (r) r.remove();
@@ -6203,7 +6207,8 @@ function netHostTick(dt, fromTimer) {
   if (NET.snapAcc >= NET_CFG.SNAP_MS) {
     NET.snapAcc = 0;
     const sn = netSnapshot();
-    if (sn.s !== NET.lastSnap || sn.log.length) { NET.lastSnap = sn.s; netBroadcast({ k: 'snap', s: sn.s, log: sn.log, logFrom: sn.logFrom }); NET.logSent = G.log.length; }
+    const cmp = sn.s.replace(/"(timer|acc)":-?[0-9.e+-]+/g, ''), now = performance.now(); // 倒數與戰鬥進度不算變化，另外保底定時送
+    if (cmp !== NET.lastSnap || sn.log.length || now - (NET.snapAt || 0) >= NET_CFG.SNAP_KEEPALIVE_MS) { NET.lastSnap = cmp; NET.snapAt = now; netBroadcast({ k: 'snap', s: sn.s, log: sn.log, logFrom: sn.logFrom }); NET.logSent = G.log.length; }
   }
   NET.tickAcc += dt * 1000;
   if (G.phase === 'combat' && NET.tickAcc >= NET_CFG.TICK_MS) { NET.tickAcc = 0; netBroadcast({ k: 'tick', round: G.round, t: G.battles.map(b => b.B.t), cmds: G.battles.map(b => b.B.cmdLog || []), speed: G.speed || 1 }); }
@@ -6295,7 +6300,18 @@ async function netClientReconnect() {
 function netSendAct(a) {
   if (!NET.host) return 'bad';
   const id = NET.reqId++; NET.pending[id] = a.t; NET.host.send({ k: 'act', a, id });
+  // 先在自己手機上做出來（伺服器回來的畫面會校正）；還沒被伺服器處理的操作，收到舊畫面時會再套一次
+  if (G && NET_CFG.PREDICT.includes(a.t)) {
+    const r = netPredict(a);
+    if (r === 'ok') { NET.pred.push({ id, t: performance.now(), a: JSON.parse(JSON.stringify(a)) }); return 'ok'; }
+  }
   return 'net';
+}
+function netPredict(a) {
+  const n = G.log.length; let r;
+  try { r = act(G, ME, JSON.parse(JSON.stringify(a))); } catch (e) { r = 'bad'; }
+  G.log.length = n; // 特效與音效等伺服器的正式紀錄
+  return r;
 }
 function netClientMsg(m) {
   if (!m) return;
@@ -6310,12 +6326,12 @@ function netClientMsg(m) {
   else if (m.k === 'room') { NET.seats = m.seats; NET.code = m.code; renderRoom(); }
   else if (m.k === 'full') { toast(m.why, 3000); setTimeout(netLeave, 50); }
   else if (m.k === 'start') { const re = NET.started && G; ME = NET.mySeat = m.seat; NET.started = true; if (m.seats) NET.seats = m.seats; if (m.epoch !== undefined) { NET.epoch = m.epoch; NET.hostSeat = m.hostSeat; } if (!re) for (const k in S3.V) s3Remove(k); }
-  else if (m.k === 'res') { const t = NET.pending[m.id]; delete NET.pending[m.id]; if (m.r !== 'ok' && !['ready', 'ping', 'move'].includes(t)) toast(ERR[m.r] || '不行'); if (m.r !== 'ok' && t === 'move') renderPrep(); }
+  else if (m.k === 'res') { const t = NET.pending[m.id]; delete NET.pending[m.id]; NET.pred = NET.pred.filter(x => x.id !== m.id); if (m.r !== 'ok' && !['ready', 'ping', 'move'].includes(t)) toast(ERR[m.r] || '不行'); if (m.r !== 'ok' && t === 'move') renderPrep(); }
   else if (m.k === 'snap') netApplySnap(m);
   else if (m.k === 'battles') {
     if (NET.battleRound === m.round && NET.battles.length === m.list.length && NET.battles.every(b => b.B)) { if (m.t) { NET.hostT = m.t; NET.cmds = m.cmds; NET.hostAt = performance.now(); } return; } // 已經在跑同一批（重連補送）
     NET.battles = m.list.map(b => ({ teams: b.teams, ghost: !!b.ghost, input: b.input, B: createBattle(JSON.parse(JSON.stringify(b.input))) }));
-    NET.battleRound = m.round; NET.hostT = m.t || NET.battles.map(() => 0); NET.cmds = m.cmds || NET.battles.map(() => []); NET.hostAt = performance.now();
+    NET.battleRound = m.round; NET.playT = []; NET.hostT = m.t || NET.battles.map(() => 0); NET.cmds = m.cmds || NET.battles.map(() => []); NET.hostAt = performance.now();
     if (G) G.battles = NET.battles;
   }
   else if (m.k === 'tick') { if (m.round !== NET.battleRound) return; NET.hostT = m.t; NET.hostAt = performance.now(); NET.cmds = m.cmds; NET.speed = m.speed || 1; }
@@ -6328,7 +6344,10 @@ function netApplySnap(m) {
   ng.rng = () => 0; // 客人不擲骰；_ra 留著，接手當房主時用
   ng.battles = (NET.battleRound === ng.round) ? NET.battles : [];
   const first = !G;
+  if (G && G.phase === 'combat' && ng.phase === 'combat') ng.acc = G.acc; // 戰鬥播放進度由自己的時鐘決定
   G = ng;
+  const pnow = performance.now(); NET.pred = NET.pred.filter(x => pnow - x.t < 4000); // 太久沒回覆（多半是斷線掉了）就不再套
+  for (const x of NET.pred) netPredict(x.a); // 伺服器還沒處理到的操作，套回新畫面上
   if (first) {
     lastPhase = ''; lastRound = 0; cv = null; sel = null; logIdx = 0; prevLevel = 0; prevGold = null; prevTiers = {};
     $('overlay').hidden = true; $('lobby').hidden = true; $('game').hidden = false; s3Resize(); $('stage').dataset.arena = G.arena;
@@ -6343,16 +6362,28 @@ function netApplySnap(m) {
 function netClientUpdate(dt) {
   if (!G) return;
   if (G.timer > 0) G.timer -= dt * 1000;
+  if (G.phase === 'prep' || G.phase === 'lobby') return; // 戰鬥資料可能比「進入戰鬥」的畫面先到：這時還沒開打，不能快轉
   if (G.phase !== 'combat') { // 戰鬥結束：把還沒播完的部分快轉跑完
     for (const bt of NET.battles) if (bt.B && !bt.B.over && NET.battleRound === G.round) { let n = 0; while (!bt.B.over && n++ < 2000) { netApplyCmds(bt, NET.battles.indexOf(bt)); step(bt.B); } bt.B.ev.length = 0; }
     return;
   }
+  // 平滑播放：自己的時鐘照正常速度走，落後就稍微加快、超前就稍微放慢，不再一頓一頓地追
   const since = (performance.now() - NET.hostAt) / CFG.TICK_MS * (NET.speed || 1);
+  const adv = dt * 1000 / CFG.TICK_MS * (NET.speed || 1);
+  let fracSet = false;
   NET.battles.forEach((bt, i) => {
-    const B = bt.B; if (!B || B.over) return;
-    const target = Math.floor((NET.hostT[i] || 0) + Math.min(since, NET_CFG.EXTRAP_TICKS) - NET_CFG.BUFFER_TICKS);
+    const B = bt.B; if (!B) return;
+    const target = (NET.hostT[i] || 0) + Math.min(since, NET_CFG.EXTRAP_TICKS) - NET_CFG.BUFFER_TICKS;
+    let pt = NET.playT[i]; if (pt === undefined || pt < B.t) pt = B.t;
+    const lag = target - pt, k = NET_CFG.CATCHUP_PCT / 100;
+    if (lag > NET_CFG.SNAP_JUMP_TICKS) pt = target;
+    else pt += adv * Math.max(1 - k, Math.min(1 + k, 1 + lag / 10));
+    pt = Math.min(pt, Math.max(B.t, target + 2)); // 不要跑到伺服器前面太多
+    NET.playT[i] = pt;
+    if (B.over) return;
     let n = 0;
-    while (B.t < target && !B.over && n++ < 40) { netApplyCmds(bt, i); step(B); }
+    while (B.t + 1 <= pt && !B.over && n++ < 400) { netApplyCmds(bt, i); step(B); }
+    if (!fracSet && cv && cv.B === B) { fracSet = true; G.acc = Math.max(0, Math.min(1, pt - B.t)) * CFG.TICK_MS; }
   });
 }
 function netApplyCmds(bt, i) {

@@ -18,6 +18,8 @@ open(os.path.join(H, 'dist/preview.html'), 'w', encoding='utf-8').write(page.rep
 imp = "import { DurableObject } from 'cloudflare:workers';\n"
 srv = rd(os.path.join(H, 'server/server.js')).replace(imp, '')
 game = '\n'.join(rd(os.path.join(S, f + '.js')) for f in ['data','sheet','engine','game'])
+_v = re.search(r"dataset\.v\s*=\s*'([^']+)'", rd(os.path.join(S, 'ui.js')))
+srv = srv.replace('__VER__', _v.group(1) if _v else '')
 open(os.path.join(ROOT, 'server/worker.js'), 'w', encoding='utf-8').write(imp + game + '\n' + srv)
 # 版本號提醒
 v = re.search(r"dataset\.v\s*=\s*'([^']+)'", rd(os.path.join(S, 'ui.js')))
