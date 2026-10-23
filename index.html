@@ -400,8 +400,112 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
   .team b { font-size: 16px; }
   .helpbtn { top: 64px; }
 }
+
+/* ===== 開場：載入＋登入（不顯示遊戲畫面） ===== */
+#splash { position: fixed; inset: 0; z-index: 60; overflow: hidden; background: #f6b27a; display: flex; flex-direction: column; align-items: center; transition: opacity .6s ease, visibility .6s; }
+#splash.out { opacity: 0; visibility: hidden; pointer-events: none; }
+#splash .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+#splash .logo { position: relative; margin-top: calc(9vh + env(safe-area-inset-top, 0px)); text-align: center; color: #fff; }
+#splash .logo h1 { font-family: var(--f-display); font-size: clamp(46px, 13vw, 76px); margin: 0; letter-spacing: .08em; -webkit-text-stroke: 2px #a8481f; paint-order: stroke fill; text-shadow: 0 5px 0 #7c3415, 0 12px 26px rgba(120,40,10,.35); animation: spPop .9s cubic-bezier(.2,1.4,.4,1) both; }
+#splash .logo p { margin: 8px 0 0; font-weight: 800; font-size: 15px; color: #8a3d1c; }
+@keyframes spPop { from { transform: scale(.6) translateY(10px); opacity: 0; } }
+#spCard { box-sizing: border-box; position: relative; margin-top: 3vh; width: min(380px, calc(100% - 32px)); background: rgba(255,248,234,.94); border-radius: 18px; padding: 16px; box-shadow: 0 12px 36px rgba(90,40,15,.3); animation: spPop .5s ease both; }
+#spCard h2 { font-family: var(--f-display); margin: 0 0 8px; font-size: 22px; }
+#spCard .x { display: none; }
+#spLoad { position: absolute; left: 50%; bottom: calc(9vh + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(420px, 74vw); transition: opacity .4s; }
+#spLoad.done { opacity: 0; }
+#spTrack { position: relative; height: 14px; border-radius: 999px; background: rgba(120,50,25,.28); box-shadow: inset 0 2px 3px rgba(80,30,10,.25); }
+#spFill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #ffe08a, #ffb84d); box-shadow: 0 0 10px rgba(255,220,140,.7); }
+#spRunner { position: absolute; bottom: 12px; left: 0%; width: 54px; height: 40px; margin-left: -27px; }
+#spRunner .body { animation: spBob .32s ease-in-out infinite alternate; transform-origin: 27px 30px; }
+#spRunner .lg1 { animation: spLeg .32s ease-in-out infinite alternate; transform-origin: 20px 30px; }
+#spRunner .lg2 { animation: spLeg .32s ease-in-out infinite alternate-reverse; transform-origin: 34px 30px; }
+#spRunner .dust { animation: spDust .64s linear infinite; }
+@keyframes spBob { to { transform: translateY(-3px) rotate(-3deg); } }
+@keyframes spLeg { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
+@keyframes spDust { from { transform: translateX(0) scale(.6); opacity: .7; } to { transform: translateX(-14px) scale(1.2); opacity: 0; } }
+#spText { margin-top: 8px; text-align: center; color: #fffaf0; font-weight: 700; font-size: 13px; text-shadow: 0 1px 0 rgba(120,40,10,.4); }
+.cl1 { animation: spDrift 46s linear infinite; } .cl2 { animation: spDrift 64s linear infinite; animation-delay: -30s; } .cl3 { animation: spDrift 80s linear infinite; animation-delay: -12s; }
+@keyframes spDrift { from { transform: translateX(-300px); } to { transform: translateX(1500px); } }
+.spSun { animation: spSun 4s ease-in-out infinite alternate; transform-origin: 300px 190px; }
+@keyframes spSun { to { transform: scale(1.06); } }
+.spIsle { animation: spFloat 5s ease-in-out infinite alternate; }
+@keyframes spFloat { to { transform: translateY(-8px); } }
+.hop1, .hop2, .hop3 { animation: spHop 1.4s cubic-bezier(.3,0,.5,1) infinite; }
+.hop2 { animation-delay: -.45s; } .hop3 { animation-delay: -.9s; }
+@keyframes spHop { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-16px); } }
+.leaf { animation: spLeaf linear infinite; }
+@keyframes spLeaf { from { transform: translate(0, -40px) rotate(0); } to { transform: translate(-60px, 860px) rotate(540deg); } }
+@media (prefers-reduced-motion: reduce) { #splash * { animation: none !important; } }
+#game { padding-top: env(safe-area-inset-top, 0px); } /* iPhone 動態島／瀏海：遊戲畫面整個往下讓開 */
 </style>
 
+<div id="splash">
+  <svg class="scene" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="spSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9c4"/><stop offset=".45" stop-color="#ffc58e"/><stop offset="1" stop-color="#ee8a5a"/></linearGradient>
+      <radialGradient id="spSunG"><stop offset="0" stop-color="#fffbe8"/><stop offset=".55" stop-color="#ffe7a8"/><stop offset="1" stop-color="#ffe7a8" stop-opacity="0"/></radialGradient>
+    </defs>
+    <rect width="1200" height="800" fill="url(#spSky)"/>
+    <circle class="spSun" cx="760" cy="230" r="110" fill="url(#spSunG)"/>
+    <g fill="#fff8ee" opacity=".9">
+      <g class="cl1"><ellipse cx="160" cy="150" rx="56" ry="18"/><ellipse cx="186" cy="136" rx="30" ry="20"/><ellipse cx="140" cy="140" rx="20" ry="13"/></g>
+      <g class="cl2" opacity=".75"><ellipse cx="300" cy="300" rx="44" ry="13"/><ellipse cx="320" cy="290" rx="22" ry="15"/></g>
+      <g class="cl3" opacity=".85"><ellipse cx="0" cy="380" rx="60" ry="16"/><ellipse cx="28" cy="366" rx="30" ry="20"/><ellipse cx="-20" cy="370" rx="22" ry="13"/></g>
+      <g class="cl1" style="animation-delay:-25s"><ellipse cx="-200" cy="220" rx="48" ry="15"/><ellipse cx="-178" cy="208" rx="26" ry="17"/></g>
+    </g>
+    <path d="M0 520 Q120 440 260 500 T520 480 T780 470 T1040 500 T1200 470 V800 H0Z" fill="#e9a46a" opacity=".85"/>
+    <path d="M0 590 Q150 520 300 570 T600 545 T900 560 T1200 530 V800 H0Z" fill="#a9c56f"/>
+    <g class="spIsle"><g transform="translate(400,0)">
+      <ellipse cx="200" cy="628" rx="150" ry="34" fill="#8a5a3c" opacity=".35"/>
+      <path d="M58 600 L200 560 L342 600 L330 640 Q200 676 70 640Z" fill="#7a4e33"/>
+      <path d="M58 600 L200 560 L342 600 L200 640Z" fill="#9cc466"/>
+      <g fill="none" stroke="#c9e29a" stroke-width="1.6" opacity=".9">
+        <path d="M95 590 L130 580 L165 590 L130 600Z"/><path d="M165 590 L200 580 L235 590 L200 600Z"/><path d="M235 590 L270 580 L305 590 L270 600Z"/>
+        <path d="M130 600 L165 590 L200 600 L165 610Z"/><path d="M200 600 L235 590 L270 600 L235 610Z"/><path d="M165 610 L200 600 L235 610 L200 620Z"/>
+      </g>
+      <g class="hop1"><ellipse cx="130" cy="590" rx="15" ry="13" fill="#ffd34d"/><circle cx="125" cy="586" r="2" fill="#3b2a24"/><path d="M114 590 l-6 2 6 2z" fill="#f08a2c"/><path d="M128 577 q3-6 7-2" stroke="#e0a020" stroke-width="2" fill="none"/></g>
+      <g class="hop2"><ellipse cx="200" cy="578" rx="16" ry="14" fill="#fff6ea"/><ellipse cx="193" cy="560" rx="4" ry="11" fill="#fff6ea"/><ellipse cx="205" cy="559" rx="4" ry="11" fill="#fff6ea"/><ellipse cx="193" cy="561" rx="2" ry="7" fill="#f7b8b0"/><circle cx="195" cy="576" r="2" fill="#3b2a24"/><circle cx="206" cy="576" r="2" fill="#3b2a24"/><ellipse cx="200" cy="582" rx="2.5" ry="1.6" fill="#e88"/></g>
+      <g class="hop3"><path d="M255 596 q16-26 36 0z" fill="#7a5640"/><path d="M258 590 l-4-8 7 4 2-9 5 8 5-9 3 9 6-6-1 9z" fill="#5e3f2c"/><ellipse cx="287" cy="592" rx="8" ry="6" fill="#f2d2a6"/><circle cx="289" cy="590" r="1.6" fill="#3b2a24"/><circle cx="294" cy="592" r="1.6" fill="#3b2a24"/></g>
+    </g></g>
+    <path d="M0 700 Q160 640 330 685 T660 670 T980 690 T1200 660 V800 H0Z" fill="#7fae55"/>
+    <g fill="#5f8f3e"><path d="M130 688 q4-16 8 0z"/><path d="M430 682 q4-18 8 0z"/><path d="M480 690 q4-14 8 0z"/><path d="M730 676 q4-18 8 0z"/><path d="M770 672 q4-14 8 0z"/><path d="M1050 684 q4-16 8 0z"/></g>
+    <g fill="#ffd38a" opacity=".85">
+      <ellipse class="leaf" cx="480" cy="0" rx="5" ry="2.5" style="animation-duration:11s"/>
+      <ellipse class="leaf" cx="610" cy="0" rx="4" ry="2" style="animation-duration:14s;animation-delay:-5s" fill="#f7a35c"/>
+      <ellipse class="leaf" cx="730" cy="0" rx="5" ry="2.5" style="animation-duration:12s;animation-delay:-9s" fill="#c9e29a"/>
+      <ellipse class="leaf" cx="800" cy="0" rx="4" ry="2" style="animation-duration:16s;animation-delay:-2s"/>
+      <ellipse class="leaf" cx="250" cy="0" rx="5" ry="2.5" style="animation-duration:13s;animation-delay:-7s" fill="#f7a35c"/>
+      <ellipse class="leaf" cx="1050" cy="0" rx="5" ry="2.5" style="animation-duration:15s;animation-delay:-3s" fill="#c9e29a"/>
+    </g>
+  </svg>
+  <div class="logo"><h1>動物戰棋</h1><p>跟隊友同一張棋盤，打贏對面！</p></div>
+  <div id="spCard" hidden></div>
+  <div id="spLoad">
+    <div id="spTrack"><div id="spFill"></div>
+      <svg id="spRunner" viewBox="0 0 54 40" aria-hidden="true">
+        <g class="dust" fill="#fff3dc"><circle cx="8" cy="34" r="3"/><circle cx="4" cy="31" r="2"/></g>
+        <g class="lg1"><rect x="18" y="28" width="5" height="9" rx="2.5" fill="#5e3f2c"/></g>
+        <g class="lg2"><rect x="32" y="28" width="5" height="9" rx="2.5" fill="#5e3f2c"/></g>
+        <g class="body">
+          <path d="M8 30 Q10 8 30 8 Q44 9 46 24 L46 30Z" fill="#7a5640"/>
+          <path d="M9 22 l-5-3 6-1-3-6 7 3 1-7 5 6 3-7 3 7 5-6 1 7 6-3-2 7" fill="#5e3f2c"/>
+          <ellipse cx="42" cy="25" rx="10" ry="8" fill="#f2d2a6"/>
+          <circle cx="44" cy="22" r="1.9" fill="#3b2a24"/><circle cx="44.6" cy="21.4" r=".6" fill="#fff"/>
+          <circle cx="51" cy="25" r="2.2" fill="#3b2a24"/>
+          <ellipse cx="41" cy="28" rx="2.6" ry="1.5" fill="#f2a0a0" opacity=".8"/>
+        </g>
+      </svg>
+    </div>
+    <div id="spText">載入中…</div>
+  </div>
+</div>
+<script>
+// 進度條：先在這裡跑起來（大程式還在解析時也會動），之後由遊戲程式回報真實進度
+(function(){var t=8,v=0,f=document.getElementById('spFill'),r=document.getElementById('spRunner'),x=document.getElementById('spText');
+var m='載入中';window.LD={set:function(p,msg){t=Math.max(t,p);if(msg)m=msg;},get:function(){return v;}};
+(function tick(){v+=(t-v)*0.12+(v<t?0.15:0);if(v>t)v=t;if(t<30)t+=0.08;f.style.width=v+'%';r.style.left=v+'%';x.textContent=m+'　'+Math.round(v)+'%';if(v<99.9)(window.requestAnimationFrame||setTimeout)(tick,16);else{f.style.width='100%';r.style.left='100%';}})();})();
+</script>
 <div id="app">
   <section id="lobby">
     <div class="parade" id="parade"></div>
@@ -465,7 +569,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 // ===== 資料區：數值、文字可直接改這裡 =====
 // 時間單位：tick（1 tick = 50ms，20 tick = 1 秒）
 const CFG = {
-  COLS: 7, ROWS_HALF: 4, ROWS: 8,
+  COLS: 9, ROWS_HALF: 5, ROWS: 10, // 棋盤欄數、每邊列數（v0.10 起 9×10；改這裡全部跟著變）
   TICK_MS: 50,
   PREP_SEC: 30,          // 準備階段秒數
   COMBAT_MAX_TICK: 700,  // 戰鬥最長 35 秒
@@ -592,7 +696,7 @@ const TRAITS = {
   armor:   { name: '甲冑', tiers: [2, 3, 5], desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +10', '甲冑 +90，全隊 +20'], val: [30, 60, 90] },
   night:   { name: '夜行', tiers: [2, 4, 6], desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +50%', '暴擊 +80%'], val: [25, 50, 80] },
 };
-const SYNERGY_BONUS = 20; // 默契加成：兩位隊友都有出該羈絆時效果 +20%
+let SYNERGY_BONUS = 20; // 默契加成：兩位隊友都有出該羈絆時效果 +20%
 
 const TERRAIN = {
   grass: { name: '草叢', desc: '開場隱身，第一擊 +50%' },
@@ -760,7 +864,7 @@ const PREY = {
   eagle: ['squirrel', 'hare', 'fox', 'penguin', 'chameleon'], fox: ['hare', 'squirrel', 'frog'], komodo: ['boar', 'hare', 'wolf', 'rhino'],
   chameleon: ['bee', 'minibee'], peacock: ['frog', 'chameleon'], eel: ['frog', 'penguin'], whale: ['octopus'], penguin: ['eel'],
 };
-const PREY_BONUS = 25;
+let PREY_BONUS = 25;
 // ===== 天氣（依場地抽，每回合一次）=====
 const WEATHER = {
   sunny: { name: '晴天', desc: '沒有特殊效果' },
@@ -810,6 +914,22 @@ const ENCOUNTERS = [
   { id: 'toolbox', name: '工具箱', desc: '每人獲得 1 個重鑄器和 1 個拆卸器' },
 ];
 
+// ===== 由「遊戲數據.xlsx」產生（tools/xlsx2sheet.py），請不要手改；要改請改 Excel =====
+const SHEET = {};
+(function applySheet(S) {
+  if (S.CFG) { Object.assign(CFG, S.CFG); CFG.ROWS = CFG.ROWS_HALF * 2; }
+  for (const k in S.ANIMALS || {}) Object.assign(ANIMALS[k], S.ANIMALS[k]);
+  for (const k in S.EVOLVE || {}) EVOLVE[k] = S.EVOLVE[k];
+  for (const k in S.TRAITS || {}) Object.assign(TRAITS[k], S.TRAITS[k]);
+  for (const k in S.MATS || {}) Object.assign(MATS[k], S.MATS[k]);
+  for (const k in S.ITEMS || {}) ITEMS[k] = Object.assign(ITEMS[k] || {}, S.ITEMS[k]);
+  for (const k in S.AUG || {}) if (AUG[k]) Object.assign(AUG[k], S.AUG[k]);
+  if (S.MISC) { if (S.MISC.SYNERGY_BONUS !== undefined) SYNERGY_BONUS = S.MISC.SYNERGY_BONUS; if (S.MISC.PREY_BONUS !== undefined) PREY_BONUS = S.MISC.PREY_BONUS; }
+  for (const k in RECIPE) delete RECIPE[k];
+  for (const k in ITEMS) RECIPE[ITEMS[k].from.slice().sort().join('+')] = k;
+  for (const t in TRAITS) if (EMBLEMS['emb_' + t]) { EMBLEMS['emb_' + t].name = TRAITS[t].name + '紋章'; EMBLEMS['emb_' + t].desc = '裝上後這隻動物多算一個「' + TRAITS[t].name + '」羈絆'; }
+})(SHEET);
+
 // ===== 戰鬥引擎：決定性整數模擬（同種子同結果，四台手機各自跑） =====
 function makeRng(seed) {
   let a = seed >>> 0;
@@ -825,7 +945,7 @@ function makeRng(seed) {
 const SKILL_MUL = [0, 100, 150, 225];
 const idx = (c, r) => r * CFG.COLS + c;
 const inB = (c, r) => c >= 0 && c < CFG.COLS && r >= 0 && r < CFG.ROWS;
-// ===== 六角格（odd-r：奇數列往右半格）。棋盤 7×8，以 (3.25, 3.5) 為中心點對稱 =====
+// ===== 六角格（odd-r：奇數列往右半格）。棋盤 CFG.COLS×CFG.ROWS（目前 9×10），以棋盤中心點對稱 =====
 const hexD = (c1, r1, c2, r2) => { const q1 = c1 - ((r1 - (r1 & 1)) >> 1), q2 = c2 - ((r2 - (r2 & 1)) >> 1), dq = q1 - q2, dr = r1 - r2; return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2; };
 const hexX = (c, r) => c + ((r & 1) ? 0.5 : 0); // 橫向實際位置（算「欄」範圍用）
 const NB_EVEN = [[0, 1], [-1, 1], [1, 0], [-1, 0], [0, -1], [-1, -1]], NB_ODD = [[1, 1], [0, 1], [1, 0], [-1, 0], [1, -1], [0, -1]];
@@ -1638,6 +1758,7 @@ const stageOf = R => R <= 3 ? 1 : 2 + Math.floor((R - 4) / 5);
 const stageStart = R => R === 1 || (R >= 4 && (R - 4) % 5 === 0);
 // team 本地座標（自己半場 r0 後排 → r3 前排）↔ 全場座標
 // side：0 = 下半場、1 = 上半場（team1 的座標點對稱翻轉）
+const CENTER_COLS = () => { const m = (CFG.COLS - 1) >> 1, o = [m]; for (let d = 1; d <= m; d++) o.push(m - d, m + d); return o.slice(0, 5); }; // 由中間往兩邊
 const toGlobal = (side, c, r) => side === 0 ? [c, r] : [CFG.COLS - 1 - c, CFG.ROWS - 1 - r];
 const toLocal = toGlobal; // 對稱
 // 多隊模式：每兩隊共用一塊棋盤存放（隊 0/1 用 0～55，隊 2/3 用 100～155…），戰鬥時再搬到同一張戰場
@@ -1667,7 +1788,7 @@ function createGame(opt) {
     board: {}, pool: {}, terrain: {}, height: {}, arena: 'jungle', arenaStart: 0, uid: 1, battles: [], log: [], winner: -1, lastResult: null, acc: 0,
   };
   const poolMul = G.teams.length > 2 ? CFG.POOL_8P_PCT : 100; // 8 人局卡池放大
-  for (const k in ANIMALS) G.pool[k] = rules.bans.includes(k) ? 0 : Math.floor(CFG.POOL[ANIMALS[k].cost] * poolMul / 100);
+  for (const k in ANIMALS) G.pool[k] = (rules.bans.includes(k) || !(ANIMALS[k].cost >= 1)) ? 0 : Math.floor((CFG.POOL[ANIMALS[k].cost] || 0) * poolMul / 100); // 費用 0 ＝ 停用
   G.lastOpp = G.teams.map(() => -1);
   return G;
 }
@@ -2183,7 +2304,7 @@ function aiPlace(G, pid) {
     const [gc, gr] = toGlobal(SIDE(P.team), c, r), k = teamCell(P.team, gr * CFG.COLS + gc);
     if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock' && !P.avoidCells[k]) free.push({ k, c, r });
   }
-  const centerScore = f => { const [c, r] = cellRC(f.k); return Math.abs(hexX(c, r) - 3.25); };
+  const centerScore = f => { const [c, r] = cellRC(f.k); return Math.abs(hexX(c, r) - ((CFG.COLS - 1) / 2 + 0.25)); };
   for (const o of list) {
     const A = ANIMALS[o.u.key];
     // 合體技：靠近隊友的搭檔
@@ -2202,7 +2323,7 @@ function aiPlace(G, pid) {
     }
     if (!spot && G.rules.frontline && G.teams.length === 2 && (o.u.key === 'bat' || o.u.key === 'cheetah') && intruders(G, pid) < 1 && G.rng(2)) {
       const row = SIDE(P.team) === 0 ? CFG.ROWS_HALF : CFG.ROWS_HALF - 1;
-      for (const c of [3, 2, 4, 1, 5]) { const k = teamCell(P.team, row * CFG.COLS + c); if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock') { if (act(G, pid, { t: 'move', uid: o.u.uid, to: { zone: 'board', cell: k } }) === 'ok') { spot = 'done'; } break; } }
+      for (const c of CENTER_COLS()) { const k = teamCell(P.team, row * CFG.COLS + c); if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock') { if (act(G, pid, { t: 'move', uid: o.u.uid, to: { zone: 'board', cell: k } }) === 'ok') { spot = 'done'; } break; } }
       if (spot === 'done') continue;
     }
     if (!spot) {
@@ -2264,7 +2385,7 @@ function applyAugNow(G, P, id) {
   }
 }
 
-function pveOf(R) { return PVE[R] || PVE[23]; }
+function pveOf(R) { const dc = (CFG.COLS - 7) >> 1, dr = CFG.ROWS_HALF - 4; return (PVE[R] || PVE[23]).map(([k, c, r]) => [k, c + dc, r + dr]); } // PVE 座標以 7×4 半場寫，換算到目前棋盤（置中、前排對齊）
 
 // ===== 天氣、遭遇、選秀、掉落、消耗品、中立物件 =====
 function battleFlags(G) { return { eternalnight: G.portal === 'eternalnight', bond: G.portal === 'bond' }; }
@@ -3266,6 +3387,7 @@ function s3Init(wrap, canvas, overlay) {
   s3Resize();
   window.addEventListener('resize', s3Resize);
 }
+const CAM_FIT = 1 + (CFG.COLS - 7) * 0.085; // 棋盤每多 1 欄鏡頭拉遠多少（數字越小棋子越大，但邊緣可能出畫）
 function s3Resize() {
   const w = S3.wrap.clientWidth, h = S3.wrap.clientHeight;
   S3.W = w; S3.H = h;
@@ -3273,7 +3395,7 @@ function s3Resize() {
   const a = w / h; S3.cam.aspect = a;
   // 依畫面比例調整距離，讓 7 欄＋備戰席剛好入鏡
   S3.cam.fov = 36;
-  const dist = (a < 1 ? 13.0 / Math.max(0.62, a) : 12.2 + 3.2 / a) * 0.93; // 六角棋盤較短，鏡頭拉近一點
+  const dist = (a < 1 ? 13.0 / Math.max(0.62, a) : 12.2 + 3.2 / a) * 0.93 * CAM_FIT; // 六角棋盤較短，鏡頭拉近一點；CAM_FIT 依棋盤大小
   const ang = 0.93;
   S3.camBase.set(0, Math.sin(ang) * dist, Math.cos(ang) * dist + 0.9);
   S3.camLook.set(0, 0, a < 1 ? 0.15 : 0.2);
@@ -3283,8 +3405,10 @@ function s3Resize() {
 // ---- 座標 ----
 // 六角格：奇數列往右半格，列距 √3/2；整盤以 (0, -0.5) 為中心
 const HEX_DZ = 0.866;
-const cellWorld = (vc, vr) => [vc + ((vr & 1) ? 0.5 : 0) - 3.25, -0.5 + (3.5 - vr) * HEX_DZ];
-const benchWorld = i => [(i - 3.5) * 0.8, 3.85];
+const BOARD_CX = (CFG.COLS - 1) / 2 + 0.25, BOARD_CZ = (CFG.ROWS - 1) / 2; // 棋盤中心（odd-r 點對稱）
+const cellWorld = (vc, vr) => [vc + ((vr & 1) ? 0.5 : 0) - BOARD_CX, -0.5 + (BOARD_CZ - vr) * HEX_DZ];
+const benchWorld = i => [(i - 3.5) * 0.8, -0.5 + BOARD_CZ * HEX_DZ + 1.32];
+const BOARD_GROW_X = (CFG.COLS - 7) / 2, BOARD_GROW_Z = (CFG.ROWS - 8) / 2 * HEX_DZ; // 比原本 7×8 大多少
 
 // ---- 場地 ----
 const ARENA_LOOK = {
@@ -3545,11 +3669,11 @@ function vnoise(x, z) { // 簡單平滑雜訊 0..1
   return (h(i, j) * (1 - u) + h(i + 1, j) * u) * (1 - v) + (h(i, j + 1) * (1 - u) + h(i + 1, j + 1) * u) * v;
 }
 function buildGround(key) {
-  const L = ARENA_LOOK[key], W = 9.6, D = 10.6, geo = new THREE.PlaneGeometry(W, D, 96, 106); geo.rotateX(-Math.PI / 2);
+  const L = ARENA_LOOK[key], W = 9.6 + BOARD_GROW_X * 2, D = 10.6 + BOARD_GROW_Z * 2, geo = new THREE.PlaneGeometry(W, D, Math.round(W * 10), Math.round(D * 10)); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, n = pos.count, cols = new Float32Array(n * 3), edge = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     const x = pos.getX(i), z = pos.getZ(i) - 0.5; pos.setZ(i, z);
-    const u = Math.abs(x) / 4.2, w = Math.abs(z + 0.5) / 4.2, d = Math.pow(Math.pow(u, 5) + Math.pow(w, 5), 0.2) + (vnoise(x * 1.7 + 9, z * 1.7) - 0.5) * 0.05;
+    const u = Math.abs(x) / (4.2 + BOARD_GROW_X), w = Math.abs(z + 0.5) / (4.2 + BOARD_GROW_Z), d = Math.pow(Math.pow(u, 5) + Math.pow(w, 5), 0.2) + (vnoise(x * 1.7 + 9, z * 1.7) - 0.5) * 0.05;
     edge[i] = d;
     let y = groundH(x, z);
     if (d > 0.985) y = -0.12 - (d - 0.985) * 9; // 島邊緣往下收
@@ -4191,22 +4315,38 @@ function banner(b1, b2, cls) { const b = $('banner'); b.className = ''; b.queryS
 const goldSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="9" fill="#d99a2b"/><circle cx="12" cy="13" r="6.2" fill="#f2c14e"/><path d="M7.5 7.5q4.5-5 9 0z" fill="#7a4f28"/></svg>';
 
 // ---- 3D 小頭像（商店卡、圖鑑、資訊卡）----
-function makePortraits() {
+// 頭像：第一次開啟時用 3D 模型畫出來（分批，不卡住畫面），畫好後存在本機，之後開遊戲直接讀
+const PORT_VER = 'p1-' + Object.keys(ANIMALS).length; // 模型外觀有改時把 p1 改成 p2，舊快取就會重畫
+function makePortraits(first, done) {
+  try { const c = JSON.parse(localStorage.getItem('zoo_port') || 'null'); if (c && c.v === PORT_VER) { Object.assign(PORT, c.p); document.querySelectorAll('img[data-pk]').forEach(im => { if (PORT[im.dataset.pk]) im.src = PORT[im.dataset.pk]; }); done && done(); return; } } catch (e) {}
+  const all = Object.keys(ANIMALS).concat(['hare', 'boar']);
+  const order = first.concat(all.filter(k => !first.includes(k)));
   const c = document.createElement('canvas'); c.width = c.height = 220;
   const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, alpha: true, preserveDrawingBuffer: true });
   r.setClearColor(0x000000, 0);
   const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xfff1dc, 0x8a5a3c, 1.3)); const d = new THREE.DirectionalLight(0xffe2b8, 2.2); d.position.set(-3, 5, 6); sc.add(d);
   const cam = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
-  for (const k of Object.keys(ANIMALS).concat(['hare', 'boar'])) {
+  const one = k => {
     const R = buildAnimal(k); R.phase = 0; poseRig(R, { t: 0.4 });
     R.yaw.rotation.y = -0.4; sc.add(R.root);
     const h = Math.max(0.9, R.headTop || 1);
     cam.position.set(0, h * 0.6 + 0.2, 2.75 * h); cam.lookAt(0, h * 0.47, 0);
     r.render(sc, cam); PORT[k] = c.toDataURL('image/png'); sc.remove(R.root);
-  }
-  r.dispose(); r.forceContextLoss && r.forceContextLoss();
+    document.querySelectorAll(`img[data-pk="${k}"]`).forEach(im => { im.src = PORT[k]; });
+    LD.set(50 + 40 * i / order.length);
+  };
+  let i = 0;
+  const step = () => {
+    const t0 = performance.now();
+    while (i < order.length && performance.now() - t0 < 30) one(order[i++]); // 每批最多 30ms，中間讓畫面更新
+    if (i < order.length) { setTimeout(step, 0); return; }
+    r.dispose(); r.forceContextLoss && r.forceContextLoss();
+    try { localStorage.setItem('zoo_port', JSON.stringify({ v: PORT_VER, p: PORT })); } catch (e) {}
+    done && done();
+  };
+  step();
 }
-const pimg = (k, cls) => `<img src="${PORT[k] || ''}" alt="" class="${cls || ''}">`;
+const pimg = (k, cls) => `<img src="${PORT[k] || ''}" data-pk="${k}" alt="" class="${cls || ''}">`;
 
 // ---- 單位資料 ----
 function unitStats(u) {
@@ -4852,7 +4992,7 @@ function showDex(tab) {
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
   if (tab === 'augs') body = [1, 2, 3].map(tr => `<div class="plain"><div><b>${AUG_TIER_NAME[tr]}</b>（第 ${CFG.AUG_ROUNDS.join('、')} 回合三選一，銀／金／彩 依回合機率出現）</div></div>` + AUGMENTS.filter(x => x.tier === tr).map(x => `<div class="plain">${augIcon(x.id)}<div><b>${x.name}</b>　${x.desc}</div></div>`).join('')).join('');
   if (tab === 'arena') body = Object.keys(ARENAS).map(a => `<div class="plain"><div><b>${ARENAS[a].name}</b>　地形：${Object.keys(ARENAS[a].weights).sort((x, y) => ARENAS[a].weights[y] - ARENAS[a].weights[x]).map(t => TERRAIN_SKIN[a][t]).join('、')}（越前面越常見）</div></div>`).join('') + Object.keys(TERRAIN).map(t => `<div class="plain"><div><b>${TERRAIN[t].name}類</b>　${TERRAIN[t].desc}</div></div>`).join('') + `<div class="plain"><div><b>高台</b>（${Object.keys(ARENAS).map(a => TERRAIN_SKIN[a].high).join('、')}）　遠程射程 +${HIGH.RANGE}；從低處打上高台的普攻有 ${HIGH.MISS}% 落空；爬坡移動變慢</div></div>` + '<div class="plain"><div>每個階段換一個場地，地形與高台雙方對稱。</div></div>';
-  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（7×4 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
+  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（${CFG.COLS}×${CFG.ROWS_HALF} 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
   $('panel').innerHTML = `<button class="x" id="dexX" aria-label="關閉">✕</button><h2>圖鑑</h2><div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div><div class="dex">${body}</div>`;
   $('overlay').hidden = false;
   $('dexX').onclick = () => { $('overlay').hidden = true; };
@@ -4861,10 +5001,11 @@ function showDex(tab) {
 
 // ---- 啟動 ----
 function boot() {
-  makePortraits();
-  $('parade').innerHTML = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'].map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.9.3'; // 版本號只留在原始碼，不顯示給玩家
-  s3Init($('stage'), $('cv'), $('ov'));
+  const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
+  $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
+  makePortraits(parade, () => splashFinish());
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.11.0'; // 版本號只留在原始碼，不顯示給玩家
+  s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
   window.addEventListener('pointermove', e => { onMove(e); onItemMove(e); });
@@ -5162,7 +5303,7 @@ function onHotkey(e) {
 // ---- 陣容存檔 ----
 function saveFormation(i) {
   const t = myTeam(), list = [];
-  for (const k in G.board) { const u = G.board[k]; if (u.owner !== ME) continue; const [c, r] = cellRC(+k), [lc, lr] = toLocal(SIDE(t), c, r); list.push({ key: u.key, star: u.star, lc, lr }); }
+  for (const k in G.board) { const u = G.board[k]; if (u.owner !== ME) continue; const [c, r] = cellRC(+k), [lc, lr] = toLocal(SIDE(t), c, r); list.push({ key: u.key, star: u.star, lc, lr, w: CFG.COLS, h: CFG.ROWS_HALF }); }
   try { localStorage.setItem('zoo_form' + i, JSON.stringify(list)); } catch (e) {}
   toast(`陣容 ${i} 已存檔（${list.length} 隻）`);
 }
@@ -5174,7 +5315,9 @@ function loadFormation(i) {
     const cand = ownUnits(G, ME).filter(o => o.u.key === it.key && !used[o.u.uid]).sort((a, b) => Math.abs(a.u.star - it.star) - Math.abs(b.u.star - it.star))[0];
     if (!cand) continue;
     used[cand.u.uid] = 1;
-    const [gc, gr] = toGlobal(SIDE(t), it.lc, it.lr);
+    const lc = it.lc + (CFG.COLS - (it.w || 7)) / 2, lr = it.lr + (CFG.ROWS_HALF - (it.h || 4)); // 舊存檔（7×8）換算到現在的棋盤：左右置中、前排對齊
+    if (lc < 0 || lc >= CFG.COLS || lr < 0 || lr >= CFG.ROWS_HALF) continue;
+    const [gc, gr] = toGlobal(SIDE(t), lc, lr);
     if (actMe({ t: 'move', uid: cand.u.uid, to: { zone: 'board', cell: teamCell(t, gr * CFG.COLS + gc) } }) === 'ok') n++;
   }
   processLog(); renderPrep(); sfx('place');
@@ -5947,8 +6090,8 @@ function accBadge() {
 // 需要登入時先跳登入框，登入後繼續原本要做的事
 function needLogin(then) { if (ACC.token && ACC.me) { then(); return; } openAccount(then); }
 function openAccount(then, startup) {
-  const me = ACC.me;
-  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>${startup ? '登入動物戰棋' : '帳號'}</h2>` + (me ? `
+  const me = ACC.me, P = startup ? $('spCard') : $('panel');
+  P.innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>${startup ? '登入' : '帳號'}</h2>` + (me ? `
     <div class="lpme">${tierBadge(me.lp)}<b>${me.lp} LP</b><small>帳號 ${esc(me.user)}・${me.games} 場・第一名 ${me.wins} 次</small></div>
     <label class="rnum">暱稱<input id="acName" maxlength="8" value="${esc(me.name)}"></label>
     <div class="xbtns"><button class="btn moss" id="acRename">更新暱稱</button><button class="btn" id="acOut">登出</button></div>` : `
@@ -5960,16 +6103,16 @@ function openAccount(then, startup) {
       <button class="btn primary" id="acGo" type="submit">登入</button>
       ${startup ? '<button class="btn" id="acSkip" type="button">先不登入，只玩練習</button>' : ''}
     </form>`);
-  $('overlay').hidden = false;
+  if (startup) P.hidden = false; else $('overlay').hidden = false;
   $('mX').onclick = () => { $('overlay').hidden = true; };
-  if ($('acSkip')) $('acSkip').onclick = () => { $('overlay').hidden = true; };
+  if ($('acSkip')) $('acSkip').onclick = () => splashHide();
   if (me) {
     $('acRename').onclick = async () => { const r = await accApi('/api/rename', { name: $('acName').value }); if (r.ok) { ACC.me = r.me; netSetName(r.me.name); accSave(); toast('已更新'); } else toast(r.err); };
     $('acOut').onclick = async () => { await accApi('/api/logout', {}); ACC.token = ''; ACC.me = null; accSave(); openAccount(); };
     return;
   }
   let mode = 'in';
-  $('panel').querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { mode = b.dataset.ac; $('panel').querySelectorAll('[data-ac]').forEach(x => x.classList.toggle('on', x === b)); $('acNameRow').hidden = mode !== 'up'; $('acGo').textContent = mode === 'up' ? '註冊並登入' : '登入'; $('acPass').autocomplete = mode === 'up' ? 'new-password' : 'current-password'; });
+  P.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { mode = b.dataset.ac; P.querySelectorAll('[data-ac]').forEach(x => x.classList.toggle('on', x === b)); $('acNameRow').hidden = mode !== 'up'; $('acGo').textContent = mode === 'up' ? '註冊並登入' : '登入'; $('acPass').autocomplete = mode === 'up' ? 'new-password' : 'current-password'; });
   $('acForm').onsubmit = async e => {
     e.preventDefault(); $('acGo').disabled = true;
     const body = { user: $('acUser').value, pass: $('acPass').value, name: $('acNick').value };
@@ -5978,7 +6121,7 @@ function openAccount(then, startup) {
     if (!r.ok) { toast(r.err || '失敗', 3000); return; }
     ACC.token = r.token; ACC.me = r.me; netSetName(r.me.name); accSave();
     toast(mode === 'up' ? '註冊完成，歡迎！' : `歡迎回來，${r.me.name}`);
-    if (then) then(); else openAccount();
+    if (startup) splashHide(); else if (then) then(); else openAccount();
   };
 }
 
@@ -6049,13 +6192,21 @@ async function srvLadder() {
   document.getElementById('glRank').textContent = r.rank ? `你是第 ${r.rank} 名／共 ${r.total} 人` : `共 ${r.total} 人${ACC.me ? '（你還沒有排位紀錄）' : ''}`;
   box.innerHTML = r.top.map((x, i) => `<div class="lprow ${ACC.me && x.uid === ACC.me.uid ? 'me' : ''}"><span>${i + 1}</span><b>${esc(x.name)}${ACC.me && x.uid === ACC.me.uid ? '（你）' : ''}</b>${tierBadge(x.lp)}<em>${x.lp}</em></div>`).join('') || '<small>還沒有人打過排位。</small>';
 }
-// 開遊戲先看到登入畫面（還沒登入、或登入過期時）；可以選擇先不登入只玩練習
-setTimeout(async () => {
+// 開場畫面：載入完成後，沒登入就在開場畫面上顯示登入框（後面不顯示遊戲）；已登入或預覽頁就直接進大廳
+let SPLASH_T0 = performance.now(), splashDoneOnce = false;
+async function splashFinish() {
+  if (splashDoneOnce) return; splashDoneOnce = true;
   accBadge();
-  if (!srvOn()) return;
-  if (ACC.token) await accRefresh();
-  if (!ACC.token && $('lobby') && !$('lobby').hidden && (!G || $('game').hidden)) openAccount(() => { $('overlay').hidden = true; }, true);
-}, 300);
+  LD.set(92, srvOn() ? '連線中' : '完成');
+  if (srvOn() && ACC.token) await Promise.race([accRefresh(), new Promise(r => setTimeout(r, 4000))]);
+  LD.set(100, '完成');
+  const wait = Math.max(0, 900 - (performance.now() - SPLASH_T0)); // 至少讓進度條跑完一小段，不會閃一下就消失
+  setTimeout(() => {
+    if (srvOn() && !ACC.token) { $('spLoad').classList.add('done'); openAccount(null, true); }
+    else splashHide();
+  }, wait + 350);
+}
+function splashHide() { const s = $('splash'); if (!s) return; s.classList.add('out'); setTimeout(() => s.remove(), 700); accBadge(); }
 function openLadderSrv() {
   const me = ACC.me, wr = me && me.games ? Math.round(me.wins * 100 / me.games) : 0;
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯</h2>
@@ -6551,7 +6702,11 @@ function eggsFrame(dt) {
   }
 }
 
-boot();
+// 先讓瀏覽器把大廳畫出來，再做比較重的初始化（3D 場景、頭像），避免開啟時黑屏
+let booted = false;
+const goBoot = () => { if (booted) return; booted = true; performance.mark('boot-start'); LD.set(35, '準備場地'); try { boot(); } catch (e) { console.error(e); splashFinish(); } performance.mark('boot-end'); };
+requestAnimationFrame(() => setTimeout(goBoot, 0));
+setTimeout(goBoot, 400); // 背景分頁不會跑 requestAnimationFrame，用計時器保底
 
 })();
 </script>

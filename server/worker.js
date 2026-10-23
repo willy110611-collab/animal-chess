@@ -2,7 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 // ===== 資料區：數值、文字可直接改這裡 =====
 // 時間單位：tick（1 tick = 50ms，20 tick = 1 秒）
 const CFG = {
-  COLS: 7, ROWS_HALF: 4, ROWS: 8,
+  COLS: 9, ROWS_HALF: 5, ROWS: 10, // 棋盤欄數、每邊列數（v0.10 起 9×10；改這裡全部跟著變）
   TICK_MS: 50,
   PREP_SEC: 30,          // 準備階段秒數
   COMBAT_MAX_TICK: 700,  // 戰鬥最長 35 秒
@@ -129,7 +129,7 @@ const TRAITS = {
   armor:   { name: '甲冑', tiers: [2, 3, 5], desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +10', '甲冑 +90，全隊 +20'], val: [30, 60, 90] },
   night:   { name: '夜行', tiers: [2, 4, 6], desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +50%', '暴擊 +80%'], val: [25, 50, 80] },
 };
-const SYNERGY_BONUS = 20; // 默契加成：兩位隊友都有出該羈絆時效果 +20%
+let SYNERGY_BONUS = 20; // 默契加成：兩位隊友都有出該羈絆時效果 +20%
 
 const TERRAIN = {
   grass: { name: '草叢', desc: '開場隱身，第一擊 +50%' },
@@ -297,7 +297,7 @@ const PREY = {
   eagle: ['squirrel', 'hare', 'fox', 'penguin', 'chameleon'], fox: ['hare', 'squirrel', 'frog'], komodo: ['boar', 'hare', 'wolf', 'rhino'],
   chameleon: ['bee', 'minibee'], peacock: ['frog', 'chameleon'], eel: ['frog', 'penguin'], whale: ['octopus'], penguin: ['eel'],
 };
-const PREY_BONUS = 25;
+let PREY_BONUS = 25;
 // ===== 天氣（依場地抽，每回合一次）=====
 const WEATHER = {
   sunny: { name: '晴天', desc: '沒有特殊效果' },
@@ -347,6 +347,22 @@ const ENCOUNTERS = [
   { id: 'toolbox', name: '工具箱', desc: '每人獲得 1 個重鑄器和 1 個拆卸器' },
 ];
 
+// ===== 由「遊戲數據.xlsx」產生（tools/xlsx2sheet.py），請不要手改；要改請改 Excel =====
+const SHEET = {};
+(function applySheet(S) {
+  if (S.CFG) { Object.assign(CFG, S.CFG); CFG.ROWS = CFG.ROWS_HALF * 2; }
+  for (const k in S.ANIMALS || {}) Object.assign(ANIMALS[k], S.ANIMALS[k]);
+  for (const k in S.EVOLVE || {}) EVOLVE[k] = S.EVOLVE[k];
+  for (const k in S.TRAITS || {}) Object.assign(TRAITS[k], S.TRAITS[k]);
+  for (const k in S.MATS || {}) Object.assign(MATS[k], S.MATS[k]);
+  for (const k in S.ITEMS || {}) ITEMS[k] = Object.assign(ITEMS[k] || {}, S.ITEMS[k]);
+  for (const k in S.AUG || {}) if (AUG[k]) Object.assign(AUG[k], S.AUG[k]);
+  if (S.MISC) { if (S.MISC.SYNERGY_BONUS !== undefined) SYNERGY_BONUS = S.MISC.SYNERGY_BONUS; if (S.MISC.PREY_BONUS !== undefined) PREY_BONUS = S.MISC.PREY_BONUS; }
+  for (const k in RECIPE) delete RECIPE[k];
+  for (const k in ITEMS) RECIPE[ITEMS[k].from.slice().sort().join('+')] = k;
+  for (const t in TRAITS) if (EMBLEMS['emb_' + t]) { EMBLEMS['emb_' + t].name = TRAITS[t].name + '紋章'; EMBLEMS['emb_' + t].desc = '裝上後這隻動物多算一個「' + TRAITS[t].name + '」羈絆'; }
+})(SHEET);
+
 // ===== 戰鬥引擎：決定性整數模擬（同種子同結果，四台手機各自跑） =====
 function makeRng(seed) {
   let a = seed >>> 0;
@@ -362,7 +378,7 @@ function makeRng(seed) {
 const SKILL_MUL = [0, 100, 150, 225];
 const idx = (c, r) => r * CFG.COLS + c;
 const inB = (c, r) => c >= 0 && c < CFG.COLS && r >= 0 && r < CFG.ROWS;
-// ===== 六角格（odd-r：奇數列往右半格）。棋盤 7×8，以 (3.25, 3.5) 為中心點對稱 =====
+// ===== 六角格（odd-r：奇數列往右半格）。棋盤 CFG.COLS×CFG.ROWS（目前 9×10），以棋盤中心點對稱 =====
 const hexD = (c1, r1, c2, r2) => { const q1 = c1 - ((r1 - (r1 & 1)) >> 1), q2 = c2 - ((r2 - (r2 & 1)) >> 1), dq = q1 - q2, dr = r1 - r2; return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2; };
 const hexX = (c, r) => c + ((r & 1) ? 0.5 : 0); // 橫向實際位置（算「欄」範圍用）
 const NB_EVEN = [[0, 1], [-1, 1], [1, 0], [-1, 0], [0, -1], [-1, -1]], NB_ODD = [[1, 1], [0, 1], [1, 0], [-1, 0], [1, -1], [0, -1]];
@@ -1175,6 +1191,7 @@ const stageOf = R => R <= 3 ? 1 : 2 + Math.floor((R - 4) / 5);
 const stageStart = R => R === 1 || (R >= 4 && (R - 4) % 5 === 0);
 // team 本地座標（自己半場 r0 後排 → r3 前排）↔ 全場座標
 // side：0 = 下半場、1 = 上半場（team1 的座標點對稱翻轉）
+const CENTER_COLS = () => { const m = (CFG.COLS - 1) >> 1, o = [m]; for (let d = 1; d <= m; d++) o.push(m - d, m + d); return o.slice(0, 5); }; // 由中間往兩邊
 const toGlobal = (side, c, r) => side === 0 ? [c, r] : [CFG.COLS - 1 - c, CFG.ROWS - 1 - r];
 const toLocal = toGlobal; // 對稱
 // 多隊模式：每兩隊共用一塊棋盤存放（隊 0/1 用 0～55，隊 2/3 用 100～155…），戰鬥時再搬到同一張戰場
@@ -1204,7 +1221,7 @@ function createGame(opt) {
     board: {}, pool: {}, terrain: {}, height: {}, arena: 'jungle', arenaStart: 0, uid: 1, battles: [], log: [], winner: -1, lastResult: null, acc: 0,
   };
   const poolMul = G.teams.length > 2 ? CFG.POOL_8P_PCT : 100; // 8 人局卡池放大
-  for (const k in ANIMALS) G.pool[k] = rules.bans.includes(k) ? 0 : Math.floor(CFG.POOL[ANIMALS[k].cost] * poolMul / 100);
+  for (const k in ANIMALS) G.pool[k] = (rules.bans.includes(k) || !(ANIMALS[k].cost >= 1)) ? 0 : Math.floor((CFG.POOL[ANIMALS[k].cost] || 0) * poolMul / 100); // 費用 0 ＝ 停用
   G.lastOpp = G.teams.map(() => -1);
   return G;
 }
@@ -1720,7 +1737,7 @@ function aiPlace(G, pid) {
     const [gc, gr] = toGlobal(SIDE(P.team), c, r), k = teamCell(P.team, gr * CFG.COLS + gc);
     if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock' && !P.avoidCells[k]) free.push({ k, c, r });
   }
-  const centerScore = f => { const [c, r] = cellRC(f.k); return Math.abs(hexX(c, r) - 3.25); };
+  const centerScore = f => { const [c, r] = cellRC(f.k); return Math.abs(hexX(c, r) - ((CFG.COLS - 1) / 2 + 0.25)); };
   for (const o of list) {
     const A = ANIMALS[o.u.key];
     // 合體技：靠近隊友的搭檔
@@ -1739,7 +1756,7 @@ function aiPlace(G, pid) {
     }
     if (!spot && G.rules.frontline && G.teams.length === 2 && (o.u.key === 'bat' || o.u.key === 'cheetah') && intruders(G, pid) < 1 && G.rng(2)) {
       const row = SIDE(P.team) === 0 ? CFG.ROWS_HALF : CFG.ROWS_HALF - 1;
-      for (const c of [3, 2, 4, 1, 5]) { const k = teamCell(P.team, row * CFG.COLS + c); if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock') { if (act(G, pid, { t: 'move', uid: o.u.uid, to: { zone: 'board', cell: k } }) === 'ok') { spot = 'done'; } break; } }
+      for (const c of CENTER_COLS()) { const k = teamCell(P.team, row * CFG.COLS + c); if (!G.board[k] && G.terrain[cellBase(k)] !== 'rock') { if (act(G, pid, { t: 'move', uid: o.u.uid, to: { zone: 'board', cell: k } }) === 'ok') { spot = 'done'; } break; } }
       if (spot === 'done') continue;
     }
     if (!spot) {
@@ -1801,7 +1818,7 @@ function applyAugNow(G, P, id) {
   }
 }
 
-function pveOf(R) { return PVE[R] || PVE[23]; }
+function pveOf(R) { const dc = (CFG.COLS - 7) >> 1, dr = CFG.ROWS_HALF - 4; return (PVE[R] || PVE[23]).map(([k, c, r]) => [k, c + dc, r + dr]); } // PVE 座標以 7×4 半場寫，換算到目前棋盤（置中、前排對齊）
 
 // ===== 天氣、遭遇、選秀、掉落、消耗品、中立物件 =====
 function battleFlags(G) { return { eternalnight: G.portal === 'eternalnight', bond: G.portal === 'bond' }; }
