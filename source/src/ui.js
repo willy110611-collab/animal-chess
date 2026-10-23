@@ -510,7 +510,7 @@ function hudOpp() { if (!G.battles || !G.battles.length || G.phase === 'prep') r
 function myBattle() { const t = myTeam(); return G.battles.find(b => b.teams[0] === t || b.teams[1] === t) || G.battles[0]; } // 被淘汰後觀戰第一場
 function startCombatView() {
   sel = null; renderSheet();
-  const bt = myBattle(); cv = { bt, B: bt.B, vt: bt.teams[0] === myTeam() ? 0 : 1, zonePos: {}, lastCell: {} };
+  const bt = myBattle(); cv = { bt, B: bt.B, vt: bt.teams[0] === myTeam() ? 0 : 1, mine: bt.teams.includes(myTeam()), zonePos: {}, lastCell: {} };
   s3SetTerrain(cv.B.terrain, cv.vt, cv.B.temp, cv.B.height);
   combatSync();
   // 敵方傳送進場
@@ -520,7 +520,7 @@ function startCombatView() {
 const kOf = u => u.uid ? 'u' + u.uid : 'b' + u.id;
 function bWorld(c, r) { const [vc, vr] = vview(c, r, cv.vt); return cellWorld(vc, vr); }
 function combatSync() {
-  const B = cv.B, frac = REPLAY ? Math.min(1, REPLAY.acc / CFG.TICK_MS) : G.phase === 'combat' ? Math.min(1, G.acc / CFG.TICK_MS) : 1, list = [];
+  const B = cv.B, frac = REPLAY ? Math.min(1, REPLAY.acc / CFG.TICK_MS) : (G.phase === 'combat' || (NET.role === 'client' && G.phase === 'result' && !B.over)) ? Math.min(1, G.acc / CFG.TICK_MS) : 1, list = [];
   for (const u of B.units) {
     let c = u.c, r = u.r, lift = 0, moving = false, moveP = null, jumpP = null, mp = null;
     // 六角格的奇數列會往右偏半格，所以移動要在「世界座標」內插，不能內插格子編號（否則跨列時會左右瞬移）
@@ -642,6 +642,41 @@ function comboFx(B, ev) {
   S3.shake = Math.max(S3.shake, 0.15);
   if (ev.s === '夜幕降臨') S3.nightTarget = 1;
 }
+// ---- 回合勝負（照聯盟戰棋）：自己的戰場一打完就顯示勝負並扣血，別的戰場打完才統一結算、進準備 ----
+function roundResultBanner(r) {
+  r = r || G.lastResult; const t = myTeam(); if (!r) return;
+  if (r.pve) { banner(r.win[t] ? '擊退野生動物！' : '野生回合結束', '獲得裝備材料', 'win'); }
+  else { const o = r.opp ? r.opp[t] : 1 - t, od = o >= 0 ? (r.dmg[o] || 0) : 0;
+    if (r.win[t]) { banner('勝利！', `${o >= 0 ? teamLabel(o) : '敵隊'} −${od}`, 'win'); confetti(); }
+    else { banner(o >= 0 && r.win[o] ? '敗北' : '平手', `我隊 −${r.dmg[t]}`, 'lose'); damageOrbs(); } }
+}
+function roundDmgNote(r) {
+  const t = myTeam(); if (!r || r.pve) return;
+  const o = r.opp ? r.opp[t] : 1 - t, od = o >= 0 ? (r.dmg[o] || 0) : 0;
+  if (r.win[t]) { if (od) toast(`${o >= 0 ? teamLabel(o) : '敵隊'} −${od}`, 1800); }
+  else { toast(`我隊 −${r.dmg[t]}`, 1800); damageOrbs(); }
+}
+// 伺服器（或本機）已經結算好自己這場了嗎？
+function mySettled() { const r = G.roundRes, i = G.battles.indexOf(cv.bt); return r && r.round === G.round && i >= 0 && (r.done || []).includes(i) ? r : null; }
+function myBattleDoneCheck() {
+  if (!cv || !cv.mine || REPLAY) return;
+  if (cv.needDmg) { const r = mySettled() || (G.phase === 'result' ? G.lastResult : null); if (r) { cv.needDmg = false; roundDmgNote(r); } }
+  if (cv.doneShown || !cv.B.over) return;
+  cv.doneShown = true;
+  const r = mySettled() || (G.phase === 'result' ? G.lastResult : null);
+  if (r) { roundResultBanner(r); return; }
+  // 結算資料還沒到（連線時偶爾）：先顯示勝負，扣血等資料到了再補
+  const w = cv.B.winner, pve = cv.bt.teams[1] < 0;
+  if (pve) banner(w === cv.vt ? '擊退野生動物！' : '野生回合結束', '獲得裝備材料', 'win');
+  else { if (w === cv.vt) { banner('勝利！', '', 'win'); confetti(); } else banner(w === 1 - cv.vt ? '敗北' : '平手', '', 'lose'); cv.needDmg = true; }
+}
+const WAIT_CFG = { SHOW: true }; // 自己打完、別的戰場還在打時，是否顯示「等待其他戰場」
+function waitChip(n) {
+  let el = document.getElementById('waitChip');
+  if (!n || !WAIT_CFG.SHOW) { if (el) el.hidden = true; return; }
+  if (!el) { const st = $('stage'); if (!st) return; el = document.createElement('div'); el.id = 'waitChip'; st.appendChild(el); }
+  const txt = `等待其他戰場…（剩 ${n} 場）`; if (el.textContent !== txt) el.textContent = txt; el.hidden = false;
+}
 function damageOrbs(team) {
   // 敵方存活者化成光球飛向我隊血條
   const B = cv && cv.B; if (!B) return;
@@ -714,7 +749,7 @@ function onPhase() {
   const ph = G.phase;
   if (ph !== 'prep' && SCOUT >= 0) { SCOUT = -1; renderScoutBar(); $('stage').classList.remove('scouting'); }
   if (ph === 'prep') {
-    cv = null; sel = null; S3.nightTarget = 0; SCOUT = -1;
+    waitChip(0); cv = null; sel = null; S3.nightTarget = 0; SCOUT = -1;
     for (const k in S3.V) if (k[0] === 'b') s3Remove(k);
     processLog(); renderPrep();
     const st = stageOf(G.round), first = st === 1 ? 1 : 4 + (st - 2) * 5;
@@ -723,11 +758,8 @@ function onPhase() {
     if (inc && G.round > 1) at(0.8, () => showIncome(inc));
   } else if (ph === 'combat') { startCombatView(); banner(isPve(G.round) ? '野生動物出沒！' : '戰鬥開始！', ''); }
   else if (ph === 'result') {
-    const r = G.lastResult, t = myTeam();
-    if (r.pve) { banner(r.win[t] ? '擊退野生動物！' : '野生回合結束', '獲得裝備材料', 'win'); }
-    else { const o = r.opp ? r.opp[t] : 1 - t, od = o >= 0 ? (r.dmg[o] || 0) : 0;
-      if (r.win[t]) { banner('勝利！', `${o >= 0 ? teamLabel(o) : '敵隊'} −${od}`, 'win'); confetti(); }
-      else { banner(o >= 0 && r.win[o] ? '敗北' : '平手', `我隊 −${r.dmg[t]}`, 'lose'); damageOrbs(); } }
+    waitChip(0);
+    if (!(cv && cv.mine && !REPLAY)) roundResultBanner(); // 觀戰或回放：照舊在結算時顯示；自己的戰場由 myBattleDoneCheck 在播完時顯示
     renderDock(); renderTraits();
   } else if (ph === 'over') showOver();
   featuresPhase(ph);
@@ -745,7 +777,7 @@ function loopBody(now) {
   if (G && !$('game').hidden) {
     if (G.phase !== lastPhase || G.round !== lastRound) { const was = lastPhase; lastPhase = G.phase; lastRound = G.round; onPhase(was); }
     if (REPLAY) replayFrame(dt);
-    else if (cv && (G.phase === 'combat' || G.phase === 'result')) { combatSync(); handleEvents(); }
+    else if (cv && (G.phase === 'combat' || G.phase === 'result')) { combatSync(); handleEvents(); myBattleDoneCheck(); if (G.phase === 'combat') waitChip(cv.doneShown ? G.battles.filter(b => b.B && !b.B.over).length : 0); }
     featuresFrame(dt);
     const t = nowS(); const due = []; sched = sched.filter(s => { if (t >= s.t) { due.push(s); return false; } return true; }); for (const s of due) { try { s.fn(); } catch (e) { console.error(e); } }
     hud();
@@ -797,7 +829,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.4'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.5'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });

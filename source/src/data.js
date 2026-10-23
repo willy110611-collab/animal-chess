@@ -3,6 +3,7 @@
 const CFG = {
   COLS: 9, ROWS_HALF: 5, ROWS: 10, // 棋盤欄數、每邊列數（v0.10 起 9×10；改這裡全部跟著變）
   TICK_MS: 50,
+  RESULT_MS: 3000,          // 全部戰場打完後，統一結算畫面停多久（毫秒）才進準備
   PREP_SEC: 30,          // 準備階段秒數
   COMBAT_MAX_TICK: 700,  // 戰鬥最長 35 秒
   OVERTIME_TICK: 600,    // 30 秒後加時

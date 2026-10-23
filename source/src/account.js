@@ -70,7 +70,7 @@ function openAccount(then, startup) {
     if (!r.ok) { toast(r.err || '失敗', 3000); return; }
     ACC.token = r.token; ACC.me = r.me; netSetName(r.me.name); accSave();
     toast(mode === 'up' ? '註冊完成，歡迎！' : `歡迎回來，${r.me.name}`);
-    if (startup) splashHide(); else if (then) then(); else openAccount();
+    if (startup) { splashHide(); srvResume(); } else if (then) then(); else openAccount();
   };
 }
 
@@ -110,6 +110,8 @@ function srvLp(m) {
   const el = document.getElementById('lpLive'); if (el) el.outerHTML = ladderResHtml(LADDER_RES);
   if (LADDER_RES.up) setTimeout(() => { banner('晉級！', ladderTierName(m.after), 'win'); if (typeof confetti === 'function') confetti(); }, 600);
 }
+// 登入後：有沒打完的對局就接回去
+async function srvResume() { if (!srvOn() || !ACC.token || NET.role) return; const r = await accApi('/api/active'); if (r && r.ok && r.code && !NET.role) { toast('回到進行中的對局…', 2500); srvJoin(r.code); } }
 function srvHost() { if (NET.role) return; needLogin(() => { toast('建立房間中…'); NET.code = ''; srvConnect('/ws/new?mode=4', () => { toast('連不上，請確認網路後再試', 3200); netReset(); }); }); }
 function srvJoin(code) { if (NET.role) return; needLogin(() => { toast('連線中…'); NET.code = code; srvConnect('/ws/room/' + code, () => { toast('連不上，請確認網路後再試', 3000); netReset(); }); }); }
 // 網速：右上角小小的訊號格＋延遲（綠＝順、黃＝普通、紅＝卡）；最近幾次的抖動大也算卡
@@ -165,9 +167,11 @@ async function splashFinish() {
   if (srvOn()) accApi('/api/meta').then(r => { if (r && r.ok) try { localStorage.setItem('zoo_meta', JSON.stringify(r.list || [])); } catch (e) {} }); // 練習模式的電腦也會模仿玩家陣容
   LD.set(100, '完成');
   const wait = Math.max(0, 900 - (performance.now() - SPLASH_T0)); // 至少讓進度條跑完一小段，不會閃一下就消失
+  let back = ''; // 重開 App：還有沒打完的對局就直接接回去（已經被淘汰就不會有）
+  if (srvOn() && ACC.token) { const r = await Promise.race([accApi('/api/active'), new Promise(x => setTimeout(() => x(null), 3000))]); if (r && r.ok && r.code) back = r.code; }
   setTimeout(() => {
     if (!ACC.token) { $('spLoad').classList.add('done'); openAccount(null, true); }
-    else splashHide();
+    else { splashHide(); if (back) { toast('回到進行中的對局…', 2500); srvJoin(back); } }
   }, wait + 350);
 }
 function splashHide() { const s = $('splash'); if (!s) return; s.classList.add('out'); const sc = $('spCard'); if (sc) { sc.innerHTML = ''; sc.hidden = true; } /* 清掉登入框，避免跟設定裡的帳號框 id 重複 */ setTimeout(() => { if (s.classList.contains('out')) s.style.display = 'none'; }, 700); accBadge(); }

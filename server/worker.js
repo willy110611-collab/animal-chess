@@ -4,6 +4,7 @@ import { DurableObject } from 'cloudflare:workers';
 const CFG = {
   COLS: 9, ROWS_HALF: 5, ROWS: 10, // 棋盤欄數、每邊列數（v0.10 起 9×10；改這裡全部跟著變）
   TICK_MS: 50,
+  RESULT_MS: 3000,          // 全部戰場打完後，統一結算畫面停多久（毫秒）才進準備
   PREP_SEC: 30,          // 準備階段秒數
   COMBAT_MAX_TICK: 700,  // 戰鬥最長 35 秒
   OVERTIME_TICK: 600,    // 30 秒後加時
@@ -1624,6 +1625,49 @@ function pairTeams(G) {
   return best;
 }
 // 淘汰：血量歸零的隊伍出局，依血量決定名次；剩 1 隊（或回合上限）時結束
+// 血歸 0 就當場淘汰（照聯盟戰棋）。同一回合被淘汰的隊：血負越多名次越後；一樣多時先被打到 0 的排後。
+// 名次當下就給：還在打的戰場會先在後台快轉模擬到結束，預先知道誰還會死、會負多少。
+// （只有真人之後在戰鬥中下指令改變了結果時，名次才可能再調整一次）
+function knockOut(G, team, dieT, batch) {
+  const T = G.teams[team]; if (T.out) return;
+  G.dieSeq = (G.dieSeq || 0) + 1;
+  T.out = true; T.dieRound = G.round; T.dieSeq = G.dieSeq; T.dieT = dieT || 0;
+  for (const P of G.players) if (P.team === team) { P.out = true; P.ready = true; P.augChoice = null;
+    for (const o of ownUnits(G, P.id)) { G.pool[o.u.key] += Math.pow(3, o.u.star - 1); if (o.zone === 'board') delete G.board[o.cell]; else P.bench[o.i] = null; } }
+  if (batch) return; // 同一場兩隊同時歸零（平手）：全部標記完再一起排名
+  rankRoundOuts(G);
+  G.log.push({ k: 'out', team, place: T.place });
+}
+// 把還沒打完的戰場複製一份快轉到結束（跟客人手機重播用的是同一套決定性模擬）
+function predictBattle(G, bt) {
+  const B = bt.B, C = createBattle(JSON.parse(JSON.stringify(bt.input))), log = B.cmdLog || [];
+  let done = 0, n = 0;
+  const cmds = () => { while (done < log.length && log[done].t <= C.t) { const c = log[done++]; C.cmdUsed[c.owner] = false; battleCommand(C, c.owner, c.type); } };
+  while (C.t < B.t && !C.over && n++ < 20000) { cmds(); step(C); }
+  while (!C.over && n++ < 20000) {
+    cmds();
+    for (const pid in G.aiCmd || {}) { const c = G.aiCmd[pid]; if (c && C.t === c.t && c.t >= B.t && bt.teams.includes(G.players[pid].team)) battleCommand(C, +pid, c.type); }
+    step(C);
+  }
+  return C;
+}
+function battleDamage(G, B, side) { return CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (stageOf(G.round) - 1); }
+function rankRoundOuts(G) {
+  const list = G.teams.map((T, i) => i).filter(i => G.teams[i].out && G.teams[i].dieRound === G.round)
+    .map(i => ({ t: i, hp: G.teams[i].hp, at: G.teams[i].dieT, seq: G.teams[i].dieSeq, real: true }));
+  if (!isPve(G.round)) for (const bt of G.battles) { // 還在打的戰場：預測誰還會在這回合歸零
+    if (bt.settled) continue;
+    const C = bt.B.over ? bt.B : predictBattle(G, bt); // 同一格剛打完、還沒輪到結算的直接用結果
+    bt.teams.forEach((team, side) => {
+      if (side === 1 && bt.ghost) return; const T = G.teams[team]; if (!T || T.out || C.winner === side) return;
+      const hp = T.hp - (T.ark > 0 ? 0 : battleDamage(G, C, side));
+      if (hp <= 0) list.push({ t: team, hp, at: C.t, seq: 1e9, real: false });
+    });
+  }
+  const aliveEnd = aliveTeams(G).length - list.filter(x => !x.real).length;
+  list.sort((x, y) => (y.hp - x.hp) || (y.at - x.at) || (y.seq - x.seq)); // 好的在前：血多、晚死
+  list.forEach((x, i) => { if (!x.real) return; const T = G.teams[x.t], p = aliveEnd + 1 + i; if (T.place && T.place !== p) G.log.push({ k: 'place', team: x.t, place: p }); T.place = p; });
+}
 function eliminate(G, force) {
   const alive = aliveTeams(G), dead = alive.filter(t => G.teams[t].hp <= 0).sort((x, y) => G.teams[y].hp - G.teams[x].hp);
   let place = alive.length;
@@ -1633,7 +1677,7 @@ function eliminate(G, force) {
   const left = aliveTeams(G);
   if (left.length <= 1 || force) {
     left.sort((x, y) => G.teams[y].hp - G.teams[x].hp).forEach((t, i) => { G.teams[t].place = i + 1; });
-    if (!left.length) { const all = G.teams.map((T, i) => i).sort((x, y) => G.teams[y].hp - G.teams[x].hp); all.forEach((t, i) => { G.teams[t].place = i + 1; }); }
+    if (!left.length && !G.teams.some(T => T.place === 1)) { const all = G.teams.map((T, i) => i).sort((x, y) => G.teams[y].hp - G.teams[x].hp); all.forEach((t, i) => { G.teams[t].place = i + 1; }); } // 最後兩隊同回合一起歸零：名次已由 knockOut 排好
     G.winner = G.teams.findIndex(T => T.place === 1);
     G.phase = 'over';
     return true;
@@ -1641,42 +1685,52 @@ function eliminate(G, force) {
   return false;
 }
 
-function endCombat(G) {
-  const R = G.round, st = stageOf(R), n = G.teams.length, res = { round: R, pve: isPve(R), dmg: new Array(n).fill(0), win: new Array(n).fill(false), opp: new Array(n).fill(-1) };
+// 每場戰鬥一打完就先結算那一場（扣血、連勝敗、勝場金、戰利品），像聯盟戰棋一樣；全部打完才進入回合結算
+function roundRes(G) {
+  const n = G.teams.length;
+  if (!G.roundRes || G.roundRes.round !== G.round) G.roundRes = { round: G.round, pve: isPve(G.round), dmg: new Array(n).fill(0), win: new Array(n).fill(false), opp: new Array(n).fill(-1), done: [] };
+  return G.roundRes;
+}
+function settleBattle(G, bt) {
+  if (bt.settled) return; bt.settled = true;
+  const R = G.round, st = stageOf(R), res = roundRes(G), B = bt.B;
   if (isPve(R)) {
-    for (const bt of G.battles) {
-      const team = bt.teams[0]; res.win[team] = bt.B.winner === 0;
-      for (const P of G.players) if (P.team === team) {
-        const times = G.portal === 'harvest' ? 2 : 1;
-        for (let k = 0; k < times; k++) for (const d of rollLoot(G, R)) giveLoot(G, P, d);
-      }
+    const team = bt.teams[0]; res.win[team] = B.winner === 0;
+    for (const P of G.players) if (P.team === team) {
+      const times = G.portal === 'harvest' ? 2 : 1;
+      for (let k = 0; k < times; k++) for (const d of rollLoot(G, R)) giveLoot(G, P, d);
     }
   } else {
-    for (const bt of G.battles) {
-      const B = bt.B, w = B.winner;
-      bt.teams.forEach((team, side) => {
-        if (side === 1 && bt.ghost) return; // 幽靈對手：不影響被複製的那隊
-        const T = G.teams[team]; res.opp[team] = bt.teams[1 - side];
-        if (w === side) { res.win[team] = true; T.streak = T.streak > 0 ? T.streak + 1 : 1; for (const P of G.players) if (P.team === team) P.gold += CFG.WIN_GOLD; }
-        else {
-          let d = CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (st - 1);
-          if (T.ark > 0) { T.ark--; d = 0; res.ark = true; }
-          T.hp -= d; res.dmg[team] = d; T.streak = T.streak < 0 ? T.streak - 1 : -1;
-        }
-      });
-    }
+    const w = B.winner;
+    bt.teams.forEach((team, side) => {
+      if (side === 1 && bt.ghost) return; // 幽靈對手：不影響被複製的那隊
+      const T = G.teams[team]; res.opp[team] = bt.teams[1 - side];
+      if (w === side) { res.win[team] = true; T.streak = T.streak > 0 ? T.streak + 1 : 1; for (const P of G.players) if (P.team === team) P.gold += CFG.WIN_GOLD; }
+      else {
+        let d = CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (st - 1);
+        if (T.ark > 0) { T.ark--; d = 0; res.ark = true; }
+        T.hp -= d; res.dmg[team] = d; T.streak = T.streak < 0 ? T.streak - 1 : -1;
+      }
+    });
   }
   // 增幅：戰後經濟
-  for (const bt of G.battles) {
-    const B = bt.B;
-    for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? 2 : 1 }); if (l.key === 'chest') giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
-    for (const P of G.players) {
-      if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
-      if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
-    }
+  for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? 2 : 1 }); if (l.key === 'chest') giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
+  for (const P of G.players) {
+    if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
+    if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
   }
+  res.done.push(G.battles.indexOf(bt));
+  const dying = bt.teams.filter((team, side) => team >= 0 && !(side === 1 && bt.ghost) && G.teams[team] && G.teams[team].hp <= 0 && !G.teams[team].out);
+  for (const team of dying) knockOut(G, team, B.t, true);
+  if (G.teams.some(T => T.out && T.dieRound === R)) rankRoundOuts(G);
+  for (const team of dying) G.log.push({ k: 'out', team, place: G.teams[team].place }); // 有人實際結果跟預測不同（例如真人下了戰鬥指令）時校正
+}
+function endCombat(G) {
+  const R = G.round;
+  for (const bt of G.battles) if (bt.B.over) settleBattle(G, bt); // 只剩一隊提早結束時，沒打完的不算
+  const res = roundRes(G);
   G.lastResult = res;
-  if (!eliminate(G, G.rules.maxRound > 0 && R >= G.rules.maxRound)) { G.phase = 'result'; G.timer = 3000; }
+  if (!eliminate(G, G.rules.maxRound > 0 && R >= G.rules.maxRound)) { G.phase = 'result'; G.timer = CFG.RESULT_MS || 3000; }
 }
 
 // 主更新：dt 毫秒
@@ -1705,7 +1759,8 @@ function update(G, dt) {
         step(b.B);
       }
     }
-    if (combatDone(G)) endCombat(G);
+    for (const b of G.battles) if (b.B.over && !b.settled) settleBattle(G, b); // 先打完的先結算
+    if (combatDone(G) || aliveTeams(G).length <= 1) endCombat(G); // 只剩一隊就直接結束
   } else if (G.phase === 'result') {
     G.timer -= dt; if (G.timer <= 0) startPrep(G);
   }
@@ -2135,7 +2190,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'http://localhost:8123', 'http://127.0.0.1:8123'],
-  VERSION: '0.12.4',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.12.5',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）
@@ -2144,6 +2199,7 @@ const SV = {
   IDLE_CLOSE_MS: 120000, // 房間沒人多久關掉
   PBKDF2_ITER: 60000,    // 密碼雜湊強度
   SESSION_DAYS: 120,
+  ACTIVE_MAX_MS: 4 * 3600e3, // 「回到對局」紀錄最多保留多久（一場不會打這麼久）
   REG_PER_IP_DAY: 5,     // 同一個 IP 一天最多註冊幾個帳號（擋大量分身）
   LOGIN_FAIL_HOUR: 10,   // 同一帳號一小時最多輸錯幾次
   MM_SAME_TZ: 2, MM_WIDEN_MS: 20000,
@@ -2178,6 +2234,12 @@ export default {
       if (p === '/api/logout' && req.method === 'POST') return json(req, await acc.logout(tok));
       if (p === '/api/ladder') return json(req, await acc.ladder(tok, url.searchParams.get('mode') || 'duo'));
       if (p === '/api/meta') return json(req, { ok: true, list: await acc.getMeta() });
+      if (p === '/api/active') { // 重開 App：有沒有還沒打完、自己也還沒被淘汰的對局
+        const a = await acc.getActive(tok); if (!a) return json(req, { ok: true, code: '' });
+        const st = await env.ROOM.get(env.ROOM.idFromName(a.code)).status(a.uid).catch(() => null);
+        if (!st || !st.alive) { await acc.clearActive([a.uid], a.code); return json(req, { ok: true, code: '' }); }
+        return json(req, { ok: true, code: a.code });
+      }
       if (p === '/api/ping') return json(req, { ok: true, t: Date.now(), v: SV.VERSION, colo: (req.cf && req.cf.colo) || '' });
       if (req.headers.get('Upgrade') === 'websocket') {
         let m;
@@ -2202,6 +2264,8 @@ export class Accounts extends DurableObject {
     // v0.12：單人天梯分開計分（舊資料表補欄位）
     this.sql.exec('CREATE TABLE IF NOT EXISTS meta (id TEXT PRIMARY KEY, data TEXT, n INTEGER, games INTEGER DEFAULT 1, wins INTEGER DEFAULT 1, t INTEGER)');
     for (const c of ['lp1', 'games1', 'wins1']) { try { this.sql.exec(`ALTER TABLE users ADD COLUMN ${c} INTEGER DEFAULT 0`); } catch (e) {} }
+    // v0.12.5：每個帳號正在打的對局（重開 App 自動回到同一場）
+    this.sql.exec('CREATE TABLE IF NOT EXISTS active (uid TEXT PRIMARY KEY, code TEXT, t INTEGER)');
   }
   async hashPw(pass, salt) {
     const k = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveBits']);
@@ -2248,6 +2312,16 @@ export class Accounts extends DurableObject {
     const ul = u ? (mode === 'solo' ? u.lp1 : u.lp) : 0, ug = u ? (mode === 'solo' ? u.games1 : u.games) : 0;
     if (u && ug) rank = this.row(`SELECT COUNT(*) AS n FROM users WHERE ${Gm}>0 AND (${L}>? OR (${L}=? AND ${Gm}>?))`, ul, ul, ug).n + 1;
     return { ok: true, top, total, me: u, rank, mode: mode === 'solo' ? 'solo' : 'duo' };
+  }
+  // ---- 進行中的對局 ----
+  async setActive(uids, code) { for (const u of uids) this.sql.exec('INSERT OR REPLACE INTO active VALUES (?,?,?)', String(u), String(code), Date.now()); return { ok: true }; }
+  async clearActive(uids, code) { for (const u of uids) this.sql.exec('DELETE FROM active WHERE uid=? AND code=?', String(u), String(code)); return { ok: true }; }
+  async getActive(tok) {
+    const u = this.verify(tok); if (!u) return null;
+    const r = this.row('SELECT code, t FROM active WHERE uid=?', u.uid);
+    if (!r) return null;
+    if (Date.now() - r.t > SV.ACTIVE_MAX_MS) { this.sql.exec('DELETE FROM active WHERE uid=?', u.uid); return null; }
+    return { uid: u.uid, code: r.code };
   }
   // ---- 電腦模仿玩家：高勝率陣容庫 ----
   // 收進「打出好名次的真人陣容」；電腦用過後回報名次。勝率 =（好名次+1）/（場數+2）；勝率太低或太舊的慢慢淘汰
@@ -2330,6 +2404,7 @@ export class Room extends DurableObject {
       if (seat < 0) {
         if (this.G && this.mm && this.mm.seatOf[u.uid] !== undefined && !this.seats[this.mm.seatOf[u.uid]]) { // 配對成員晚到：接回原本保留的位置（原本由電腦代打）
           seat = this.mm.seatOf[u.uid]; this.seats[seat] = { uid: u.uid, name: u.name, lp: u.lp };
+          this.acc().setActive([u.uid], this.code).catch(() => {});
           const P = this.G.players[seat]; if (P && !P.out) { P.ai = false; P.name = u.name; this.G.humanAt[seat] = true; this.G.ladder[seat] = { lp: u.lp, pid: u.uid, name: u.name }; this.G.ranked = this.isRanked(); }
         } else if (this.G) { this.send(c, { k: 'full', why: '遊戲已經開始了' }); c.uid = null; return; }
         else {
@@ -2381,8 +2456,17 @@ export class Room extends DurableObject {
     G.ladder = this.seats.map(s => s ? { lp: s.lp || 0, pid: s.uid, name: s.name } : null);
     G.ranked = this.isRanked();
     startGame(G);
+    this.acc().setActive(this.seats.filter(Boolean).map(s => s.uid), this.code).catch(() => {});
     for (const c of this.conns) if (c.uid) this.send(c, { k: 'start', seat: c.seat });
     this.resync();
+  }
+  async status(uid) { const G = this.G; if (!G || G.phase === 'over' || !this.seats) return { alive: false }; const i = this.seats.findIndex(s => s && s.uid === uid); return { alive: i >= 0 && !!G.players[i] && !G.players[i].out }; }
+  // 進行中對局紀錄：開打時記下所有真人；被淘汰或整場結束就清掉
+  trackActive() {
+    const G = this.G; if (!G || !this.seats) return;
+    this.activeCleared = this.activeCleared || {};
+    const gone = this.seats.map((s, i) => s && !this.activeCleared[s.uid] && (G.phase === 'over' || (G.players[i] && G.players[i].out)) ? s.uid : null).filter(Boolean);
+    if (gone.length) { for (const u of gone) this.activeCleared[u] = true; this.acc().clearActive(gone, this.code).catch(() => {}); }
   }
   isRanked() { const G = this.G; return G.teams.filter((T, t) => G.players.some((p, i) => p.team === t && G.humanAt[i])).length >= 2; }
   resync() { this.lastSnap = ''; this.logSent = 0; this.snapAcc = 1e9; if (this.G && this.G.phase === 'combat') this.sendBattles(); }
@@ -2400,7 +2484,7 @@ export class Room extends DurableObject {
     if (!this.G) { if (this.mm && (this.seats.filter(Boolean).length >= Object.keys(this.mm.seatOf).length || now - this.mm.t0 > SV.JOIN_WAIT_MS) && this.seats.some(Boolean)) this.start(); return; }
     const G = this.G;
     if (G.phase !== 'over') update(G, dt);
-    this.settleOuts();
+    this.settleOuts(); this.trackActive();
     if (G.phase === 'over' && !this.metaDone) { this.metaDone = true; this.metaReport(); }
     const bk = G.round + G.phase + G.battles.length;
     if (G.phase === 'combat' && this.battleKey !== bk && G.battles.length && G.battles[0].input) this.sendBattles();
@@ -2425,7 +2509,7 @@ export class Room extends DurableObject {
   // 天梯：某隊名次確定（被淘汰或比賽結束）就結算那一隊的真人
   settleOuts() {
     const G = this.G; if (!G.ranked) return;
-    const ready = G.teams.map((T, t) => t).filter(t => !this.settled[t] && G.teams[t].place && (G.teams[t].out || G.phase === 'over'));
+    const ready = G.teams.map((T, t) => t).filter(t => !this.settled[t] && G.teams[t].place && ((G.teams[t].out && !(G.phase === 'combat' && G.teams[t].dieRound === G.round)) || G.phase === 'over')); // 同回合還有戰場在打時名次可能往前調：等這回合打完才算分
     if (!ready.length) return;
     for (const t of ready) this.settled[t] = true;
     const all = this.seats.map((s, i) => s ? { uid: s.uid, team: G.players[i].team } : null).filter(Boolean);

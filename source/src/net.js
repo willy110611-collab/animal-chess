@@ -417,7 +417,8 @@ function netClientUpdate(dt) {
   if (!G) return;
   if (G.timer > 0) G.timer -= dt * 1000;
   if (G.phase === 'prep' || G.phase === 'lobby') return; // 戰鬥資料可能比「進入戰鬥」的畫面先到：這時還沒開打，不能快轉
-  if (G.phase !== 'combat') { // 戰鬥結束：把還沒播完的部分快轉跑完
+  // 結算時：自己畫面落後的最後一小段照常播完（勝負畫面才不會被切掉）；快結束還沒播完才快轉
+  if (G.phase !== 'combat' && !(G.phase === 'result' && NET.battleRound === G.round && G.timer > 1200)) { // 把還沒播完的部分快轉跑完
     for (const bt of NET.battles) if (bt.B && !bt.B.over && NET.battleRound === G.round) { let n = 0; while (!bt.B.over && n++ < 2000) { netApplyCmds(bt, NET.battles.indexOf(bt)); step(bt.B); } bt.B.ev.length = 0; }
     return;
   }

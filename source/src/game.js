@@ -437,6 +437,49 @@ function pairTeams(G) {
   return best;
 }
 // 淘汰：血量歸零的隊伍出局，依血量決定名次；剩 1 隊（或回合上限）時結束
+// 血歸 0 就當場淘汰（照聯盟戰棋）。同一回合被淘汰的隊：血負越多名次越後；一樣多時先被打到 0 的排後。
+// 名次當下就給：還在打的戰場會先在後台快轉模擬到結束，預先知道誰還會死、會負多少。
+// （只有真人之後在戰鬥中下指令改變了結果時，名次才可能再調整一次）
+function knockOut(G, team, dieT, batch) {
+  const T = G.teams[team]; if (T.out) return;
+  G.dieSeq = (G.dieSeq || 0) + 1;
+  T.out = true; T.dieRound = G.round; T.dieSeq = G.dieSeq; T.dieT = dieT || 0;
+  for (const P of G.players) if (P.team === team) { P.out = true; P.ready = true; P.augChoice = null;
+    for (const o of ownUnits(G, P.id)) { G.pool[o.u.key] += Math.pow(3, o.u.star - 1); if (o.zone === 'board') delete G.board[o.cell]; else P.bench[o.i] = null; } }
+  if (batch) return; // 同一場兩隊同時歸零（平手）：全部標記完再一起排名
+  rankRoundOuts(G);
+  G.log.push({ k: 'out', team, place: T.place });
+}
+// 把還沒打完的戰場複製一份快轉到結束（跟客人手機重播用的是同一套決定性模擬）
+function predictBattle(G, bt) {
+  const B = bt.B, C = createBattle(JSON.parse(JSON.stringify(bt.input))), log = B.cmdLog || [];
+  let done = 0, n = 0;
+  const cmds = () => { while (done < log.length && log[done].t <= C.t) { const c = log[done++]; C.cmdUsed[c.owner] = false; battleCommand(C, c.owner, c.type); } };
+  while (C.t < B.t && !C.over && n++ < 20000) { cmds(); step(C); }
+  while (!C.over && n++ < 20000) {
+    cmds();
+    for (const pid in G.aiCmd || {}) { const c = G.aiCmd[pid]; if (c && C.t === c.t && c.t >= B.t && bt.teams.includes(G.players[pid].team)) battleCommand(C, +pid, c.type); }
+    step(C);
+  }
+  return C;
+}
+function battleDamage(G, B, side) { return CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (stageOf(G.round) - 1); }
+function rankRoundOuts(G) {
+  const list = G.teams.map((T, i) => i).filter(i => G.teams[i].out && G.teams[i].dieRound === G.round)
+    .map(i => ({ t: i, hp: G.teams[i].hp, at: G.teams[i].dieT, seq: G.teams[i].dieSeq, real: true }));
+  if (!isPve(G.round)) for (const bt of G.battles) { // 還在打的戰場：預測誰還會在這回合歸零
+    if (bt.settled) continue;
+    const C = bt.B.over ? bt.B : predictBattle(G, bt); // 同一格剛打完、還沒輪到結算的直接用結果
+    bt.teams.forEach((team, side) => {
+      if (side === 1 && bt.ghost) return; const T = G.teams[team]; if (!T || T.out || C.winner === side) return;
+      const hp = T.hp - (T.ark > 0 ? 0 : battleDamage(G, C, side));
+      if (hp <= 0) list.push({ t: team, hp, at: C.t, seq: 1e9, real: false });
+    });
+  }
+  const aliveEnd = aliveTeams(G).length - list.filter(x => !x.real).length;
+  list.sort((x, y) => (y.hp - x.hp) || (y.at - x.at) || (y.seq - x.seq)); // 好的在前：血多、晚死
+  list.forEach((x, i) => { if (!x.real) return; const T = G.teams[x.t], p = aliveEnd + 1 + i; if (T.place && T.place !== p) G.log.push({ k: 'place', team: x.t, place: p }); T.place = p; });
+}
 function eliminate(G, force) {
   const alive = aliveTeams(G), dead = alive.filter(t => G.teams[t].hp <= 0).sort((x, y) => G.teams[y].hp - G.teams[x].hp);
   let place = alive.length;
@@ -446,7 +489,7 @@ function eliminate(G, force) {
   const left = aliveTeams(G);
   if (left.length <= 1 || force) {
     left.sort((x, y) => G.teams[y].hp - G.teams[x].hp).forEach((t, i) => { G.teams[t].place = i + 1; });
-    if (!left.length) { const all = G.teams.map((T, i) => i).sort((x, y) => G.teams[y].hp - G.teams[x].hp); all.forEach((t, i) => { G.teams[t].place = i + 1; }); }
+    if (!left.length && !G.teams.some(T => T.place === 1)) { const all = G.teams.map((T, i) => i).sort((x, y) => G.teams[y].hp - G.teams[x].hp); all.forEach((t, i) => { G.teams[t].place = i + 1; }); } // 最後兩隊同回合一起歸零：名次已由 knockOut 排好
     G.winner = G.teams.findIndex(T => T.place === 1);
     G.phase = 'over';
     return true;
@@ -454,42 +497,52 @@ function eliminate(G, force) {
   return false;
 }
 
-function endCombat(G) {
-  const R = G.round, st = stageOf(R), n = G.teams.length, res = { round: R, pve: isPve(R), dmg: new Array(n).fill(0), win: new Array(n).fill(false), opp: new Array(n).fill(-1) };
+// 每場戰鬥一打完就先結算那一場（扣血、連勝敗、勝場金、戰利品），像聯盟戰棋一樣；全部打完才進入回合結算
+function roundRes(G) {
+  const n = G.teams.length;
+  if (!G.roundRes || G.roundRes.round !== G.round) G.roundRes = { round: G.round, pve: isPve(G.round), dmg: new Array(n).fill(0), win: new Array(n).fill(false), opp: new Array(n).fill(-1), done: [] };
+  return G.roundRes;
+}
+function settleBattle(G, bt) {
+  if (bt.settled) return; bt.settled = true;
+  const R = G.round, st = stageOf(R), res = roundRes(G), B = bt.B;
   if (isPve(R)) {
-    for (const bt of G.battles) {
-      const team = bt.teams[0]; res.win[team] = bt.B.winner === 0;
-      for (const P of G.players) if (P.team === team) {
-        const times = G.portal === 'harvest' ? 2 : 1;
-        for (let k = 0; k < times; k++) for (const d of rollLoot(G, R)) giveLoot(G, P, d);
-      }
+    const team = bt.teams[0]; res.win[team] = B.winner === 0;
+    for (const P of G.players) if (P.team === team) {
+      const times = G.portal === 'harvest' ? 2 : 1;
+      for (let k = 0; k < times; k++) for (const d of rollLoot(G, R)) giveLoot(G, P, d);
     }
   } else {
-    for (const bt of G.battles) {
-      const B = bt.B, w = B.winner;
-      bt.teams.forEach((team, side) => {
-        if (side === 1 && bt.ghost) return; // 幽靈對手：不影響被複製的那隊
-        const T = G.teams[team]; res.opp[team] = bt.teams[1 - side];
-        if (w === side) { res.win[team] = true; T.streak = T.streak > 0 ? T.streak + 1 : 1; for (const P of G.players) if (P.team === team) P.gold += CFG.WIN_GOLD; }
-        else {
-          let d = CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (st - 1);
-          if (T.ark > 0) { T.ark--; d = 0; res.ark = true; }
-          T.hp -= d; res.dmg[team] = d; T.streak = T.streak < 0 ? T.streak - 1 : -1;
-        }
-      });
-    }
+    const w = B.winner;
+    bt.teams.forEach((team, side) => {
+      if (side === 1 && bt.ghost) return; // 幽靈對手：不影響被複製的那隊
+      const T = G.teams[team]; res.opp[team] = bt.teams[1 - side];
+      if (w === side) { res.win[team] = true; T.streak = T.streak > 0 ? T.streak + 1 : 1; for (const P of G.players) if (P.team === team) P.gold += CFG.WIN_GOLD; }
+      else {
+        let d = CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (st - 1);
+        if (T.ark > 0) { T.ark--; d = 0; res.ark = true; }
+        T.hp -= d; res.dmg[team] = d; T.streak = T.streak < 0 ? T.streak - 1 : -1;
+      }
+    });
   }
   // 增幅：戰後經濟
-  for (const bt of G.battles) {
-    const B = bt.B;
-    for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? 2 : 1 }); if (l.key === 'chest') giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
-    for (const P of G.players) {
-      if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
-      if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
-    }
+  for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? 2 : 1 }); if (l.key === 'chest') giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
+  for (const P of G.players) {
+    if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
+    if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
   }
+  res.done.push(G.battles.indexOf(bt));
+  const dying = bt.teams.filter((team, side) => team >= 0 && !(side === 1 && bt.ghost) && G.teams[team] && G.teams[team].hp <= 0 && !G.teams[team].out);
+  for (const team of dying) knockOut(G, team, B.t, true);
+  if (G.teams.some(T => T.out && T.dieRound === R)) rankRoundOuts(G);
+  for (const team of dying) G.log.push({ k: 'out', team, place: G.teams[team].place }); // 有人實際結果跟預測不同（例如真人下了戰鬥指令）時校正
+}
+function endCombat(G) {
+  const R = G.round;
+  for (const bt of G.battles) if (bt.B.over) settleBattle(G, bt); // 只剩一隊提早結束時，沒打完的不算
+  const res = roundRes(G);
   G.lastResult = res;
-  if (!eliminate(G, G.rules.maxRound > 0 && R >= G.rules.maxRound)) { G.phase = 'result'; G.timer = 3000; }
+  if (!eliminate(G, G.rules.maxRound > 0 && R >= G.rules.maxRound)) { G.phase = 'result'; G.timer = CFG.RESULT_MS || 3000; }
 }
 
 // 主更新：dt 毫秒
@@ -518,7 +571,8 @@ function update(G, dt) {
         step(b.B);
       }
     }
-    if (combatDone(G)) endCombat(G);
+    for (const b of G.battles) if (b.B.over && !b.settled) settleBattle(G, b); // 先打完的先結算
+    if (combatDone(G) || aliveTeams(G).length <= 1) endCombat(G); // 只剩一隊就直接結束
   } else if (G.phase === 'result') {
     G.timer -= dt; if (G.timer <= 0) startPrep(G);
   }

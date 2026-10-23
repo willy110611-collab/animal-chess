@@ -43,11 +43,12 @@ function teamLp(G, team, meLp) {
   const lps = ps.map(p => (G.ladder && G.ladder[p.id]) ? G.ladder[p.id].lp : p.ai ? meLp + (LADDER_CFG.AI_LP[G.rules.aiLevel] || 0) : meLp);
   return lps.reduce((a, b) => a + b, 0) / Math.max(1, lps.length);
 }
-let LADDER_RES = null, LADDER_SHOWN = null;
+let LADDER_RES = null, LADDER_SHOWN = null, LADDER_PLACE = 0, LADDER_PEND = false;
 function ladderSettle() {
   if (!G) return null;
   const t = myTeam(), T = G.teams[t];
   if (!(G.phase === 'over' || T.out) || !T.place) return null;
+  if (G.phase === 'combat' && T.dieRound === G.round) return { seed: G.seed, pending: true }; // 同回合還有戰場在打，名次可能往前調：打完再算
   if (G.server) { // 伺服器局：分數由伺服器算好再送來
     if (!G.ranked) return (LADDER_RES = { seed: G.seed, unranked: true, after: ACC.me ? ACC.me.lp : LADDER.lp });
     return LADDER_RES && LADDER_RES.seed === G.seed ? LADDER_RES : { seed: G.seed, pending: true };
@@ -88,11 +89,17 @@ function ladderResHtml(r) {
 // 被淘汰但比賽還沒結束：跳出名次與 LP，可以繼續觀戰
 function ladderFrame() {
   if (G && G.online && G.phase === 'over' && LADDER_RES && LADDER_RES.seed === G.seed && !LADDER_RES.unranked && LADDER_RES.full !== G.seed) { LADDER_RES.full = G.seed; if (!netBlocked()) glPublishRecord(); } // 被淘汰時發的紀錄只有部分名次，結束時補發完整的
-  if (!G || LADDER_SHOWN === G.seed || $('game').hidden) return;
+  if (!G || $('game').hidden) return;
   const T = G.teams[myTeam()];
+  if (LADDER_SHOWN === G.seed) { // 已經顯示淘汰畫面：同回合有人負得更多時名次往前調
+    if (T.place && LADDER_PLACE && T.place !== LADDER_PLACE) { LADDER_PLACE = T.place; toast(`名次更新：第 ${T.place} 名`, 2600); const h = document.getElementById('outPlace'); if (h) h.textContent = `第 ${T.place} 名`; }
+    if (LADDER_PEND && !(G.phase === 'combat' && T.dieRound === G.round)) { LADDER_PEND = false; const el = document.getElementById('lpLive'); if (el) el.outerHTML = ladderOverHtml(); }
+    return;
+  }
   if (G.phase !== 'over' && T.out) {
-    LADDER_SHOWN = G.seed;
-    $('panel').innerHTML = `<div class="over"><h2>第 ${T.place} 名</h2><p>我隊被淘汰了，其他隊還在打。</p>${ladderOverHtml()}<div><button class="btn" id="btnWatch">繼續觀戰</button> <button class="btn primary" id="btnOutLobby">回大廳</button></div></div>`;
+    if (typeof cv !== 'undefined' && cv && cv.mine && !cv.doneShown && G.phase === 'combat') return; // 自己的戰鬥畫面播完再跳
+    LADDER_SHOWN = G.seed; LADDER_PLACE = T.place; LADDER_PEND = G.phase === 'combat' && T.dieRound === G.round;
+    $('panel').innerHTML = `<div class="over"><h2 id="outPlace">第 ${T.place} 名</h2><p>我隊被淘汰了，其他隊還在打。</p>${ladderOverHtml()}<div><button class="btn" id="btnWatch">繼續觀戰</button> <button class="btn primary" id="btnOutLobby">回大廳</button></div></div>`;
     $('overlay').hidden = false;
     $('btnWatch').onclick = () => { $('overlay').hidden = true; };
     $('btnOutLobby').onclick = () => { if (NET.role) netLeave(); else { G = null; for (const k in S3.V) s3Remove(k); $('overlay').hidden = true; $('game').hidden = true; $('lobby').hidden = false; } };

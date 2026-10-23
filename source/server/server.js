@@ -14,6 +14,7 @@ const SV = {
   IDLE_CLOSE_MS: 120000, // 房間沒人多久關掉
   PBKDF2_ITER: 60000,    // 密碼雜湊強度
   SESSION_DAYS: 120,
+  ACTIVE_MAX_MS: 4 * 3600e3, // 「回到對局」紀錄最多保留多久（一場不會打這麼久）
   REG_PER_IP_DAY: 5,     // 同一個 IP 一天最多註冊幾個帳號（擋大量分身）
   LOGIN_FAIL_HOUR: 10,   // 同一帳號一小時最多輸錯幾次
   MM_SAME_TZ: 2, MM_WIDEN_MS: 20000,
@@ -48,6 +49,12 @@ export default {
       if (p === '/api/logout' && req.method === 'POST') return json(req, await acc.logout(tok));
       if (p === '/api/ladder') return json(req, await acc.ladder(tok, url.searchParams.get('mode') || 'duo'));
       if (p === '/api/meta') return json(req, { ok: true, list: await acc.getMeta() });
+      if (p === '/api/active') { // 重開 App：有沒有還沒打完、自己也還沒被淘汰的對局
+        const a = await acc.getActive(tok); if (!a) return json(req, { ok: true, code: '' });
+        const st = await env.ROOM.get(env.ROOM.idFromName(a.code)).status(a.uid).catch(() => null);
+        if (!st || !st.alive) { await acc.clearActive([a.uid], a.code); return json(req, { ok: true, code: '' }); }
+        return json(req, { ok: true, code: a.code });
+      }
       if (p === '/api/ping') return json(req, { ok: true, t: Date.now(), v: SV.VERSION, colo: (req.cf && req.cf.colo) || '' });
       if (req.headers.get('Upgrade') === 'websocket') {
         let m;
@@ -72,6 +79,8 @@ export class Accounts extends DurableObject {
     // v0.12：單人天梯分開計分（舊資料表補欄位）
     this.sql.exec('CREATE TABLE IF NOT EXISTS meta (id TEXT PRIMARY KEY, data TEXT, n INTEGER, games INTEGER DEFAULT 1, wins INTEGER DEFAULT 1, t INTEGER)');
     for (const c of ['lp1', 'games1', 'wins1']) { try { this.sql.exec(`ALTER TABLE users ADD COLUMN ${c} INTEGER DEFAULT 0`); } catch (e) {} }
+    // v0.12.5：每個帳號正在打的對局（重開 App 自動回到同一場）
+    this.sql.exec('CREATE TABLE IF NOT EXISTS active (uid TEXT PRIMARY KEY, code TEXT, t INTEGER)');
   }
   async hashPw(pass, salt) {
     const k = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveBits']);
@@ -118,6 +127,16 @@ export class Accounts extends DurableObject {
     const ul = u ? (mode === 'solo' ? u.lp1 : u.lp) : 0, ug = u ? (mode === 'solo' ? u.games1 : u.games) : 0;
     if (u && ug) rank = this.row(`SELECT COUNT(*) AS n FROM users WHERE ${Gm}>0 AND (${L}>? OR (${L}=? AND ${Gm}>?))`, ul, ul, ug).n + 1;
     return { ok: true, top, total, me: u, rank, mode: mode === 'solo' ? 'solo' : 'duo' };
+  }
+  // ---- 進行中的對局 ----
+  async setActive(uids, code) { for (const u of uids) this.sql.exec('INSERT OR REPLACE INTO active VALUES (?,?,?)', String(u), String(code), Date.now()); return { ok: true }; }
+  async clearActive(uids, code) { for (const u of uids) this.sql.exec('DELETE FROM active WHERE uid=? AND code=?', String(u), String(code)); return { ok: true }; }
+  async getActive(tok) {
+    const u = this.verify(tok); if (!u) return null;
+    const r = this.row('SELECT code, t FROM active WHERE uid=?', u.uid);
+    if (!r) return null;
+    if (Date.now() - r.t > SV.ACTIVE_MAX_MS) { this.sql.exec('DELETE FROM active WHERE uid=?', u.uid); return null; }
+    return { uid: u.uid, code: r.code };
   }
   // ---- 電腦模仿玩家：高勝率陣容庫 ----
   // 收進「打出好名次的真人陣容」；電腦用過後回報名次。勝率 =（好名次+1）/（場數+2）；勝率太低或太舊的慢慢淘汰
@@ -200,6 +219,7 @@ export class Room extends DurableObject {
       if (seat < 0) {
         if (this.G && this.mm && this.mm.seatOf[u.uid] !== undefined && !this.seats[this.mm.seatOf[u.uid]]) { // 配對成員晚到：接回原本保留的位置（原本由電腦代打）
           seat = this.mm.seatOf[u.uid]; this.seats[seat] = { uid: u.uid, name: u.name, lp: u.lp };
+          this.acc().setActive([u.uid], this.code).catch(() => {});
           const P = this.G.players[seat]; if (P && !P.out) { P.ai = false; P.name = u.name; this.G.humanAt[seat] = true; this.G.ladder[seat] = { lp: u.lp, pid: u.uid, name: u.name }; this.G.ranked = this.isRanked(); }
         } else if (this.G) { this.send(c, { k: 'full', why: '遊戲已經開始了' }); c.uid = null; return; }
         else {
@@ -251,8 +271,17 @@ export class Room extends DurableObject {
     G.ladder = this.seats.map(s => s ? { lp: s.lp || 0, pid: s.uid, name: s.name } : null);
     G.ranked = this.isRanked();
     startGame(G);
+    this.acc().setActive(this.seats.filter(Boolean).map(s => s.uid), this.code).catch(() => {});
     for (const c of this.conns) if (c.uid) this.send(c, { k: 'start', seat: c.seat });
     this.resync();
+  }
+  async status(uid) { const G = this.G; if (!G || G.phase === 'over' || !this.seats) return { alive: false }; const i = this.seats.findIndex(s => s && s.uid === uid); return { alive: i >= 0 && !!G.players[i] && !G.players[i].out }; }
+  // 進行中對局紀錄：開打時記下所有真人；被淘汰或整場結束就清掉
+  trackActive() {
+    const G = this.G; if (!G || !this.seats) return;
+    this.activeCleared = this.activeCleared || {};
+    const gone = this.seats.map((s, i) => s && !this.activeCleared[s.uid] && (G.phase === 'over' || (G.players[i] && G.players[i].out)) ? s.uid : null).filter(Boolean);
+    if (gone.length) { for (const u of gone) this.activeCleared[u] = true; this.acc().clearActive(gone, this.code).catch(() => {}); }
   }
   isRanked() { const G = this.G; return G.teams.filter((T, t) => G.players.some((p, i) => p.team === t && G.humanAt[i])).length >= 2; }
   resync() { this.lastSnap = ''; this.logSent = 0; this.snapAcc = 1e9; if (this.G && this.G.phase === 'combat') this.sendBattles(); }
@@ -270,7 +299,7 @@ export class Room extends DurableObject {
     if (!this.G) { if (this.mm && (this.seats.filter(Boolean).length >= Object.keys(this.mm.seatOf).length || now - this.mm.t0 > SV.JOIN_WAIT_MS) && this.seats.some(Boolean)) this.start(); return; }
     const G = this.G;
     if (G.phase !== 'over') update(G, dt);
-    this.settleOuts();
+    this.settleOuts(); this.trackActive();
     if (G.phase === 'over' && !this.metaDone) { this.metaDone = true; this.metaReport(); }
     const bk = G.round + G.phase + G.battles.length;
     if (G.phase === 'combat' && this.battleKey !== bk && G.battles.length && G.battles[0].input) this.sendBattles();
@@ -295,7 +324,7 @@ export class Room extends DurableObject {
   // 天梯：某隊名次確定（被淘汰或比賽結束）就結算那一隊的真人
   settleOuts() {
     const G = this.G; if (!G.ranked) return;
-    const ready = G.teams.map((T, t) => t).filter(t => !this.settled[t] && G.teams[t].place && (G.teams[t].out || G.phase === 'over'));
+    const ready = G.teams.map((T, t) => t).filter(t => !this.settled[t] && G.teams[t].place && ((G.teams[t].out && !(G.phase === 'combat' && G.teams[t].dieRound === G.round)) || G.phase === 'over')); // 同回合還有戰場在打時名次可能往前調：等這回合打完才算分
     if (!ready.length) return;
     for (const t of ready) this.settled[t] = true;
     const all = this.seats.map((s, i) => s ? { uid: s.uid, team: G.players[i].team } : null).filter(Boolean);

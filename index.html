@@ -414,6 +414,8 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .nteams b { font-size: 13px; } .nseat { background: #efdcb8; border-radius: 8px; padding: 8px 6px; font-weight: 700; font-size: 13px; text-align: left; display: grid; } .nseat.on { background: #fff; box-shadow: inset 0 0 0 2px #d9c4a0; } .nseat.me { box-shadow: inset 0 0 0 2px var(--rust); } .nseat small { font-size: 11px; color: var(--ink-soft); }
 .xfer textarea { width: 100%; box-sizing: border-box; font: 12px/1.4 ui-monospace, monospace; padding: 6px 8px; border-radius: 8px; border: 1px solid #d9c4a0; word-break: break-all; margin: 6px 0; }
 .xbtns { display: flex; gap: 6px; flex-wrap: wrap; }
+#waitChip { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6; padding: 5px 12px; border-radius: 999px; background: rgba(40,26,20,.62); color: #fff3dc; font-size: 13px; font-weight: 700; white-space: nowrap; pointer-events: none; animation: waitPulse 1.6s ease-in-out infinite; }
+@keyframes waitPulse { 50% { opacity: .65; } }
 #netRtt { position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); bottom: 10px; z-index: 6; display: flex; align-items: flex-end; gap: 2px; font-size: 10px; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.3); color: #e8f5dc; pointer-events: none; }
 #netRtt i { width: 3px; background: rgba(255,255,255,.25); border-radius: 1px; } #netRtt i:nth-child(1) { height: 4px; } #netRtt i:nth-child(2) { height: 7px; } #netRtt i:nth-child(3) { height: 10px; } #netRtt b { margin-left: 3px; font-weight: 700; }
 #netRtt.q3 i { background: #6fd36a; } #netRtt.q2 i:nth-child(-n+2) { background: #ffd34d; } #netRtt.q1 i:nth-child(1) { background: #ff6a5a; } #netRtt.q1 b { color: #ffb0a6; }
@@ -634,6 +636,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 const CFG = {
   COLS: 9, ROWS_HALF: 5, ROWS: 10, // 棋盤欄數、每邊列數（v0.10 起 9×10；改這裡全部跟著變）
   TICK_MS: 50,
+  RESULT_MS: 3000,          // 全部戰場打完後，統一結算畫面停多久（毫秒）才進準備
   PREP_SEC: 30,          // 準備階段秒數
   COMBAT_MAX_TICK: 700,  // 戰鬥最長 35 秒
   OVERTIME_TICK: 600,    // 30 秒後加時
@@ -2254,6 +2257,49 @@ function pairTeams(G) {
   return best;
 }
 // 淘汰：血量歸零的隊伍出局，依血量決定名次；剩 1 隊（或回合上限）時結束
+// 血歸 0 就當場淘汰（照聯盟戰棋）。同一回合被淘汰的隊：血負越多名次越後；一樣多時先被打到 0 的排後。
+// 名次當下就給：還在打的戰場會先在後台快轉模擬到結束，預先知道誰還會死、會負多少。
+// （只有真人之後在戰鬥中下指令改變了結果時，名次才可能再調整一次）
+function knockOut(G, team, dieT, batch) {
+  const T = G.teams[team]; if (T.out) return;
+  G.dieSeq = (G.dieSeq || 0) + 1;
+  T.out = true; T.dieRound = G.round; T.dieSeq = G.dieSeq; T.dieT = dieT || 0;
+  for (const P of G.players) if (P.team === team) { P.out = true; P.ready = true; P.augChoice = null;
+    for (const o of ownUnits(G, P.id)) { G.pool[o.u.key] += Math.pow(3, o.u.star - 1); if (o.zone === 'board') delete G.board[o.cell]; else P.bench[o.i] = null; } }
+  if (batch) return; // 同一場兩隊同時歸零（平手）：全部標記完再一起排名
+  rankRoundOuts(G);
+  G.log.push({ k: 'out', team, place: T.place });
+}
+// 把還沒打完的戰場複製一份快轉到結束（跟客人手機重播用的是同一套決定性模擬）
+function predictBattle(G, bt) {
+  const B = bt.B, C = createBattle(JSON.parse(JSON.stringify(bt.input))), log = B.cmdLog || [];
+  let done = 0, n = 0;
+  const cmds = () => { while (done < log.length && log[done].t <= C.t) { const c = log[done++]; C.cmdUsed[c.owner] = false; battleCommand(C, c.owner, c.type); } };
+  while (C.t < B.t && !C.over && n++ < 20000) { cmds(); step(C); }
+  while (!C.over && n++ < 20000) {
+    cmds();
+    for (const pid in G.aiCmd || {}) { const c = G.aiCmd[pid]; if (c && C.t === c.t && c.t >= B.t && bt.teams.includes(G.players[pid].team)) battleCommand(C, +pid, c.type); }
+    step(C);
+  }
+  return C;
+}
+function battleDamage(G, B, side) { return CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (stageOf(G.round) - 1); }
+function rankRoundOuts(G) {
+  const list = G.teams.map((T, i) => i).filter(i => G.teams[i].out && G.teams[i].dieRound === G.round)
+    .map(i => ({ t: i, hp: G.teams[i].hp, at: G.teams[i].dieT, seq: G.teams[i].dieSeq, real: true }));
+  if (!isPve(G.round)) for (const bt of G.battles) { // 還在打的戰場：預測誰還會在這回合歸零
+    if (bt.settled) continue;
+    const C = bt.B.over ? bt.B : predictBattle(G, bt); // 同一格剛打完、還沒輪到結算的直接用結果
+    bt.teams.forEach((team, side) => {
+      if (side === 1 && bt.ghost) return; const T = G.teams[team]; if (!T || T.out || C.winner === side) return;
+      const hp = T.hp - (T.ark > 0 ? 0 : battleDamage(G, C, side));
+      if (hp <= 0) list.push({ t: team, hp, at: C.t, seq: 1e9, real: false });
+    });
+  }
+  const aliveEnd = aliveTeams(G).length - list.filter(x => !x.real).length;
+  list.sort((x, y) => (y.hp - x.hp) || (y.at - x.at) || (y.seq - x.seq)); // 好的在前：血多、晚死
+  list.forEach((x, i) => { if (!x.real) return; const T = G.teams[x.t], p = aliveEnd + 1 + i; if (T.place && T.place !== p) G.log.push({ k: 'place', team: x.t, place: p }); T.place = p; });
+}
 function eliminate(G, force) {
   const alive = aliveTeams(G), dead = alive.filter(t => G.teams[t].hp <= 0).sort((x, y) => G.teams[y].hp - G.teams[x].hp);
   let place = alive.length;
@@ -2263,7 +2309,7 @@ function eliminate(G, force) {
   const left = aliveTeams(G);
   if (left.length <= 1 || force) {
     left.sort((x, y) => G.teams[y].hp - G.teams[x].hp).forEach((t, i) => { G.teams[t].place = i + 1; });
-    if (!left.length) { const all = G.teams.map((T, i) => i).sort((x, y) => G.teams[y].hp - G.teams[x].hp); all.forEach((t, i) => { G.teams[t].place = i + 1; }); }
+    if (!left.length && !G.teams.some(T => T.place === 1)) { const all = G.teams.map((T, i) => i).sort((x, y) => G.teams[y].hp - G.teams[x].hp); all.forEach((t, i) => { G.teams[t].place = i + 1; }); } // 最後兩隊同回合一起歸零：名次已由 knockOut 排好
     G.winner = G.teams.findIndex(T => T.place === 1);
     G.phase = 'over';
     return true;
@@ -2271,42 +2317,52 @@ function eliminate(G, force) {
   return false;
 }
 
-function endCombat(G) {
-  const R = G.round, st = stageOf(R), n = G.teams.length, res = { round: R, pve: isPve(R), dmg: new Array(n).fill(0), win: new Array(n).fill(false), opp: new Array(n).fill(-1) };
+// 每場戰鬥一打完就先結算那一場（扣血、連勝敗、勝場金、戰利品），像聯盟戰棋一樣；全部打完才進入回合結算
+function roundRes(G) {
+  const n = G.teams.length;
+  if (!G.roundRes || G.roundRes.round !== G.round) G.roundRes = { round: G.round, pve: isPve(G.round), dmg: new Array(n).fill(0), win: new Array(n).fill(false), opp: new Array(n).fill(-1), done: [] };
+  return G.roundRes;
+}
+function settleBattle(G, bt) {
+  if (bt.settled) return; bt.settled = true;
+  const R = G.round, st = stageOf(R), res = roundRes(G), B = bt.B;
   if (isPve(R)) {
-    for (const bt of G.battles) {
-      const team = bt.teams[0]; res.win[team] = bt.B.winner === 0;
-      for (const P of G.players) if (P.team === team) {
-        const times = G.portal === 'harvest' ? 2 : 1;
-        for (let k = 0; k < times; k++) for (const d of rollLoot(G, R)) giveLoot(G, P, d);
-      }
+    const team = bt.teams[0]; res.win[team] = B.winner === 0;
+    for (const P of G.players) if (P.team === team) {
+      const times = G.portal === 'harvest' ? 2 : 1;
+      for (let k = 0; k < times; k++) for (const d of rollLoot(G, R)) giveLoot(G, P, d);
     }
   } else {
-    for (const bt of G.battles) {
-      const B = bt.B, w = B.winner;
-      bt.teams.forEach((team, side) => {
-        if (side === 1 && bt.ghost) return; // 幽靈對手：不影響被複製的那隊
-        const T = G.teams[team]; res.opp[team] = bt.teams[1 - side];
-        if (w === side) { res.win[team] = true; T.streak = T.streak > 0 ? T.streak + 1 : 1; for (const P of G.players) if (P.team === team) P.gold += CFG.WIN_GOLD; }
-        else {
-          let d = CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (st - 1);
-          if (T.ark > 0) { T.ark--; d = 0; res.ark = true; }
-          T.hp -= d; res.dmg[team] = d; T.streak = T.streak < 0 ? T.streak - 1 : -1;
-        }
-      });
-    }
+    const w = B.winner;
+    bt.teams.forEach((team, side) => {
+      if (side === 1 && bt.ghost) return; // 幽靈對手：不影響被複製的那隊
+      const T = G.teams[team]; res.opp[team] = bt.teams[1 - side];
+      if (w === side) { res.win[team] = true; T.streak = T.streak > 0 ? T.streak + 1 : 1; for (const P of G.players) if (P.team === team) P.gold += CFG.WIN_GOLD; }
+      else {
+        let d = CFG.DMG_BASE + Math.floor(survivorStars(B, 1 - side) * CFG.DMG_STAR_PCT / 100) + CFG.DMG_STAGE * (st - 1);
+        if (T.ark > 0) { T.ark--; d = 0; res.ark = true; }
+        T.hp -= d; res.dmg[team] = d; T.streak = T.streak < 0 ? T.streak - 1 : -1;
+      }
+    });
   }
   // 增幅：戰後經濟
-  for (const bt of G.battles) {
-    const B = bt.B;
-    for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? 2 : 1 }); if (l.key === 'chest') giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
-    for (const P of G.players) {
-      if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
-      if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
-    }
+  for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? 2 : 1 }); if (l.key === 'chest') giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
+  for (const P of G.players) {
+    if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
+    if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
   }
+  res.done.push(G.battles.indexOf(bt));
+  const dying = bt.teams.filter((team, side) => team >= 0 && !(side === 1 && bt.ghost) && G.teams[team] && G.teams[team].hp <= 0 && !G.teams[team].out);
+  for (const team of dying) knockOut(G, team, B.t, true);
+  if (G.teams.some(T => T.out && T.dieRound === R)) rankRoundOuts(G);
+  for (const team of dying) G.log.push({ k: 'out', team, place: G.teams[team].place }); // 有人實際結果跟預測不同（例如真人下了戰鬥指令）時校正
+}
+function endCombat(G) {
+  const R = G.round;
+  for (const bt of G.battles) if (bt.B.over) settleBattle(G, bt); // 只剩一隊提早結束時，沒打完的不算
+  const res = roundRes(G);
   G.lastResult = res;
-  if (!eliminate(G, G.rules.maxRound > 0 && R >= G.rules.maxRound)) { G.phase = 'result'; G.timer = 3000; }
+  if (!eliminate(G, G.rules.maxRound > 0 && R >= G.rules.maxRound)) { G.phase = 'result'; G.timer = CFG.RESULT_MS || 3000; }
 }
 
 // 主更新：dt 毫秒
@@ -2335,7 +2391,8 @@ function update(G, dt) {
         step(b.B);
       }
     }
-    if (combatDone(G)) endCombat(G);
+    for (const b of G.battles) if (b.B.over && !b.settled) settleBattle(G, b); // 先打完的先結算
+    if (combatDone(G) || aliveTeams(G).length <= 1) endCombat(G); // 只剩一隊就直接結束
   } else if (G.phase === 'result') {
     G.timer -= dt; if (G.timer <= 0) startPrep(G);
   }
@@ -5053,7 +5110,7 @@ function hudOpp() { if (!G.battles || !G.battles.length || G.phase === 'prep') r
 function myBattle() { const t = myTeam(); return G.battles.find(b => b.teams[0] === t || b.teams[1] === t) || G.battles[0]; } // 被淘汰後觀戰第一場
 function startCombatView() {
   sel = null; renderSheet();
-  const bt = myBattle(); cv = { bt, B: bt.B, vt: bt.teams[0] === myTeam() ? 0 : 1, zonePos: {}, lastCell: {} };
+  const bt = myBattle(); cv = { bt, B: bt.B, vt: bt.teams[0] === myTeam() ? 0 : 1, mine: bt.teams.includes(myTeam()), zonePos: {}, lastCell: {} };
   s3SetTerrain(cv.B.terrain, cv.vt, cv.B.temp, cv.B.height);
   combatSync();
   // 敵方傳送進場
@@ -5063,7 +5120,7 @@ function startCombatView() {
 const kOf = u => u.uid ? 'u' + u.uid : 'b' + u.id;
 function bWorld(c, r) { const [vc, vr] = vview(c, r, cv.vt); return cellWorld(vc, vr); }
 function combatSync() {
-  const B = cv.B, frac = REPLAY ? Math.min(1, REPLAY.acc / CFG.TICK_MS) : G.phase === 'combat' ? Math.min(1, G.acc / CFG.TICK_MS) : 1, list = [];
+  const B = cv.B, frac = REPLAY ? Math.min(1, REPLAY.acc / CFG.TICK_MS) : (G.phase === 'combat' || (NET.role === 'client' && G.phase === 'result' && !B.over)) ? Math.min(1, G.acc / CFG.TICK_MS) : 1, list = [];
   for (const u of B.units) {
     let c = u.c, r = u.r, lift = 0, moving = false, moveP = null, jumpP = null, mp = null;
     // 六角格的奇數列會往右偏半格，所以移動要在「世界座標」內插，不能內插格子編號（否則跨列時會左右瞬移）
@@ -5185,6 +5242,41 @@ function comboFx(B, ev) {
   S3.shake = Math.max(S3.shake, 0.15);
   if (ev.s === '夜幕降臨') S3.nightTarget = 1;
 }
+// ---- 回合勝負（照聯盟戰棋）：自己的戰場一打完就顯示勝負並扣血，別的戰場打完才統一結算、進準備 ----
+function roundResultBanner(r) {
+  r = r || G.lastResult; const t = myTeam(); if (!r) return;
+  if (r.pve) { banner(r.win[t] ? '擊退野生動物！' : '野生回合結束', '獲得裝備材料', 'win'); }
+  else { const o = r.opp ? r.opp[t] : 1 - t, od = o >= 0 ? (r.dmg[o] || 0) : 0;
+    if (r.win[t]) { banner('勝利！', `${o >= 0 ? teamLabel(o) : '敵隊'} −${od}`, 'win'); confetti(); }
+    else { banner(o >= 0 && r.win[o] ? '敗北' : '平手', `我隊 −${r.dmg[t]}`, 'lose'); damageOrbs(); } }
+}
+function roundDmgNote(r) {
+  const t = myTeam(); if (!r || r.pve) return;
+  const o = r.opp ? r.opp[t] : 1 - t, od = o >= 0 ? (r.dmg[o] || 0) : 0;
+  if (r.win[t]) { if (od) toast(`${o >= 0 ? teamLabel(o) : '敵隊'} −${od}`, 1800); }
+  else { toast(`我隊 −${r.dmg[t]}`, 1800); damageOrbs(); }
+}
+// 伺服器（或本機）已經結算好自己這場了嗎？
+function mySettled() { const r = G.roundRes, i = G.battles.indexOf(cv.bt); return r && r.round === G.round && i >= 0 && (r.done || []).includes(i) ? r : null; }
+function myBattleDoneCheck() {
+  if (!cv || !cv.mine || REPLAY) return;
+  if (cv.needDmg) { const r = mySettled() || (G.phase === 'result' ? G.lastResult : null); if (r) { cv.needDmg = false; roundDmgNote(r); } }
+  if (cv.doneShown || !cv.B.over) return;
+  cv.doneShown = true;
+  const r = mySettled() || (G.phase === 'result' ? G.lastResult : null);
+  if (r) { roundResultBanner(r); return; }
+  // 結算資料還沒到（連線時偶爾）：先顯示勝負，扣血等資料到了再補
+  const w = cv.B.winner, pve = cv.bt.teams[1] < 0;
+  if (pve) banner(w === cv.vt ? '擊退野生動物！' : '野生回合結束', '獲得裝備材料', 'win');
+  else { if (w === cv.vt) { banner('勝利！', '', 'win'); confetti(); } else banner(w === 1 - cv.vt ? '敗北' : '平手', '', 'lose'); cv.needDmg = true; }
+}
+const WAIT_CFG = { SHOW: true }; // 自己打完、別的戰場還在打時，是否顯示「等待其他戰場」
+function waitChip(n) {
+  let el = document.getElementById('waitChip');
+  if (!n || !WAIT_CFG.SHOW) { if (el) el.hidden = true; return; }
+  if (!el) { const st = $('stage'); if (!st) return; el = document.createElement('div'); el.id = 'waitChip'; st.appendChild(el); }
+  const txt = `等待其他戰場…（剩 ${n} 場）`; if (el.textContent !== txt) el.textContent = txt; el.hidden = false;
+}
 function damageOrbs(team) {
   // 敵方存活者化成光球飛向我隊血條
   const B = cv && cv.B; if (!B) return;
@@ -5257,7 +5349,7 @@ function onPhase() {
   const ph = G.phase;
   if (ph !== 'prep' && SCOUT >= 0) { SCOUT = -1; renderScoutBar(); $('stage').classList.remove('scouting'); }
   if (ph === 'prep') {
-    cv = null; sel = null; S3.nightTarget = 0; SCOUT = -1;
+    waitChip(0); cv = null; sel = null; S3.nightTarget = 0; SCOUT = -1;
     for (const k in S3.V) if (k[0] === 'b') s3Remove(k);
     processLog(); renderPrep();
     const st = stageOf(G.round), first = st === 1 ? 1 : 4 + (st - 2) * 5;
@@ -5266,11 +5358,8 @@ function onPhase() {
     if (inc && G.round > 1) at(0.8, () => showIncome(inc));
   } else if (ph === 'combat') { startCombatView(); banner(isPve(G.round) ? '野生動物出沒！' : '戰鬥開始！', ''); }
   else if (ph === 'result') {
-    const r = G.lastResult, t = myTeam();
-    if (r.pve) { banner(r.win[t] ? '擊退野生動物！' : '野生回合結束', '獲得裝備材料', 'win'); }
-    else { const o = r.opp ? r.opp[t] : 1 - t, od = o >= 0 ? (r.dmg[o] || 0) : 0;
-      if (r.win[t]) { banner('勝利！', `${o >= 0 ? teamLabel(o) : '敵隊'} −${od}`, 'win'); confetti(); }
-      else { banner(o >= 0 && r.win[o] ? '敗北' : '平手', `我隊 −${r.dmg[t]}`, 'lose'); damageOrbs(); } }
+    waitChip(0);
+    if (!(cv && cv.mine && !REPLAY)) roundResultBanner(); // 觀戰或回放：照舊在結算時顯示；自己的戰場由 myBattleDoneCheck 在播完時顯示
     renderDock(); renderTraits();
   } else if (ph === 'over') showOver();
   featuresPhase(ph);
@@ -5288,7 +5377,7 @@ function loopBody(now) {
   if (G && !$('game').hidden) {
     if (G.phase !== lastPhase || G.round !== lastRound) { const was = lastPhase; lastPhase = G.phase; lastRound = G.round; onPhase(was); }
     if (REPLAY) replayFrame(dt);
-    else if (cv && (G.phase === 'combat' || G.phase === 'result')) { combatSync(); handleEvents(); }
+    else if (cv && (G.phase === 'combat' || G.phase === 'result')) { combatSync(); handleEvents(); myBattleDoneCheck(); if (G.phase === 'combat') waitChip(cv.doneShown ? G.battles.filter(b => b.B && !b.B.over).length : 0); }
     featuresFrame(dt);
     const t = nowS(); const due = []; sched = sched.filter(s => { if (t >= s.t) { due.push(s); return false; } return true; }); for (const s of due) { try { s.fn(); } catch (e) { console.error(e); } }
     hud();
@@ -5340,7 +5429,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.4'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.5'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -6363,7 +6452,8 @@ function netClientUpdate(dt) {
   if (!G) return;
   if (G.timer > 0) G.timer -= dt * 1000;
   if (G.phase === 'prep' || G.phase === 'lobby') return; // 戰鬥資料可能比「進入戰鬥」的畫面先到：這時還沒開打，不能快轉
-  if (G.phase !== 'combat') { // 戰鬥結束：把還沒播完的部分快轉跑完
+  // 結算時：自己畫面落後的最後一小段照常播完（勝負畫面才不會被切掉）；快結束還沒播完才快轉
+  if (G.phase !== 'combat' && !(G.phase === 'result' && NET.battleRound === G.round && G.timer > 1200)) { // 把還沒播完的部分快轉跑完
     for (const bt of NET.battles) if (bt.B && !bt.B.over && NET.battleRound === G.round) { let n = 0; while (!bt.B.over && n++ < 2000) { netApplyCmds(bt, NET.battles.indexOf(bt)); step(bt.B); } bt.B.ev.length = 0; }
     return;
   }
@@ -6552,7 +6642,7 @@ function openAccount(then, startup) {
     if (!r.ok) { toast(r.err || '失敗', 3000); return; }
     ACC.token = r.token; ACC.me = r.me; netSetName(r.me.name); accSave();
     toast(mode === 'up' ? '註冊完成，歡迎！' : `歡迎回來，${r.me.name}`);
-    if (startup) splashHide(); else if (then) then(); else openAccount();
+    if (startup) { splashHide(); srvResume(); } else if (then) then(); else openAccount();
   };
 }
 
@@ -6592,6 +6682,8 @@ function srvLp(m) {
   const el = document.getElementById('lpLive'); if (el) el.outerHTML = ladderResHtml(LADDER_RES);
   if (LADDER_RES.up) setTimeout(() => { banner('晉級！', ladderTierName(m.after), 'win'); if (typeof confetti === 'function') confetti(); }, 600);
 }
+// 登入後：有沒打完的對局就接回去
+async function srvResume() { if (!srvOn() || !ACC.token || NET.role) return; const r = await accApi('/api/active'); if (r && r.ok && r.code && !NET.role) { toast('回到進行中的對局…', 2500); srvJoin(r.code); } }
 function srvHost() { if (NET.role) return; needLogin(() => { toast('建立房間中…'); NET.code = ''; srvConnect('/ws/new?mode=4', () => { toast('連不上，請確認網路後再試', 3200); netReset(); }); }); }
 function srvJoin(code) { if (NET.role) return; needLogin(() => { toast('連線中…'); NET.code = code; srvConnect('/ws/room/' + code, () => { toast('連不上，請確認網路後再試', 3000); netReset(); }); }); }
 // 網速：右上角小小的訊號格＋延遲（綠＝順、黃＝普通、紅＝卡）；最近幾次的抖動大也算卡
@@ -6647,9 +6739,11 @@ async function splashFinish() {
   if (srvOn()) accApi('/api/meta').then(r => { if (r && r.ok) try { localStorage.setItem('zoo_meta', JSON.stringify(r.list || [])); } catch (e) {} }); // 練習模式的電腦也會模仿玩家陣容
   LD.set(100, '完成');
   const wait = Math.max(0, 900 - (performance.now() - SPLASH_T0)); // 至少讓進度條跑完一小段，不會閃一下就消失
+  let back = ''; // 重開 App：還有沒打完的對局就直接接回去（已經被淘汰就不會有）
+  if (srvOn() && ACC.token) { const r = await Promise.race([accApi('/api/active'), new Promise(x => setTimeout(() => x(null), 3000))]); if (r && r.ok && r.code) back = r.code; }
   setTimeout(() => {
     if (!ACC.token) { $('spLoad').classList.add('done'); openAccount(null, true); }
-    else splashHide();
+    else { splashHide(); if (back) { toast('回到進行中的對局…', 2500); srvJoin(back); } }
   }, wait + 350);
 }
 function splashHide() { const s = $('splash'); if (!s) return; s.classList.add('out'); const sc = $('spCard'); if (sc) { sc.innerHTML = ''; sc.hidden = true; } /* 清掉登入框，避免跟設定裡的帳號框 id 重複 */ setTimeout(() => { if (s.classList.contains('out')) s.style.display = 'none'; }, 700); accBadge(); }
@@ -6722,11 +6816,12 @@ function teamLp(G, team, meLp) {
   const lps = ps.map(p => (G.ladder && G.ladder[p.id]) ? G.ladder[p.id].lp : p.ai ? meLp + (LADDER_CFG.AI_LP[G.rules.aiLevel] || 0) : meLp);
   return lps.reduce((a, b) => a + b, 0) / Math.max(1, lps.length);
 }
-let LADDER_RES = null, LADDER_SHOWN = null;
+let LADDER_RES = null, LADDER_SHOWN = null, LADDER_PLACE = 0, LADDER_PEND = false;
 function ladderSettle() {
   if (!G) return null;
   const t = myTeam(), T = G.teams[t];
   if (!(G.phase === 'over' || T.out) || !T.place) return null;
+  if (G.phase === 'combat' && T.dieRound === G.round) return { seed: G.seed, pending: true }; // 同回合還有戰場在打，名次可能往前調：打完再算
   if (G.server) { // 伺服器局：分數由伺服器算好再送來
     if (!G.ranked) return (LADDER_RES = { seed: G.seed, unranked: true, after: ACC.me ? ACC.me.lp : LADDER.lp });
     return LADDER_RES && LADDER_RES.seed === G.seed ? LADDER_RES : { seed: G.seed, pending: true };
@@ -6767,11 +6862,17 @@ function ladderResHtml(r) {
 // 被淘汰但比賽還沒結束：跳出名次與 LP，可以繼續觀戰
 function ladderFrame() {
   if (G && G.online && G.phase === 'over' && LADDER_RES && LADDER_RES.seed === G.seed && !LADDER_RES.unranked && LADDER_RES.full !== G.seed) { LADDER_RES.full = G.seed; if (!netBlocked()) glPublishRecord(); } // 被淘汰時發的紀錄只有部分名次，結束時補發完整的
-  if (!G || LADDER_SHOWN === G.seed || $('game').hidden) return;
+  if (!G || $('game').hidden) return;
   const T = G.teams[myTeam()];
+  if (LADDER_SHOWN === G.seed) { // 已經顯示淘汰畫面：同回合有人負得更多時名次往前調
+    if (T.place && LADDER_PLACE && T.place !== LADDER_PLACE) { LADDER_PLACE = T.place; toast(`名次更新：第 ${T.place} 名`, 2600); const h = document.getElementById('outPlace'); if (h) h.textContent = `第 ${T.place} 名`; }
+    if (LADDER_PEND && !(G.phase === 'combat' && T.dieRound === G.round)) { LADDER_PEND = false; const el = document.getElementById('lpLive'); if (el) el.outerHTML = ladderOverHtml(); }
+    return;
+  }
   if (G.phase !== 'over' && T.out) {
-    LADDER_SHOWN = G.seed;
-    $('panel').innerHTML = `<div class="over"><h2>第 ${T.place} 名</h2><p>我隊被淘汰了，其他隊還在打。</p>${ladderOverHtml()}<div><button class="btn" id="btnWatch">繼續觀戰</button> <button class="btn primary" id="btnOutLobby">回大廳</button></div></div>`;
+    if (typeof cv !== 'undefined' && cv && cv.mine && !cv.doneShown && G.phase === 'combat') return; // 自己的戰鬥畫面播完再跳
+    LADDER_SHOWN = G.seed; LADDER_PLACE = T.place; LADDER_PEND = G.phase === 'combat' && T.dieRound === G.round;
+    $('panel').innerHTML = `<div class="over"><h2 id="outPlace">第 ${T.place} 名</h2><p>我隊被淘汰了，其他隊還在打。</p>${ladderOverHtml()}<div><button class="btn" id="btnWatch">繼續觀戰</button> <button class="btn primary" id="btnOutLobby">回大廳</button></div></div>`;
     $('overlay').hidden = false;
     $('btnWatch').onclick = () => { $('overlay').hidden = true; };
     $('btnOutLobby').onclick = () => { if (NET.role) netLeave(); else { G = null; for (const k in S3.V) s3Remove(k); $('overlay').hidden = true; $('game').hidden = true; $('lobby').hidden = false; } };
