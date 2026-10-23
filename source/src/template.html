@@ -82,13 +82,50 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .team .hp { height: 6px; background: rgba(255,255,255,.15); border-radius: 4px; overflow: hidden; }
 .team .hp i { display: block; height: 100%; background: var(--good); transition: width .6s cubic-bezier(.2,.9,.3,1.2); }
 .team.r .hp i { background: var(--enemy); margin-left: auto; }
-.team.stand { gap: 1px; padding: 4px 8px; }
-#stage.multi .helpbtn { top: 116px; } #stage.multi .menubtn { top: 156px; }
-@media (max-width: 560px) { #stage.multi .helpbtn { top: 100px; } #stage.multi .menubtn { top: 140px; } }
-.team.stand .srow { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; opacity: .85; }
-.team.stand .srow b { font-size: 13px; font-family: var(--f-display); }
-.team.stand.many { grid-template-columns: 1fr 1fr; column-gap: 10px; row-gap: 1px; } .team.stand.many .srow { font-size: 10px; gap: 4px; } .team.stand.many .srow b { font-size: 11px; }
-.team.stand .srow.me { color: #9be07a; opacity: 1; } .team.stand .srow.opp { color: #ffb08a; opacity: 1; } .team.stand .srow.out { opacity: .4; text-decoration: line-through; }
+#stage.multi .helpbtn { top: calc(var(--sth, 108px) + 12px); } #stage.multi .menubtn { top: calc(var(--sth, 108px) + 52px); }
+/* 多隊排名表：一列一行，名字太長用…；可以點 */
+.team.stand { gap: 0; padding: 4px 6px 5px; pointer-events: auto; min-width: 0; }
+.team.stand .sthead { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; opacity: .75; padding: 0 2px 2px; }
+.team.stand .sthead small { font-size: 10px; }
+.team.stand .srow { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 14px 8px minmax(0,1fr) auto; align-items: center; gap: 4px; padding: 1px 3px; border-radius: 6px; font-size: 11px; line-height: 15px; cursor: pointer; opacity: .9; min-width: 0; }
+.team.stand .srow:hover { background: rgba(255,255,255,.08); }
+.team.stand .srow em { font-style: normal; font-size: 9px; opacity: .65; text-align: right; }
+.team.stand .srow b, .team.stand .spair b { font-size: 12px; font-family: var(--f-display); font-variant-numeric: tabular-nums; }
+.team.stand .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team.stand .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); display: inline-block; }
+.team.stand .srow.me { color: #9be07a; opacity: 1; } .team.stand .srow.opp { color: #ffb08a; opacity: 1; } .team.stand .srow.out { opacity: .4; } .team.stand .srow.out .nm { text-decoration: line-through; }
+.team.stand .srow.look { background: rgba(242,193,78,.22); outline: 1px solid var(--gold-2); }
+.team.stand .spair { display: grid; grid-template-columns: 7px minmax(0,1fr) 24px minmax(0,1fr) 7px; align-items: center; gap: 3px; font-size: 10.5px; line-height: 17px; padding: 0 2px; border-radius: 6px; opacity: .85; }
+.team.stand .spair .nm:last-of-type { text-align: right; }
+.team.stand .spair .ghost { opacity: .6; font-style: italic; }
+.team.stand .spair.me { background: rgba(155,224,122,.16); opacity: 1; color: #fff; }
+#teamB:not(.stand) { pointer-events: auto; cursor: pointer; }
+/* Q 版雙刀互敲 */
+.clash { display: block; overflow: visible; }
+.clash.sm { width: 26px; height: 18px; }
+.clash .swL { transform-origin: 18px 38px; animation: swL 1s ease-in-out infinite; }
+.clash .swR { transform-origin: 46px 38px; animation: swR 1s ease-in-out infinite; }
+.clash .spark { transform-origin: 32px 19px; animation: spark 1s ease-out infinite; }
+@keyframes swL { 0%, 100% { transform: rotate(18deg); } 42% { transform: rotate(10deg); } 55% { transform: rotate(40deg); } 66% { transform: rotate(32deg); } }
+@keyframes swR { 0%, 100% { transform: rotate(-18deg); } 42% { transform: rotate(-10deg); } 55% { transform: rotate(-40deg); } 66% { transform: rotate(-32deg); } }
+@keyframes spark { 0%, 50% { transform: scale(.2); opacity: 0; } 56% { transform: scale(1.25) rotate(8deg); opacity: 1; } 80% { transform: scale(.9) rotate(-4deg); opacity: .8; } 100% { transform: scale(.5); opacity: 0; } }
+.clashbox { display: none; }
+.clock { position: relative; }
+.clock.fight .clashbox { display: block; position: absolute; left: 3px; top: 19px; width: 28px; height: 22px; pointer-events: none; }
+.clock.fight .clashbox .clash { width: 28px; height: 22px; }
+#stage.multi .wchip { left: max(8px, env(safe-area-inset-left, 0px)); transform: none; max-width: calc(50% - 60px); }
+@media (prefers-reduced-motion: reduce) { .clash .swL, .clash .swR, .clash .spark { animation: none; } .clash .spark { opacity: 1; } }
+/* 看別人棋盤的提示列 */
+#scoutBar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 6px; background: rgba(43,28,22,.88); color: var(--paper); border-radius: 999px; padding: 4px 6px; font-size: 12px; white-space: nowrap; max-width: calc(100% - 24px); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+#scoutBar[hidden] { display: none; }
+#scoutBar > span { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#scoutBar > span b { overflow: hidden; text-overflow: ellipsis; max-width: 9em; }
+#scoutBar i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+#scoutBar .scb { all: unset; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; font-weight: 900; background: rgba(255,255,255,.12); }
+#scoutBar .sch { padding: 4px 10px; font-size: 12px; min-height: 0; }
+#stage.scouting #cv { filter: saturate(.85); }
+@media (max-width: 560px) { #scoutBar { font-size: 11px; bottom: 8px; } }
+.ltabs.ailv { align-items: center; } .ltabs.ailv span { font-size: 13px; font-weight: 700; margin-right: 4px; }
 .team .who { display: flex; gap: 4px; flex-wrap: wrap; font-weight: 500; opacity: .9; }
 .team .who span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c); margin-right: 3px; }
 .team.hit { animation: shake .4s; }
@@ -555,7 +592,7 @@ var m='載入中';window.LD={set:function(p,msg){t=Math.max(t,p);if(msg)m=msg;},
       <div id="ov"></div>
       <div class="hud">
         <div class="team" id="teamA"></div>
-        <div class="clock" id="clock"><div class="stg" id="stg"></div><b id="timer">30</b><small id="phaseTxt">準備</small></div>
+        <div class="clock" id="clock"><div class="stg" id="stg"></div><b id="timer">30</b><small id="phaseTxt">準備</small><div class="clashbox" id="clashBox"></div></div>
         <div class="team r" id="teamB"></div>
       </div>
       <div id="traits"></div>

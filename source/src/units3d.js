@@ -18,10 +18,10 @@ function s3Unit(k, info) {
     const hb = document.createElement('div'); hb.className = 'hb';
     hb.innerHTML = '<div class="hb-st"></div><div class="hb-bar"><i class="hb-lag"></i><i class="hb-hp"></i><i class="hb-sh"></i><b class="hb-tk"></b></div><div class="hb-mp"><i></i></div>';
     S3.ov.appendChild(hb);
-    const blob = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: 0x2a140a, transparent: true, opacity: 0.25, depthWrite: false }));
+    const blob = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: 0x2a140a, transparent: true, opacity: 0.25, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); blob.renderOrder = 3;
     blob.rotation.x = -Math.PI / 2; S3.unitRoot.add(blob);
     if (!GEO.unitRing) GEO.unitRing = new THREE.RingGeometry(0.34, 0.42, 32);
-    const ring = new THREE.Mesh(GEO.unitRing, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }));
+    const ring = new THREE.Mesh(GEO.unitRing, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 })); ring.renderOrder = 4;
     ring.rotation.x = -Math.PI / 2; S3.unitRoot.add(ring);
     v = S3.V[k] = { k, R, hb, blob, ring, unitKey: info.key, pos: V3(info.x, 0, info.z), tgt: V3(info.x, 0, info.z), yaw: 0, tyaw: 0, act: null, hitT: -9, deadT: null,
       hpShow: 1, lag: 1, star: 0, stunG: null, icon: null, seen: 0, born: nowS(), moving: false, lift: 0 };
@@ -156,12 +156,14 @@ function s3Frame(dt, ctx) {
     const nightOn = S3.night > 0.5 && (ANIMALS[v.unitKey] || {}).traits && ANIMALS[v.unitKey].traits.includes('night');
     if (nightOn !== v.nightOn) { setNightEyes(v.R, nightOn); v.nightOn = nightOn; }
     const ghost = it.stealth ? 0.45 : it.mirror ? 0.7 : 0;
-    if (ghost !== v.ghost) { v.ghost = ghost; for (const m of v.R.mats) { m.transparent = !!ghost || m.userData.op < 1; m.opacity = ghost || m.userData.op; m.needsUpdate = true; } }
+    if (ghost !== v.ghost) { // 半透明（草叢／陰影隱身）：固定繪製順序＋寫入深度，避免身體零件前後順序每格互換造成閃爍
+      v.ghost = ghost; let oi = 0; v.R.root.traverse(o => { if (o.isMesh) o.renderOrder = ghost ? 40 + oi++ : 0; });
+      for (const m of v.R.mats) { m.transparent = !!ghost || m.userData.op < 1; m.opacity = ghost || m.userData.op; m.depthWrite = true; m.needsUpdate = true; } }
     // 影子與圈
     const gone = dead !== undefined && dead > 0.8;
     const gh = groundH(v.pos.x, v.pos.z);
-    v.blob.position.set(v.pos.x, 0.012 + gh, v.pos.z); v.blob.scale.setScalar(0.38 * (v.scale || 1) * (1 + 0.5 * v.lift - 0.25 * Math.min(1, v.R.fly || 0))); v.blob.material.opacity = 0.25 * (1 - 0.8 * v.lift); v.blob.visible = !gone;
-    v.ring.position.set(v.pos.x, 0.016 + gh, v.pos.z); v.ring.visible = (!!it.color || S3.selK === k) && !gone;
+    v.blob.position.set(v.pos.x, 0.03 + Math.max(gh, waterTop(v.pos.x, v.pos.z)), v.pos.z); v.blob.scale.setScalar(0.38 * (v.scale || 1) * (1 + 0.5 * v.lift - 0.25 * Math.min(1, v.R.fly || 0))); v.blob.material.opacity = 0.25 * (1 - 0.8 * v.lift); v.blob.visible = !gone;
+    v.ring.position.set(v.pos.x, 0.035 + Math.max(gh, waterTop(v.pos.x, v.pos.z)), v.pos.z); v.ring.visible = (!!it.color || S3.selK === k) && !gone;
     if (S3.selK === k) { v.ring.material.color.set('#ffd34d'); v.ring.scale.setScalar((v.scale || 1) * (1.05 + 0.08 * Math.sin(t * 6))); } else { v.ring.material.color.set(it.color || '#ffffff'); v.ring.scale.setScalar(v.scale || 1); }
     // 暈眩星星
     if (it.stun && !v.stunG && !gone) { v.stunG = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('star'), transparent: true, depthWrite: false })); s.scale.setScalar(0.16); v.stunG.add(s); } S3.unitRoot.add(v.stunG); }

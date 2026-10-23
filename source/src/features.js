@@ -41,8 +41,6 @@ function featuresBoot() {
   $('btnMeter').onclick = () => { METER.on = !METER.on; $('meter').hidden = !METER.on; renderMeter(true); };
   $('meter').addEventListener('click', e => { const t = e.target.closest('[data-mt]'); if (t) { METER.tab = t.dataset.mt; renderMeter(true); } });
   $('cmdbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (!b) return; const r = actMe({ t: 'cmd', type: b.dataset.cmd }); if (r !== 'ok') { toast(ERR[r] || '現在不能下指令'); sfx('error'); } });
-  $('teamB').style.pointerEvents = 'auto'; $('teamB').style.cursor = 'pointer';
-  $('teamB').addEventListener('click', () => openScout());
   // 大廳按鈕
   $('btnLadder').onclick = () => openLadder();
   $('btnPlay').onclick = () => openModes();
@@ -512,7 +510,9 @@ let INSTALL_SHOW = false, INSTALL_FN = null;
 function openModes() {
   const online = !netBlocked();
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>選擇模式</h2><div class="modes">
-    <div><h3>練習 <small>跟電腦打，不計分</small></h3><div class="mgrid">
+    <div><h3>練習 <small>跟電腦打，不計分</small></h3>
+    <div class="ltabs ailv"><span>電腦強度</span>${[['easy', '簡單'], ['normal', '普通'], ['hard', '困難']].map(([k, n]) => `<button class="btn ${(loadRules().aiLevel || 'normal') === k ? 'on' : ''}" data-ailv="${k}">${n}</button>`).join('')}</div>
+    <div class="mgrid">
       <button class="btn primary" data-mode="p-solo"><b>單人混戰</b><small>8 人各自一隊</small></button>
       <button class="btn primary" data-mode="p-duel"><b>單人 1 對 1</b><small>你對一個電腦</small></button>
       <button class="btn primary" data-mode="p-duo"><b>雙人對戰</b><small>2 隊 4 人，你＋電腦隊友</small></button>
@@ -529,6 +529,7 @@ function openModes() {
     </div></div>` : ''}
   </div>`;
   $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('panel').querySelectorAll('[data-ailv]').forEach(b => b.onclick = () => { const r = loadRules(); r.aiLevel = b.dataset.ailv; saveRules(r); $('panel').querySelectorAll('[data-ailv]').forEach(x => x.classList.toggle('on', x === b)); });
   $('panel').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
     const m = b.dataset.mode; $('overlay').hidden = true;
     if (m === 'p-solo') { ME = 0; netReset(); newGame(8, true); }

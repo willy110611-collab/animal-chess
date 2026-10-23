@@ -1503,7 +1503,7 @@ function rollTerrain(G) {
 // ---- 回合流程 ----
 function startGame(G) {
   // 電腦模仿玩家：從高勝率的玩家陣容裡挑一套當目標（依勝率加權）
-  for (const P of G.players) if (P.ai) P.target = metaPick(G);
+  for (const P of G.players) if (P.ai) P.target = G.rng(100) < aiLv(G, P).meta ? metaPick(G) : null;
   delete G.meta;
   G.round = 0; G.arenaStart = G.rng(ARENA_ORDER.length);
   if (G.rules.portals) {
@@ -1745,9 +1745,17 @@ const AI_CFG = {
   LEVEL_AT: { 2: 3, 4: 4, 6: 5, 10: 6, 14: 7, 19: 8, 25: 9 }, // 第幾回合起想要升到幾級（普通難度）
   SAVE: 50,                // 血量健康時存到多少金（吃滿利息）
   ROLL_HP: 40,             // 團隊血量低於這個就開始刷新找牌
-  ROLL_KEEP: { easy: 999, normal: 20, hard: 10 }, // 刷新時至少留多少金
-  ROLL_LEVEL: { easy: 99, normal: 7, hard: 6 },    // 到幾級開始固定刷新（找 3、4 費二星）
 };
+// 電腦強度（練習時在「選擇模式」切換；只影響對手，電腦隊友固定普通）
+// lvl：升級目標加減｜rollKeep：刷新時至少留多少金｜rollLv：到幾級開始固定刷新
+// meta：照玩家高勝率陣容打的機率%｜plan：照羈絆計畫買牌的程度｜noise：買牌亂數｜misplace：每隻棋子亂站的機率%｜combo：會不會湊合體技｜smartItems：裝備給對的人
+const AI_LEVELS = {
+  easy:   { meta: 0,   plan: 0.3, noise: 30, misplace: 70, combo: false, smartItems: false, lvl: -1, rollKeep: 999, rollLv: 99 },
+  normal: { meta: 50,  plan: 0.8, noise: 14, misplace: 20, combo: true,  smartItems: true,  lvl: 0,  rollKeep: 20,  rollLv: 7 },
+  hard:   { meta: 100, plan: 1,   noise: 8,  misplace: 0,  combo: true,  smartItems: true,  lvl: 0,  rollKeep: 20,  rollLv: 7 },
+};
+const aiLvName = (G, P) => P.aiLv || (G.players.some(q => q.team === P.team && !q.ai) ? 'normal' : (G.rules.aiLevel || 'normal'));
+const aiLv = (G, P) => AI_LEVELS[aiLvName(G, P)] || AI_LEVELS.normal;
 const aiRoleOf = key => { const A = ANIMALS[key]; if (!A) return 'fighter'; const r = A.role || ''; return r.includes('坦') ? 'tank' : r.includes('刺客') ? 'assassin' : A.rng >= 2 ? 'carry' : 'fighter'; };
 const aiHumanMate = (G, pid) => { const T = teammate(G, pid); return T && !T.ai && !T.out ? T : null; };
 // 隊伍的羈絆計畫：看我和隊友場上＋備戰席已經有的種類，挑最有希望的 2～3 個羈絆
@@ -1796,19 +1804,19 @@ function aiPickAug(G, P) {
   return P.augChoice.slice().sort((a, b) => score(b) - score(a))[0];
 }
 function aiPrep(G, pid) {
-  const P = G.players[pid], R = G.round, lv = G.rules.aiLevel || 'normal', T = G.teams[P.team];
+  const P = G.players[pid], R = G.round, lv = aiLvName(G, P), L = aiLv(G, P), T = G.teams[P.team];
   if (P.out) return;
   if (P.augChoice) act(G, pid, { t: 'aug', id: aiPickAug(G, P) });
   const human = aiHumanMate(G, pid);
   // 1) 想要的等級
   let target = 2; for (const r in AI_CFG.LEVEL_AT) if (R >= +r) target = AI_CFG.LEVEL_AT[r];
-  target = Math.max(2, Math.min(CFG.MAX_LEVEL, target + (lv === 'easy' ? -1 : lv === 'hard' ? 1 : 0) + (T.hp < AI_CFG.ROLL_HP ? 1 : 0)));
-  const healthy = T.hp >= 50, save = lv === 'easy' ? 10 : (R >= 6 && healthy ? Math.min(AI_CFG.SAVE, 10 * Math.floor(P.gold / 10)) : 0);
+  target = Math.max(2, Math.min(CFG.MAX_LEVEL, target + L.lvl + (T.hp < AI_CFG.ROLL_HP ? 1 : 0)));
+  const healthy = T.hp >= 50, save = L.lvl < 0 ? 10 : (R >= 6 && healthy ? Math.min(AI_CFG.SAVE, 10 * Math.floor(P.gold / 10)) : 0);
   while (P.level < target && P.gold >= CFG.XP_COST && P.gold - CFG.XP_COST >= Math.min(save, 20)) if (act(G, pid, { t: 'level' }) !== 'ok') break;
   // 2) 先照顧真人隊友：他快湊滿三隻的，我手上有就送他
   const mateTr = aiHelpMate(G, pid); // 回應真人隊友（送棋子、送錢、幫買）—— 互動用 v0.12 甲版
   // 3) 買牌
-  const plan = aiPlan(G, pid);
+  const plan = aiPlan(G, pid); for (const t in plan) plan[t] *= L.plan;
   const keepGold = () => (P.level >= target || P.level >= CFG.MAX_LEVEL) ? Math.min(save, 50) : save;
   const buyPass = () => {
     for (let loop = 0; loop < CFG.SHOP_SIZE; loop++) {
@@ -1823,7 +1831,7 @@ function aiPrep(G, pid) {
         const merges = c >= 2;
         if (!merges && P.gold - A.cost < keepGold()) return;
         if (!merges && benchFree <= 1) return;
-        let s = A.cost * 6 + c * 22 + G.rng(8) + (P.target && P.target.units.some(x => x[0] === k) ? META_CFG.TARGET_BUY : 0);
+        let s = A.cost * 6 + c * 22 + G.rng(L.noise) + (P.target && P.target.units.some(x => x[0] === k) ? META_CFG.TARGET_BUY : 0);
         for (const t of A.traits) s += (plan[t] || 0) * 7 + (mateTr[t] || 0) * 3; // 跟著真人隊友的羈絆湊
         if (A.cost > P.level - 1 && !c) s -= 8; // 太貴、還湊不起來的先不急
         if (own.length >= popCap(P) + 4 && !c) s -= 30;
@@ -1835,8 +1843,8 @@ function aiPrep(G, pid) {
   };
   buyPass();
   // 4) 刷新：血少或到了固定刷新的等級
-  const keep = AI_CFG.ROLL_KEEP[lv] || 20, rollLv = AI_CFG.ROLL_LEVEL[lv] || 7;
-  const wantRoll = T.hp < AI_CFG.ROLL_HP || P.level >= rollLv || (lv === 'hard' && R >= 12);
+  const keep = L.rollKeep, rollLv = L.rollLv;
+  const wantRoll = T.hp < AI_CFG.ROLL_HP || P.level >= rollLv;
   for (let n = 0; n < 12 && wantRoll && P.gold >= keep + rerollCost(P) && (T.hp < AI_CFG.ROLL_HP || P.gold >= Math.max(keep, 30)); n++) { if (act(G, pid, { t: 'reroll' }) !== 'ok') break; buyPass(); }
   // 5) 備戰席太滿：賣最沒用的（不賣有對子的）
   const sellWorst = () => {
@@ -1859,6 +1867,7 @@ function aiItems(G, pid) {
   const carry = board.slice().sort((a, b) => score(b, 'carry') - score(a, 'carry'))[0];
   const tank = board.slice().sort((a, b) => score(b, 'tank') - score(a, 'tank'))[0];
   const DEF = { acorn: 1, shell: 1, dew: 1 };
+  if (!aiLv(G, P).smartItems) { for (let i = P.items.length - 1; i >= 0; i--) { if (CONSUMABLES[P.items[i]]) continue; const o = board[G.rng(board.length)]; act(G, pid, { t: 'equip', idx: i, uid: o.u.uid }); } return; }
   for (let i = P.items.length - 1; i >= 0; i--) {
     const it = P.items[i]; if (CONSUMABLES[it]) continue;
     let order;
@@ -1872,7 +1881,7 @@ function aiItems(G, pid) {
   }
 }
 function aiPlace(G, pid) {
-  const P = G.players[pid];
+  const P = G.players[pid], L = aiLv(G, P);
   const inMine = k => inHalf(P.team, +k);
   // 被真人隊友移動過的棋子（pinned）留在原地；其他的先收回重新排
   for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid) continue; if (u.pinned && inMine(k)) continue; delete G.board[k]; const s = P.bench.indexOf(null); if (s >= 0) P.bench[s] = u; else P.bench.push(u); }
@@ -1894,8 +1903,9 @@ function aiPlace(G, pid) {
     const A = ANIMALS[o.u.key], role = aiRoleOf(o.u.key);
     let spot = null;
     if (P.target) { const tp = P.target.units.find(x => x[0] === o.u.key); if (tp) spot = free.find(f => f.c === tp[2] && f.r === tp[3]) || null; } // 照玩家陣容的站位
+    if (!spot && L.misplace && G.rng(100) < L.misplace && free.length) spot = free[G.rng(free.length)]; // 較弱的電腦：亂站
     // 合體技：靠近搭檔（隊友的或自己的）
-    for (const cb of COMBOS) {
+    if (!spot && L.combo) for (const cb of COMBOS) {
       const partner = cb.a === o.u.key ? cb.b : cb.b === o.u.key ? cb.a : null; if (!partner) continue;
       for (const k in G.board) {
         const pu = G.board[k]; if (pu.key !== partner || G.players[pu.owner].team !== P.team || (pu.owner === pid && !G.solo)) continue;

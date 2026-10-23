@@ -82,13 +82,50 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .team .hp { height: 6px; background: rgba(255,255,255,.15); border-radius: 4px; overflow: hidden; }
 .team .hp i { display: block; height: 100%; background: var(--good); transition: width .6s cubic-bezier(.2,.9,.3,1.2); }
 .team.r .hp i { background: var(--enemy); margin-left: auto; }
-.team.stand { gap: 1px; padding: 4px 8px; }
-#stage.multi .helpbtn { top: 116px; } #stage.multi .menubtn { top: 156px; }
-@media (max-width: 560px) { #stage.multi .helpbtn { top: 100px; } #stage.multi .menubtn { top: 140px; } }
-.team.stand .srow { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; opacity: .85; }
-.team.stand .srow b { font-size: 13px; font-family: var(--f-display); }
-.team.stand.many { grid-template-columns: 1fr 1fr; column-gap: 10px; row-gap: 1px; } .team.stand.many .srow { font-size: 10px; gap: 4px; } .team.stand.many .srow b { font-size: 11px; }
-.team.stand .srow.me { color: #9be07a; opacity: 1; } .team.stand .srow.opp { color: #ffb08a; opacity: 1; } .team.stand .srow.out { opacity: .4; text-decoration: line-through; }
+#stage.multi .helpbtn { top: calc(var(--sth, 108px) + 12px); } #stage.multi .menubtn { top: calc(var(--sth, 108px) + 52px); }
+/* 多隊排名表：一列一行，名字太長用…；可以點 */
+.team.stand { gap: 0; padding: 4px 6px 5px; pointer-events: auto; min-width: 0; }
+.team.stand .sthead { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; opacity: .75; padding: 0 2px 2px; }
+.team.stand .sthead small { font-size: 10px; }
+.team.stand .srow { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 14px 8px minmax(0,1fr) auto; align-items: center; gap: 4px; padding: 1px 3px; border-radius: 6px; font-size: 11px; line-height: 15px; cursor: pointer; opacity: .9; min-width: 0; }
+.team.stand .srow:hover { background: rgba(255,255,255,.08); }
+.team.stand .srow em { font-style: normal; font-size: 9px; opacity: .65; text-align: right; }
+.team.stand .srow b, .team.stand .spair b { font-size: 12px; font-family: var(--f-display); font-variant-numeric: tabular-nums; }
+.team.stand .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team.stand .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); display: inline-block; }
+.team.stand .srow.me { color: #9be07a; opacity: 1; } .team.stand .srow.opp { color: #ffb08a; opacity: 1; } .team.stand .srow.out { opacity: .4; } .team.stand .srow.out .nm { text-decoration: line-through; }
+.team.stand .srow.look { background: rgba(242,193,78,.22); outline: 1px solid var(--gold-2); }
+.team.stand .spair { display: grid; grid-template-columns: 7px minmax(0,1fr) 24px minmax(0,1fr) 7px; align-items: center; gap: 3px; font-size: 10.5px; line-height: 17px; padding: 0 2px; border-radius: 6px; opacity: .85; }
+.team.stand .spair .nm:last-of-type { text-align: right; }
+.team.stand .spair .ghost { opacity: .6; font-style: italic; }
+.team.stand .spair.me { background: rgba(155,224,122,.16); opacity: 1; color: #fff; }
+#teamB:not(.stand) { pointer-events: auto; cursor: pointer; }
+/* Q 版雙刀互敲 */
+.clash { display: block; overflow: visible; }
+.clash.sm { width: 26px; height: 18px; }
+.clash .swL { transform-origin: 18px 38px; animation: swL 1s ease-in-out infinite; }
+.clash .swR { transform-origin: 46px 38px; animation: swR 1s ease-in-out infinite; }
+.clash .spark { transform-origin: 32px 19px; animation: spark 1s ease-out infinite; }
+@keyframes swL { 0%, 100% { transform: rotate(18deg); } 42% { transform: rotate(10deg); } 55% { transform: rotate(40deg); } 66% { transform: rotate(32deg); } }
+@keyframes swR { 0%, 100% { transform: rotate(-18deg); } 42% { transform: rotate(-10deg); } 55% { transform: rotate(-40deg); } 66% { transform: rotate(-32deg); } }
+@keyframes spark { 0%, 50% { transform: scale(.2); opacity: 0; } 56% { transform: scale(1.25) rotate(8deg); opacity: 1; } 80% { transform: scale(.9) rotate(-4deg); opacity: .8; } 100% { transform: scale(.5); opacity: 0; } }
+.clashbox { display: none; }
+.clock { position: relative; }
+.clock.fight .clashbox { display: block; position: absolute; left: 3px; top: 19px; width: 28px; height: 22px; pointer-events: none; }
+.clock.fight .clashbox .clash { width: 28px; height: 22px; }
+#stage.multi .wchip { left: max(8px, env(safe-area-inset-left, 0px)); transform: none; max-width: calc(50% - 60px); }
+@media (prefers-reduced-motion: reduce) { .clash .swL, .clash .swR, .clash .spark { animation: none; } .clash .spark { opacity: 1; } }
+/* 看別人棋盤的提示列 */
+#scoutBar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 6px; background: rgba(43,28,22,.88); color: var(--paper); border-radius: 999px; padding: 4px 6px; font-size: 12px; white-space: nowrap; max-width: calc(100% - 24px); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+#scoutBar[hidden] { display: none; }
+#scoutBar > span { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#scoutBar > span b { overflow: hidden; text-overflow: ellipsis; max-width: 9em; }
+#scoutBar i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+#scoutBar .scb { all: unset; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; font-weight: 900; background: rgba(255,255,255,.12); }
+#scoutBar .sch { padding: 4px 10px; font-size: 12px; min-height: 0; }
+#stage.scouting #cv { filter: saturate(.85); }
+@media (max-width: 560px) { #scoutBar { font-size: 11px; bottom: 8px; } }
+.ltabs.ailv { align-items: center; } .ltabs.ailv span { font-size: 13px; font-weight: 700; margin-right: 4px; }
 .team .who { display: flex; gap: 4px; flex-wrap: wrap; font-weight: 500; opacity: .9; }
 .team .who span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c); margin-right: 3px; }
 .team.hit { animation: shake .4s; }
@@ -555,7 +592,7 @@ var m='載入中';window.LD={set:function(p,msg){t=Math.max(t,p);if(msg)m=msg;},
       <div id="ov"></div>
       <div class="hud">
         <div class="team" id="teamA"></div>
-        <div class="clock" id="clock"><div class="stg" id="stg"></div><b id="timer">30</b><small id="phaseTxt">準備</small></div>
+        <div class="clock" id="clock"><div class="stg" id="stg"></div><b id="timer">30</b><small id="phaseTxt">準備</small><div class="clashbox" id="clashBox"></div></div>
         <div class="team r" id="teamB"></div>
       </div>
       <div id="traits"></div>
@@ -2096,7 +2133,7 @@ function rollTerrain(G) {
 // ---- 回合流程 ----
 function startGame(G) {
   // 電腦模仿玩家：從高勝率的玩家陣容裡挑一套當目標（依勝率加權）
-  for (const P of G.players) if (P.ai) P.target = metaPick(G);
+  for (const P of G.players) if (P.ai) P.target = G.rng(100) < aiLv(G, P).meta ? metaPick(G) : null;
   delete G.meta;
   G.round = 0; G.arenaStart = G.rng(ARENA_ORDER.length);
   if (G.rules.portals) {
@@ -2338,9 +2375,17 @@ const AI_CFG = {
   LEVEL_AT: { 2: 3, 4: 4, 6: 5, 10: 6, 14: 7, 19: 8, 25: 9 }, // 第幾回合起想要升到幾級（普通難度）
   SAVE: 50,                // 血量健康時存到多少金（吃滿利息）
   ROLL_HP: 40,             // 團隊血量低於這個就開始刷新找牌
-  ROLL_KEEP: { easy: 999, normal: 20, hard: 10 }, // 刷新時至少留多少金
-  ROLL_LEVEL: { easy: 99, normal: 7, hard: 6 },    // 到幾級開始固定刷新（找 3、4 費二星）
 };
+// 電腦強度（練習時在「選擇模式」切換；只影響對手，電腦隊友固定普通）
+// lvl：升級目標加減｜rollKeep：刷新時至少留多少金｜rollLv：到幾級開始固定刷新
+// meta：照玩家高勝率陣容打的機率%｜plan：照羈絆計畫買牌的程度｜noise：買牌亂數｜misplace：每隻棋子亂站的機率%｜combo：會不會湊合體技｜smartItems：裝備給對的人
+const AI_LEVELS = {
+  easy:   { meta: 0,   plan: 0.3, noise: 30, misplace: 70, combo: false, smartItems: false, lvl: -1, rollKeep: 999, rollLv: 99 },
+  normal: { meta: 50,  plan: 0.8, noise: 14, misplace: 20, combo: true,  smartItems: true,  lvl: 0,  rollKeep: 20,  rollLv: 7 },
+  hard:   { meta: 100, plan: 1,   noise: 8,  misplace: 0,  combo: true,  smartItems: true,  lvl: 0,  rollKeep: 20,  rollLv: 7 },
+};
+const aiLvName = (G, P) => P.aiLv || (G.players.some(q => q.team === P.team && !q.ai) ? 'normal' : (G.rules.aiLevel || 'normal'));
+const aiLv = (G, P) => AI_LEVELS[aiLvName(G, P)] || AI_LEVELS.normal;
 const aiRoleOf = key => { const A = ANIMALS[key]; if (!A) return 'fighter'; const r = A.role || ''; return r.includes('坦') ? 'tank' : r.includes('刺客') ? 'assassin' : A.rng >= 2 ? 'carry' : 'fighter'; };
 const aiHumanMate = (G, pid) => { const T = teammate(G, pid); return T && !T.ai && !T.out ? T : null; };
 // 隊伍的羈絆計畫：看我和隊友場上＋備戰席已經有的種類，挑最有希望的 2～3 個羈絆
@@ -2389,19 +2434,19 @@ function aiPickAug(G, P) {
   return P.augChoice.slice().sort((a, b) => score(b) - score(a))[0];
 }
 function aiPrep(G, pid) {
-  const P = G.players[pid], R = G.round, lv = G.rules.aiLevel || 'normal', T = G.teams[P.team];
+  const P = G.players[pid], R = G.round, lv = aiLvName(G, P), L = aiLv(G, P), T = G.teams[P.team];
   if (P.out) return;
   if (P.augChoice) act(G, pid, { t: 'aug', id: aiPickAug(G, P) });
   const human = aiHumanMate(G, pid);
   // 1) 想要的等級
   let target = 2; for (const r in AI_CFG.LEVEL_AT) if (R >= +r) target = AI_CFG.LEVEL_AT[r];
-  target = Math.max(2, Math.min(CFG.MAX_LEVEL, target + (lv === 'easy' ? -1 : lv === 'hard' ? 1 : 0) + (T.hp < AI_CFG.ROLL_HP ? 1 : 0)));
-  const healthy = T.hp >= 50, save = lv === 'easy' ? 10 : (R >= 6 && healthy ? Math.min(AI_CFG.SAVE, 10 * Math.floor(P.gold / 10)) : 0);
+  target = Math.max(2, Math.min(CFG.MAX_LEVEL, target + L.lvl + (T.hp < AI_CFG.ROLL_HP ? 1 : 0)));
+  const healthy = T.hp >= 50, save = L.lvl < 0 ? 10 : (R >= 6 && healthy ? Math.min(AI_CFG.SAVE, 10 * Math.floor(P.gold / 10)) : 0);
   while (P.level < target && P.gold >= CFG.XP_COST && P.gold - CFG.XP_COST >= Math.min(save, 20)) if (act(G, pid, { t: 'level' }) !== 'ok') break;
   // 2) 先照顧真人隊友：他快湊滿三隻的，我手上有就送他
   const mateTr = aiHelpMate(G, pid); // 回應真人隊友（送棋子、送錢、幫買）—— 互動用 v0.12 甲版
   // 3) 買牌
-  const plan = aiPlan(G, pid);
+  const plan = aiPlan(G, pid); for (const t in plan) plan[t] *= L.plan;
   const keepGold = () => (P.level >= target || P.level >= CFG.MAX_LEVEL) ? Math.min(save, 50) : save;
   const buyPass = () => {
     for (let loop = 0; loop < CFG.SHOP_SIZE; loop++) {
@@ -2416,7 +2461,7 @@ function aiPrep(G, pid) {
         const merges = c >= 2;
         if (!merges && P.gold - A.cost < keepGold()) return;
         if (!merges && benchFree <= 1) return;
-        let s = A.cost * 6 + c * 22 + G.rng(8) + (P.target && P.target.units.some(x => x[0] === k) ? META_CFG.TARGET_BUY : 0);
+        let s = A.cost * 6 + c * 22 + G.rng(L.noise) + (P.target && P.target.units.some(x => x[0] === k) ? META_CFG.TARGET_BUY : 0);
         for (const t of A.traits) s += (plan[t] || 0) * 7 + (mateTr[t] || 0) * 3; // 跟著真人隊友的羈絆湊
         if (A.cost > P.level - 1 && !c) s -= 8; // 太貴、還湊不起來的先不急
         if (own.length >= popCap(P) + 4 && !c) s -= 30;
@@ -2428,8 +2473,8 @@ function aiPrep(G, pid) {
   };
   buyPass();
   // 4) 刷新：血少或到了固定刷新的等級
-  const keep = AI_CFG.ROLL_KEEP[lv] || 20, rollLv = AI_CFG.ROLL_LEVEL[lv] || 7;
-  const wantRoll = T.hp < AI_CFG.ROLL_HP || P.level >= rollLv || (lv === 'hard' && R >= 12);
+  const keep = L.rollKeep, rollLv = L.rollLv;
+  const wantRoll = T.hp < AI_CFG.ROLL_HP || P.level >= rollLv;
   for (let n = 0; n < 12 && wantRoll && P.gold >= keep + rerollCost(P) && (T.hp < AI_CFG.ROLL_HP || P.gold >= Math.max(keep, 30)); n++) { if (act(G, pid, { t: 'reroll' }) !== 'ok') break; buyPass(); }
   // 5) 備戰席太滿：賣最沒用的（不賣有對子的）
   const sellWorst = () => {
@@ -2452,6 +2497,7 @@ function aiItems(G, pid) {
   const carry = board.slice().sort((a, b) => score(b, 'carry') - score(a, 'carry'))[0];
   const tank = board.slice().sort((a, b) => score(b, 'tank') - score(a, 'tank'))[0];
   const DEF = { acorn: 1, shell: 1, dew: 1 };
+  if (!aiLv(G, P).smartItems) { for (let i = P.items.length - 1; i >= 0; i--) { if (CONSUMABLES[P.items[i]]) continue; const o = board[G.rng(board.length)]; act(G, pid, { t: 'equip', idx: i, uid: o.u.uid }); } return; }
   for (let i = P.items.length - 1; i >= 0; i--) {
     const it = P.items[i]; if (CONSUMABLES[it]) continue;
     let order;
@@ -2465,7 +2511,7 @@ function aiItems(G, pid) {
   }
 }
 function aiPlace(G, pid) {
-  const P = G.players[pid];
+  const P = G.players[pid], L = aiLv(G, P);
   const inMine = k => inHalf(P.team, +k);
   // 被真人隊友移動過的棋子（pinned）留在原地；其他的先收回重新排
   for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid) continue; if (u.pinned && inMine(k)) continue; delete G.board[k]; const s = P.bench.indexOf(null); if (s >= 0) P.bench[s] = u; else P.bench.push(u); }
@@ -2487,8 +2533,9 @@ function aiPlace(G, pid) {
     const A = ANIMALS[o.u.key], role = aiRoleOf(o.u.key);
     let spot = null;
     if (P.target) { const tp = P.target.units.find(x => x[0] === o.u.key); if (tp) spot = free.find(f => f.c === tp[2] && f.r === tp[3]) || null; } // 照玩家陣容的站位
+    if (!spot && L.misplace && G.rng(100) < L.misplace && free.length) spot = free[G.rng(free.length)]; // 較弱的電腦：亂站
     // 合體技：靠近搭檔（隊友的或自己的）
-    for (const cb of COMBOS) {
+    if (!spot && L.combo) for (const cb of COMBOS) {
       const partner = cb.a === o.u.key ? cb.b : cb.b === o.u.key ? cb.a : null; if (!partner) continue;
       for (const k in G.board) {
         const pu = G.board[k]; if (pu.key !== partner || G.players[pu.owner].team !== P.team || (pu.owner === pid && !G.solo)) continue;
@@ -3863,6 +3910,8 @@ function groundH(x, z) {
   for (const [cx, cz] of S3.wcells || []) { const d = Math.hypot(x - cx, z - cz); if (d < 0.5) w = Math.min(w, -0.1 * (1 - sstep(0.22, 0.5, d))); }
   return h + w;
 }
+// 水窪水面高度（影子和選取圈要畫在水面上，不然會跟半透明的水互相遮擋閃爍）
+function waterTop(x, z) { for (const [cx, cz] of S3.wcells || []) if (Math.hypot(x - cx, z - cz) < 0.45) return -0.06; return -9; }
 function vnoise(x, z) { // 簡單平滑雜訊 0..1
   const h = (i, j) => { let n = Math.imul(i * 374761393 + j * 668265263, 1274126177); n ^= n >>> 13; return ((n >>> 0) % 1000) / 1000; };
   const i = Math.floor(x), j = Math.floor(z), fx = x - i, fz = z - j, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
@@ -3938,10 +3987,10 @@ function s3Unit(k, info) {
     const hb = document.createElement('div'); hb.className = 'hb';
     hb.innerHTML = '<div class="hb-st"></div><div class="hb-bar"><i class="hb-lag"></i><i class="hb-hp"></i><i class="hb-sh"></i><b class="hb-tk"></b></div><div class="hb-mp"><i></i></div>';
     S3.ov.appendChild(hb);
-    const blob = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: 0x2a140a, transparent: true, opacity: 0.25, depthWrite: false }));
+    const blob = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: 0x2a140a, transparent: true, opacity: 0.25, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); blob.renderOrder = 3;
     blob.rotation.x = -Math.PI / 2; S3.unitRoot.add(blob);
     if (!GEO.unitRing) GEO.unitRing = new THREE.RingGeometry(0.34, 0.42, 32);
-    const ring = new THREE.Mesh(GEO.unitRing, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }));
+    const ring = new THREE.Mesh(GEO.unitRing, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 })); ring.renderOrder = 4;
     ring.rotation.x = -Math.PI / 2; S3.unitRoot.add(ring);
     v = S3.V[k] = { k, R, hb, blob, ring, unitKey: info.key, pos: V3(info.x, 0, info.z), tgt: V3(info.x, 0, info.z), yaw: 0, tyaw: 0, act: null, hitT: -9, deadT: null,
       hpShow: 1, lag: 1, star: 0, stunG: null, icon: null, seen: 0, born: nowS(), moving: false, lift: 0 };
@@ -4076,12 +4125,14 @@ function s3Frame(dt, ctx) {
     const nightOn = S3.night > 0.5 && (ANIMALS[v.unitKey] || {}).traits && ANIMALS[v.unitKey].traits.includes('night');
     if (nightOn !== v.nightOn) { setNightEyes(v.R, nightOn); v.nightOn = nightOn; }
     const ghost = it.stealth ? 0.45 : it.mirror ? 0.7 : 0;
-    if (ghost !== v.ghost) { v.ghost = ghost; for (const m of v.R.mats) { m.transparent = !!ghost || m.userData.op < 1; m.opacity = ghost || m.userData.op; m.needsUpdate = true; } }
+    if (ghost !== v.ghost) { // 半透明（草叢／陰影隱身）：固定繪製順序＋寫入深度，避免身體零件前後順序每格互換造成閃爍
+      v.ghost = ghost; let oi = 0; v.R.root.traverse(o => { if (o.isMesh) o.renderOrder = ghost ? 40 + oi++ : 0; });
+      for (const m of v.R.mats) { m.transparent = !!ghost || m.userData.op < 1; m.opacity = ghost || m.userData.op; m.depthWrite = true; m.needsUpdate = true; } }
     // 影子與圈
     const gone = dead !== undefined && dead > 0.8;
     const gh = groundH(v.pos.x, v.pos.z);
-    v.blob.position.set(v.pos.x, 0.012 + gh, v.pos.z); v.blob.scale.setScalar(0.38 * (v.scale || 1) * (1 + 0.5 * v.lift - 0.25 * Math.min(1, v.R.fly || 0))); v.blob.material.opacity = 0.25 * (1 - 0.8 * v.lift); v.blob.visible = !gone;
-    v.ring.position.set(v.pos.x, 0.016 + gh, v.pos.z); v.ring.visible = (!!it.color || S3.selK === k) && !gone;
+    v.blob.position.set(v.pos.x, 0.03 + Math.max(gh, waterTop(v.pos.x, v.pos.z)), v.pos.z); v.blob.scale.setScalar(0.38 * (v.scale || 1) * (1 + 0.5 * v.lift - 0.25 * Math.min(1, v.R.fly || 0))); v.blob.material.opacity = 0.25 * (1 - 0.8 * v.lift); v.blob.visible = !gone;
+    v.ring.position.set(v.pos.x, 0.035 + Math.max(gh, waterTop(v.pos.x, v.pos.z)), v.pos.z); v.ring.visible = (!!it.color || S3.selK === k) && !gone;
     if (S3.selK === k) { v.ring.material.color.set('#ffd34d'); v.ring.scale.setScalar((v.scale || 1) * (1.05 + 0.08 * Math.sin(t * 6))); } else { v.ring.material.color.set(it.color || '#ffffff'); v.ring.scale.setScalar(v.scale || 1); }
     // 暈眩星星
     if (it.stun && !v.stunG && !gone) { v.stunG = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('star'), transparent: true, depthWrite: false })); s.scale.setScalar(0.16); v.stunG.add(s); } S3.unitRoot.add(v.stunG); }
@@ -4512,6 +4563,11 @@ function ownerColor(pid) {
 }
 function toast(msg, ms) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), ms || 1600); }
 function banner(b1, b2, cls) { const b = $('banner'); b.className = ''; b.querySelector('.b1').textContent = b1; b.querySelector('.b2').textContent = b2 || ''; void b.offsetWidth; b.className = 'show ' + (cls || ''); }
+// Q 版雙刀互敲＋火花（戰鬥中顯示在誰打誰中間）
+function clashSvg(cls) {
+  const sw = `<path d="M-4.5 -7 V-30 L0 -37 L4.5 -30 V-7 Z" fill="#eef3f8" stroke="#3a2a22" stroke-width="2.4" stroke-linejoin="round"/><path d="M0 -9 V-31" stroke="#b9c6d4" stroke-width="2" stroke-linecap="round"/><rect x="-10" y="-9" width="20" height="5.5" rx="2.75" fill="#f2c14e" stroke="#3a2a22" stroke-width="2.2"/><rect x="-3" y="-3.5" width="6" height="10" rx="2.5" fill="#9a5a30" stroke="#3a2a22" stroke-width="2"/><circle cy="9" r="3.6" fill="#f2c14e" stroke="#3a2a22" stroke-width="2"/>`;
+  return `<svg class="clash ${cls || ''}" viewBox="0 0 64 48" aria-hidden="true"><g class="swL"><g transform="translate(18 38)">${sw}</g></g><g class="swR"><g transform="translate(46 38)">${sw}</g></g><g class="spark"><path d="M32 6 L35 15 L44 12 L37.5 19 L45 25 L35.5 23.5 L32 32 L28.5 23.5 L19 25 L26.5 19 L20 12 L29 15 Z" fill="#ffd34d" stroke="#e8792b" stroke-width="1.6" stroke-linejoin="round"/><circle cx="32" cy="19" r="3.4" fill="#fff8d8"/><circle cx="16" cy="9" r="1.8" fill="#ffb03a"/><circle cx="49" cy="8" r="1.6" fill="#ffd34d"/><circle cx="12" cy="20" r="1.3" fill="#ff8a3a"/><circle cx="52" cy="21" r="1.5" fill="#ffb03a"/></g></svg>`;
+}
 const goldSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="9" fill="#d99a2b"/><circle cx="12" cy="13" r="6.2" fill="#f2c14e"/><path d="M7.5 7.5q4.5-5 9 0z" fill="#7a4f28"/></svg>';
 
 // ---- 3D 小頭像（商店卡、圖鑑、資訊卡）----
@@ -4577,8 +4633,39 @@ function oppBenchList(list) {
   const ps = G.players.filter(p => p.team === ot), n = ps.length * CFG.BENCH;
   ps.forEach((P, pi) => P.bench.forEach((u, i) => { if (!u) return; const [x, z] = oppBenchWorld(pi * CFG.BENCH + i, n); list.push({ k: 'ob' + u.uid, key: u.key, star: u.star, color: ownerColor(P.id), enemy: true, mini: true, x, z, hp: 1, maxhp: 1 }); }));
 }
+// ---- 看別人的棋盤（準備階段，像聯盟戰棋點頭像去別人家看）----
+let SCOUT = -1;
+const scoutTeam = () => (SCOUT >= 0 && G && G.phase === 'prep' && SCOUT !== myTeam() && G.teams[SCOUT] && !G.teams[SCOUT].out) ? SCOUT : -1;
+const teamColor = t => { if (t === myTeam()) return '#3d7fc4'; const others = G.teams.map((T, i) => i).filter(i => i !== myTeam()); return (TEAM_PAL[Math.max(0, others.indexOf(t))] || TEAM_PAL[0])[0]; };
+function scoutList(vt) {
+  const list = [];
+  for (const k in G.board) {
+    const u = G.board[k], P = G.players[u.owner]; if (P.team !== vt) continue;
+    const [x, z] = worldOfCell(+k, SIDE(vt)), st = unitStats(u);
+    list.push({ k: 'u' + u.uid, key: u.key, star: u.star, color: ownerColor(u.owner), enemy: vt !== myTeam(), x, z, hp: st.hp, maxhp: st.hp, mana: st.sm, manaMax: (ANIMALS[u.key] || {}).mana });
+  }
+  G.players.filter(P => P.team === vt).forEach((P, pi) => P.bench.forEach((u, i) => { if (!u) return; const [x, z] = pi === 0 ? benchWorld(i) : oppBenchWorld(i, CFG.BENCH); list.push({ k: 'u' + u.uid, key: u.key, star: u.star, color: ownerColor(P.id), enemy: vt !== myTeam(), mini: pi > 0, x, z, hp: 1, maxhp: 1 }); }));
+  return list;
+}
+function setScout(t) {
+  SCOUT = t === myTeam() ? -1 : t; sel = null;
+  for (const k in S3.V) s3Remove(k, true);
+  renderPrep(); hud.k = '';
+}
+function scoutStep(d) { // ‹ › 切換下一個還活著的對手
+  const alive = G.teams.map((T, i) => i).filter(i => !G.teams[i].out);
+  const cur = scoutTeam() >= 0 ? scoutTeam() : myTeam(); let j = alive.indexOf(cur);
+  j = (j + d + alive.length) % alive.length; setScout(alive[j]);
+}
+function renderScoutBar() {
+  let el = $('scoutBar');
+  if (!el) { el = document.createElement('div'); el.id = 'scoutBar'; $('stage').appendChild(el); el.addEventListener('click', e => { const b = e.target.closest('[data-sc]'); if (!b) return; const v = b.dataset.sc; if (v === 'home') setScout(myTeam()); else scoutStep(+v); }); }
+  const sc = scoutTeam(); el.hidden = sc < 0; if (sc < 0) return;
+  el.innerHTML = `<button class="scb" data-sc="-1" aria-label="上一個">‹</button><span><i style="--c:${teamColor(sc)}"></i>正在看 <b>${esc(teamLabel(sc))}</b> 的棋盤</span><button class="scb" data-sc="1" aria-label="下一個">›</button><button class="btn sch" data-sc="home">回到我的棋盤</button>`;
+}
 // ---- 準備階段同步 ----
 function prepList() {
+  if (scoutTeam() >= 0) return scoutList(scoutTeam());
   const vt = myTeam(), list = [], pve = isPve(G.round);
   for (const k in G.board) {
     const u = G.board[k], P = G.players[u.owner];
@@ -4594,9 +4681,11 @@ function prepList() {
 }
 function renderPrep() {
   s3SetArena(G.arena); $('stage').dataset.arena = G.arena;
-  s3SetTerrain(G.terrain, mySide(), null, G.height || {});
+  const sc = scoutTeam();
+  s3SetTerrain(G.terrain, sc >= 0 ? SIDE(sc) : mySide(), null, G.height || {});
   s3Sync(prepList(), 'prep');
-  renderDock(); renderTraits(); renderSheet(); highlightSel();
+  renderDock(); renderTraits(); renderSheet(); if (sc >= 0) s3Highlight([]); else highlightSel();
+  renderScoutBar(); $('stage').classList.toggle('scouting', sc >= 0);
 }
 function highlightSel() {
   const hl = [];
@@ -4754,13 +4843,26 @@ function hud() {
     el.innerHTML = `<div class="row"><span>${teamLabel(ti)}</span><b>${hp}</b></div><div class="hp"><i style="width:${hp}%"></i></div><div class="who">${ps}</div>`;
     const sk = T.streak || 0; el.classList.toggle('onfire', sk >= 2); el.classList.toggle('cold', sk <= -2); el.dataset.streak = sk >= 2 ? sk + ' 連勝' : sk <= -2 ? (-sk) + ' 連敗' : '';
   };
-  // 4 隊模式：右上角是排名表（對手標亮、淘汰的變灰）
-  const opp = hudOpp();
-  const standings = el => { const rows = G.teams.map((T, i) => ({ T, i })).sort((a, b) => (a.T.out - b.T.out) || (b.T.hp - a.T.hp)); el.classList.toggle('many', G.teams.length > 4);
-    el.innerHTML = rows.map(({ T, i }) => `<div class="srow ${i === t ? 'me' : ''} ${i === opp ? 'opp' : ''} ${T.out ? 'out' : ''}"><span>${T.out ? '#' + T.place + ' ' : ''}${teamLabel(i)}${i === opp ? '・對手' : ''}</span><b>${Math.max(0, T.hp)}</b></div>`).join(''); };
-  const hk = G.teams.map(T => T.hp + (T.out ? 'x' : '')).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join();
+  // 多隊模式：右上角排名表（單行、名字太長用…），點一列去看那隊的棋盤；戰鬥中改成「誰打誰」配對＋雙刀圖示
+  const opp = hudOpp(), sc = scoutTeam(), fight = G.phase !== 'prep' && !isPve(G.round) && G.battles && G.battles.length;
+  const nm = i => `<span class="nm">${esc(teamLabel(i))}</span>`;
+  const standings = el => {
+    const rows = G.teams.map((T, i) => ({ T, i })).sort((a, b) => (a.T.out - b.T.out) || (b.T.hp - a.T.hp)), alive = rows.filter(r => !r.T.out).length;
+    const head = `<div class="sthead"><span>${fight ? '本回合對戰' : '排名'}</span><small>剩 ${alive}/${G.teams.length}</small></div>`;
+    if (fight) { // 對戰回合：每一組誰打誰，中間雙刀互敲（自己那組排第一）
+      const bs = G.battles.slice().sort((x, y) => (y.teams.includes(t) ? 1 : 0) - (x.teams.includes(t) ? 1 : 0));
+      el.innerHTML = head + bs.map(b => { const [a, c] = b.teams, mine = a === t || c === t;
+        return `<div class="spair ${mine ? 'me' : ''}" title="${esc(teamLabel(a))} 對 ${c >= 0 ? esc(teamLabel(c)) : ''}"><i class="dot" style="--c:${teamColor(a)}"></i>${nm(a)}${clashSvg('sm')}<span class="nm${b.ghost ? ' ghost' : ''}">${esc(teamLabel(c))}</span><i class="dot" style="--c:${teamColor(c)}"></i></div>`; }).join('');
+      return;
+    }
+    el.innerHTML = head + rows.map(({ T, i }, n) => `<button class="srow ${i === t ? 'me' : ''} ${i === opp ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}"><em>${T.out ? '#' + T.place : n + 1}</em><i class="dot" style="--c:${teamColor(i)}"></i>${nm(i)}<b>${Math.max(0, T.hp)}</b></button>`).join('');
+  };
+  const hk = G.teams.map(T => T.hp + (T.out ? 'x' : '')).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join() + '|' + (fight ? 'f' + G.round : 'p') + '|' + sc;
   $('stage').classList.toggle('multi', G.teams.length > 2);
-  if (hud.k !== hk) { hud.k = hk; team(t, $('teamA')); if (G.teams.length === 2) team(1 - t, $('teamB')); else { $('teamB').classList.add('stand'); standings($('teamB')); } }
+  if (hud.k !== hk) { hud.k = hk; team(t, $('teamA')); if (G.teams.length === 2) { $('teamB').classList.remove('stand'); team(1 - t, $('teamB')); } else { $('teamB').classList.add('stand'); standings($('teamB')); } }
+  $('clock').classList.toggle('fight', G.phase === 'combat');
+  if (!$('clashBox').firstChild) $('clashBox').innerHTML = clashSvg();
+  if (G.teams.length > 2) { const h = $('teamB').offsetHeight + 8; if (hud.sth !== h) { hud.sth = h; $('stage').style.setProperty('--sth', h + 'px'); } }
   // 階段點
   const R = G.round, st = stageOf(R), first = st === 1 ? 1 : 4 + (st - 2) * 5, n = st === 1 ? 3 : 5;
   let dots = `<span>${st}-${R - first + 1}</span>`;
@@ -4838,7 +4940,7 @@ function onDown(e) {
   if (!G || itemDrag) return;
   const p = s3PickAt(e.clientX, e.clientY);
   drag = null;
-  if (p && p.type === 'unit' && p.k[0] === 'u' && G.phase !== 'over') {
+  if (p && p.type === 'unit' && p.k[0] === 'u' && G.phase !== 'over' && scoutTeam() < 0) {
     const uid = +p.k.slice(1), f = findUnit(uid);
     if (f && ((f.u.owner === ME && (G.phase === 'prep' || f.zone === 'bench')) || mateAiUnit(f))) { drag = { uid, k: p.k, f, x: e.clientX, y: e.clientY, on: false, mate: f.u.owner !== ME }; e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId); return; }
   }
@@ -4888,6 +4990,7 @@ function onUp(e) {
   onTap(p);
 }
 function onTap(p) {
+  if (scoutTeam() >= 0) { sel = p && p.type === 'unit' && p.k[0] === 'u' ? { type: 'unit', uid: +p.k.slice(1) } : null; renderSheet(); return; } // 看別人棋盤時只能點來看資料
   if (!p) { sel = null; refresh(); return; }
   if (p.type === 'unit') {
     eggTapUnit(p.k);
@@ -5037,7 +5140,7 @@ function handleBattleEvents(bt) {
           else if (sk && ev.sk) d = hitDelay(sk, 'skill');
           const cls = ev.c ? 'crit' : ev.ty === 'magic' ? 'magic' : ev.ty === 'true' ? 'true' : '';
           s3Num(k, ev.a + (ev.c ? '!' : ''), cls, d, ev.a >= 200 && !ev.c ? 19 : 0);
-          at(d, () => { const vv = S3.V[k]; if (vv) vv.hitT = nowS(); if (ev.c) hitstop(45); else if (ev.sk && ev.a >= 200) hitstop(55); });
+          if (!ev.env) at(d, () => { const vv = S3.V[k]; if (vv) vv.hitT = nowS(); if (ev.c) hitstop(45); else if (ev.sk && ev.a >= 200) hitstop(55); });
           break; }
         case 'heal': s3Num(k, '+' + ev.a, 'heal', 0); break;
         case 'miss': s3Num(k, ev.s, 'miss', hitDelay(k, 'atk')); break;
@@ -5152,8 +5255,9 @@ function pickAug(id) {
 // ---- 階段切換 ----
 function onPhase() {
   const ph = G.phase;
+  if (ph !== 'prep' && SCOUT >= 0) { SCOUT = -1; renderScoutBar(); $('stage').classList.remove('scouting'); }
   if (ph === 'prep') {
-    cv = null; sel = null; S3.nightTarget = 0;
+    cv = null; sel = null; S3.nightTarget = 0; SCOUT = -1;
     for (const k in S3.V) if (k[0] === 'b') s3Remove(k);
     processLog(); renderPrep();
     const st = stageOf(G.round), first = st === 1 ? 1 : 4 + (st - 2) * 5;
@@ -5188,6 +5292,7 @@ function loopBody(now) {
     featuresFrame(dt);
     const t = nowS(); const due = []; sched = sched.filter(s => { if (t >= s.t) { due.push(s); return false; } return true; }); for (const s of due) { try { s.fn(); } catch (e) { console.error(e); } }
     hud();
+    if (scoutTeam() >= 0 && (S3.scoutT = (S3.scoutT || 0) + dt) > 0.6) { S3.scoutT = 0; renderPrep(); }
     s3Frame(dt * ((REPLAY ? G.speed : (G.phase === 'combat' ? G.speed : 1)) || 1));
   }
 }
@@ -5235,10 +5340,11 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.1'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.2'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
+  $('teamB').addEventListener('click', e => { if (!G) return; if (G.phase !== 'prep') { openScout(); return; } const r = e.target.closest('[data-st]'); const t = r ? +r.dataset.st : G.teams.length === 2 ? 1 - myTeam() : -1; if (t < 0 || G.teams[t].out) return; setScout(scoutTeam() === t ? myTeam() : t); });
   window.addEventListener('pointermove', e => { onMove(e); onItemMove(e); });
   window.addEventListener('pointerup', e => { onUp(e); onItemUp(e); });
   $('btnHelp').onclick = () => showDex();
@@ -5300,8 +5406,6 @@ function featuresBoot() {
   $('btnMeter').onclick = () => { METER.on = !METER.on; $('meter').hidden = !METER.on; renderMeter(true); };
   $('meter').addEventListener('click', e => { const t = e.target.closest('[data-mt]'); if (t) { METER.tab = t.dataset.mt; renderMeter(true); } });
   $('cmdbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (!b) return; const r = actMe({ t: 'cmd', type: b.dataset.cmd }); if (r !== 'ok') { toast(ERR[r] || '現在不能下指令'); sfx('error'); } });
-  $('teamB').style.pointerEvents = 'auto'; $('teamB').style.cursor = 'pointer';
-  $('teamB').addEventListener('click', () => openScout());
   // 大廳按鈕
   $('btnLadder').onclick = () => openLadder();
   $('btnPlay').onclick = () => openModes();
@@ -5771,7 +5875,9 @@ let INSTALL_SHOW = false, INSTALL_FN = null;
 function openModes() {
   const online = !netBlocked();
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>選擇模式</h2><div class="modes">
-    <div><h3>練習 <small>跟電腦打，不計分</small></h3><div class="mgrid">
+    <div><h3>練習 <small>跟電腦打，不計分</small></h3>
+    <div class="ltabs ailv"><span>電腦強度</span>${[['easy', '簡單'], ['normal', '普通'], ['hard', '困難']].map(([k, n]) => `<button class="btn ${(loadRules().aiLevel || 'normal') === k ? 'on' : ''}" data-ailv="${k}">${n}</button>`).join('')}</div>
+    <div class="mgrid">
       <button class="btn primary" data-mode="p-solo"><b>單人混戰</b><small>8 人各自一隊</small></button>
       <button class="btn primary" data-mode="p-duel"><b>單人 1 對 1</b><small>你對一個電腦</small></button>
       <button class="btn primary" data-mode="p-duo"><b>雙人對戰</b><small>2 隊 4 人，你＋電腦隊友</small></button>
@@ -5788,6 +5894,7 @@ function openModes() {
     </div></div>` : ''}
   </div>`;
   $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('panel').querySelectorAll('[data-ailv]').forEach(b => b.onclick = () => { const r = loadRules(); r.aiLevel = b.dataset.ailv; saveRules(r); $('panel').querySelectorAll('[data-ailv]').forEach(x => x.classList.toggle('on', x === b)); });
   $('panel').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
     const m = b.dataset.mode; $('overlay').hidden = true;
     if (m === 'p-solo') { ME = 0; netReset(); newGame(8, true); }
@@ -6535,6 +6642,7 @@ function openLadderSrv() {
   GL.open = true; srvLadder();
 }
 window.__act = a => actMe(a); // 測試用
+window.__ff = (round, phase) => { if (!G || NET.role) return; let n = 0; while (G.phase !== 'over' && !(G.round >= round && G.phase === phase) && n++ < 2e5) { for (const P of G.players) if (P.augChoice && !P.ai) act(G, P.id, { t: 'aug', id: P.augChoice[0] }); update(G, 50); } return G.round + G.phase; }; // 測試用：快轉到指定回合
 window.__netClose = () => NET.ws && NET.ws.close(); // 測試用
 window.__netDbg = () => ({ code: NET.code, ws: NET.ws && NET.ws.readyState, tries: NET.tries, role: NET.role, srv: NET.srv });
 

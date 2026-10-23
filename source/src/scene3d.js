@@ -353,6 +353,8 @@ function groundH(x, z) {
   for (const [cx, cz] of S3.wcells || []) { const d = Math.hypot(x - cx, z - cz); if (d < 0.5) w = Math.min(w, -0.1 * (1 - sstep(0.22, 0.5, d))); }
   return h + w;
 }
+// 水窪水面高度（影子和選取圈要畫在水面上，不然會跟半透明的水互相遮擋閃爍）
+function waterTop(x, z) { for (const [cx, cz] of S3.wcells || []) if (Math.hypot(x - cx, z - cz) < 0.45) return -0.06; return -9; }
 function vnoise(x, z) { // 簡單平滑雜訊 0..1
   const h = (i, j) => { let n = Math.imul(i * 374761393 + j * 668265263, 1274126177); n ^= n >>> 13; return ((n >>> 0) % 1000) / 1000; };
   const i = Math.floor(x), j = Math.floor(z), fx = x - i, fz = z - j, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);

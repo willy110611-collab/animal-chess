@@ -20,6 +20,11 @@ function ownerColor(pid) {
 }
 function toast(msg, ms) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), ms || 1600); }
 function banner(b1, b2, cls) { const b = $('banner'); b.className = ''; b.querySelector('.b1').textContent = b1; b.querySelector('.b2').textContent = b2 || ''; void b.offsetWidth; b.className = 'show ' + (cls || ''); }
+// Q 版雙刀互敲＋火花（戰鬥中顯示在誰打誰中間）
+function clashSvg(cls) {
+  const sw = `<path d="M-4.5 -7 V-30 L0 -37 L4.5 -30 V-7 Z" fill="#eef3f8" stroke="#3a2a22" stroke-width="2.4" stroke-linejoin="round"/><path d="M0 -9 V-31" stroke="#b9c6d4" stroke-width="2" stroke-linecap="round"/><rect x="-10" y="-9" width="20" height="5.5" rx="2.75" fill="#f2c14e" stroke="#3a2a22" stroke-width="2.2"/><rect x="-3" y="-3.5" width="6" height="10" rx="2.5" fill="#9a5a30" stroke="#3a2a22" stroke-width="2"/><circle cy="9" r="3.6" fill="#f2c14e" stroke="#3a2a22" stroke-width="2"/>`;
+  return `<svg class="clash ${cls || ''}" viewBox="0 0 64 48" aria-hidden="true"><g class="swL"><g transform="translate(18 38)">${sw}</g></g><g class="swR"><g transform="translate(46 38)">${sw}</g></g><g class="spark"><path d="M32 6 L35 15 L44 12 L37.5 19 L45 25 L35.5 23.5 L32 32 L28.5 23.5 L19 25 L26.5 19 L20 12 L29 15 Z" fill="#ffd34d" stroke="#e8792b" stroke-width="1.6" stroke-linejoin="round"/><circle cx="32" cy="19" r="3.4" fill="#fff8d8"/><circle cx="16" cy="9" r="1.8" fill="#ffb03a"/><circle cx="49" cy="8" r="1.6" fill="#ffd34d"/><circle cx="12" cy="20" r="1.3" fill="#ff8a3a"/><circle cx="52" cy="21" r="1.5" fill="#ffb03a"/></g></svg>`;
+}
 const goldSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="9" fill="#d99a2b"/><circle cx="12" cy="13" r="6.2" fill="#f2c14e"/><path d="M7.5 7.5q4.5-5 9 0z" fill="#7a4f28"/></svg>';
 
 // ---- 3D 小頭像（商店卡、圖鑑、資訊卡）----
@@ -85,8 +90,39 @@ function oppBenchList(list) {
   const ps = G.players.filter(p => p.team === ot), n = ps.length * CFG.BENCH;
   ps.forEach((P, pi) => P.bench.forEach((u, i) => { if (!u) return; const [x, z] = oppBenchWorld(pi * CFG.BENCH + i, n); list.push({ k: 'ob' + u.uid, key: u.key, star: u.star, color: ownerColor(P.id), enemy: true, mini: true, x, z, hp: 1, maxhp: 1 }); }));
 }
+// ---- 看別人的棋盤（準備階段，像聯盟戰棋點頭像去別人家看）----
+let SCOUT = -1;
+const scoutTeam = () => (SCOUT >= 0 && G && G.phase === 'prep' && SCOUT !== myTeam() && G.teams[SCOUT] && !G.teams[SCOUT].out) ? SCOUT : -1;
+const teamColor = t => { if (t === myTeam()) return '#3d7fc4'; const others = G.teams.map((T, i) => i).filter(i => i !== myTeam()); return (TEAM_PAL[Math.max(0, others.indexOf(t))] || TEAM_PAL[0])[0]; };
+function scoutList(vt) {
+  const list = [];
+  for (const k in G.board) {
+    const u = G.board[k], P = G.players[u.owner]; if (P.team !== vt) continue;
+    const [x, z] = worldOfCell(+k, SIDE(vt)), st = unitStats(u);
+    list.push({ k: 'u' + u.uid, key: u.key, star: u.star, color: ownerColor(u.owner), enemy: vt !== myTeam(), x, z, hp: st.hp, maxhp: st.hp, mana: st.sm, manaMax: (ANIMALS[u.key] || {}).mana });
+  }
+  G.players.filter(P => P.team === vt).forEach((P, pi) => P.bench.forEach((u, i) => { if (!u) return; const [x, z] = pi === 0 ? benchWorld(i) : oppBenchWorld(i, CFG.BENCH); list.push({ k: 'u' + u.uid, key: u.key, star: u.star, color: ownerColor(P.id), enemy: vt !== myTeam(), mini: pi > 0, x, z, hp: 1, maxhp: 1 }); }));
+  return list;
+}
+function setScout(t) {
+  SCOUT = t === myTeam() ? -1 : t; sel = null;
+  for (const k in S3.V) s3Remove(k, true);
+  renderPrep(); hud.k = '';
+}
+function scoutStep(d) { // ‹ › 切換下一個還活著的對手
+  const alive = G.teams.map((T, i) => i).filter(i => !G.teams[i].out);
+  const cur = scoutTeam() >= 0 ? scoutTeam() : myTeam(); let j = alive.indexOf(cur);
+  j = (j + d + alive.length) % alive.length; setScout(alive[j]);
+}
+function renderScoutBar() {
+  let el = $('scoutBar');
+  if (!el) { el = document.createElement('div'); el.id = 'scoutBar'; $('stage').appendChild(el); el.addEventListener('click', e => { const b = e.target.closest('[data-sc]'); if (!b) return; const v = b.dataset.sc; if (v === 'home') setScout(myTeam()); else scoutStep(+v); }); }
+  const sc = scoutTeam(); el.hidden = sc < 0; if (sc < 0) return;
+  el.innerHTML = `<button class="scb" data-sc="-1" aria-label="上一個">‹</button><span><i style="--c:${teamColor(sc)}"></i>正在看 <b>${esc(teamLabel(sc))}</b> 的棋盤</span><button class="scb" data-sc="1" aria-label="下一個">›</button><button class="btn sch" data-sc="home">回到我的棋盤</button>`;
+}
 // ---- 準備階段同步 ----
 function prepList() {
+  if (scoutTeam() >= 0) return scoutList(scoutTeam());
   const vt = myTeam(), list = [], pve = isPve(G.round);
   for (const k in G.board) {
     const u = G.board[k], P = G.players[u.owner];
@@ -102,9 +138,11 @@ function prepList() {
 }
 function renderPrep() {
   s3SetArena(G.arena); $('stage').dataset.arena = G.arena;
-  s3SetTerrain(G.terrain, mySide(), null, G.height || {});
+  const sc = scoutTeam();
+  s3SetTerrain(G.terrain, sc >= 0 ? SIDE(sc) : mySide(), null, G.height || {});
   s3Sync(prepList(), 'prep');
-  renderDock(); renderTraits(); renderSheet(); highlightSel();
+  renderDock(); renderTraits(); renderSheet(); if (sc >= 0) s3Highlight([]); else highlightSel();
+  renderScoutBar(); $('stage').classList.toggle('scouting', sc >= 0);
 }
 function highlightSel() {
   const hl = [];
@@ -262,13 +300,26 @@ function hud() {
     el.innerHTML = `<div class="row"><span>${teamLabel(ti)}</span><b>${hp}</b></div><div class="hp"><i style="width:${hp}%"></i></div><div class="who">${ps}</div>`;
     const sk = T.streak || 0; el.classList.toggle('onfire', sk >= 2); el.classList.toggle('cold', sk <= -2); el.dataset.streak = sk >= 2 ? sk + ' 連勝' : sk <= -2 ? (-sk) + ' 連敗' : '';
   };
-  // 4 隊模式：右上角是排名表（對手標亮、淘汰的變灰）
-  const opp = hudOpp();
-  const standings = el => { const rows = G.teams.map((T, i) => ({ T, i })).sort((a, b) => (a.T.out - b.T.out) || (b.T.hp - a.T.hp)); el.classList.toggle('many', G.teams.length > 4);
-    el.innerHTML = rows.map(({ T, i }) => `<div class="srow ${i === t ? 'me' : ''} ${i === opp ? 'opp' : ''} ${T.out ? 'out' : ''}"><span>${T.out ? '#' + T.place + ' ' : ''}${teamLabel(i)}${i === opp ? '・對手' : ''}</span><b>${Math.max(0, T.hp)}</b></div>`).join(''); };
-  const hk = G.teams.map(T => T.hp + (T.out ? 'x' : '')).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join();
+  // 多隊模式：右上角排名表（單行、名字太長用…），點一列去看那隊的棋盤；戰鬥中改成「誰打誰」配對＋雙刀圖示
+  const opp = hudOpp(), sc = scoutTeam(), fight = G.phase !== 'prep' && !isPve(G.round) && G.battles && G.battles.length;
+  const nm = i => `<span class="nm">${esc(teamLabel(i))}</span>`;
+  const standings = el => {
+    const rows = G.teams.map((T, i) => ({ T, i })).sort((a, b) => (a.T.out - b.T.out) || (b.T.hp - a.T.hp)), alive = rows.filter(r => !r.T.out).length;
+    const head = `<div class="sthead"><span>${fight ? '本回合對戰' : '排名'}</span><small>剩 ${alive}/${G.teams.length}</small></div>`;
+    if (fight) { // 對戰回合：每一組誰打誰，中間雙刀互敲（自己那組排第一）
+      const bs = G.battles.slice().sort((x, y) => (y.teams.includes(t) ? 1 : 0) - (x.teams.includes(t) ? 1 : 0));
+      el.innerHTML = head + bs.map(b => { const [a, c] = b.teams, mine = a === t || c === t;
+        return `<div class="spair ${mine ? 'me' : ''}" title="${esc(teamLabel(a))} 對 ${c >= 0 ? esc(teamLabel(c)) : ''}"><i class="dot" style="--c:${teamColor(a)}"></i>${nm(a)}${clashSvg('sm')}<span class="nm${b.ghost ? ' ghost' : ''}">${esc(teamLabel(c))}</span><i class="dot" style="--c:${teamColor(c)}"></i></div>`; }).join('');
+      return;
+    }
+    el.innerHTML = head + rows.map(({ T, i }, n) => `<button class="srow ${i === t ? 'me' : ''} ${i === opp ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}"><em>${T.out ? '#' + T.place : n + 1}</em><i class="dot" style="--c:${teamColor(i)}"></i>${nm(i)}<b>${Math.max(0, T.hp)}</b></button>`).join('');
+  };
+  const hk = G.teams.map(T => T.hp + (T.out ? 'x' : '')).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join() + '|' + (fight ? 'f' + G.round : 'p') + '|' + sc;
   $('stage').classList.toggle('multi', G.teams.length > 2);
-  if (hud.k !== hk) { hud.k = hk; team(t, $('teamA')); if (G.teams.length === 2) team(1 - t, $('teamB')); else { $('teamB').classList.add('stand'); standings($('teamB')); } }
+  if (hud.k !== hk) { hud.k = hk; team(t, $('teamA')); if (G.teams.length === 2) { $('teamB').classList.remove('stand'); team(1 - t, $('teamB')); } else { $('teamB').classList.add('stand'); standings($('teamB')); } }
+  $('clock').classList.toggle('fight', G.phase === 'combat');
+  if (!$('clashBox').firstChild) $('clashBox').innerHTML = clashSvg();
+  if (G.teams.length > 2) { const h = $('teamB').offsetHeight + 8; if (hud.sth !== h) { hud.sth = h; $('stage').style.setProperty('--sth', h + 'px'); } }
   // 階段點
   const R = G.round, st = stageOf(R), first = st === 1 ? 1 : 4 + (st - 2) * 5, n = st === 1 ? 3 : 5;
   let dots = `<span>${st}-${R - first + 1}</span>`;
@@ -346,7 +397,7 @@ function onDown(e) {
   if (!G || itemDrag) return;
   const p = s3PickAt(e.clientX, e.clientY);
   drag = null;
-  if (p && p.type === 'unit' && p.k[0] === 'u' && G.phase !== 'over') {
+  if (p && p.type === 'unit' && p.k[0] === 'u' && G.phase !== 'over' && scoutTeam() < 0) {
     const uid = +p.k.slice(1), f = findUnit(uid);
     if (f && ((f.u.owner === ME && (G.phase === 'prep' || f.zone === 'bench')) || mateAiUnit(f))) { drag = { uid, k: p.k, f, x: e.clientX, y: e.clientY, on: false, mate: f.u.owner !== ME }; e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId); return; }
   }
@@ -396,6 +447,7 @@ function onUp(e) {
   onTap(p);
 }
 function onTap(p) {
+  if (scoutTeam() >= 0) { sel = p && p.type === 'unit' && p.k[0] === 'u' ? { type: 'unit', uid: +p.k.slice(1) } : null; renderSheet(); return; } // 看別人棋盤時只能點來看資料
   if (!p) { sel = null; refresh(); return; }
   if (p.type === 'unit') {
     eggTapUnit(p.k);
@@ -545,7 +597,7 @@ function handleBattleEvents(bt) {
           else if (sk && ev.sk) d = hitDelay(sk, 'skill');
           const cls = ev.c ? 'crit' : ev.ty === 'magic' ? 'magic' : ev.ty === 'true' ? 'true' : '';
           s3Num(k, ev.a + (ev.c ? '!' : ''), cls, d, ev.a >= 200 && !ev.c ? 19 : 0);
-          at(d, () => { const vv = S3.V[k]; if (vv) vv.hitT = nowS(); if (ev.c) hitstop(45); else if (ev.sk && ev.a >= 200) hitstop(55); });
+          if (!ev.env) at(d, () => { const vv = S3.V[k]; if (vv) vv.hitT = nowS(); if (ev.c) hitstop(45); else if (ev.sk && ev.a >= 200) hitstop(55); });
           break; }
         case 'heal': s3Num(k, '+' + ev.a, 'heal', 0); break;
         case 'miss': s3Num(k, ev.s, 'miss', hitDelay(k, 'atk')); break;
@@ -660,8 +712,9 @@ function pickAug(id) {
 // ---- 階段切換 ----
 function onPhase() {
   const ph = G.phase;
+  if (ph !== 'prep' && SCOUT >= 0) { SCOUT = -1; renderScoutBar(); $('stage').classList.remove('scouting'); }
   if (ph === 'prep') {
-    cv = null; sel = null; S3.nightTarget = 0;
+    cv = null; sel = null; S3.nightTarget = 0; SCOUT = -1;
     for (const k in S3.V) if (k[0] === 'b') s3Remove(k);
     processLog(); renderPrep();
     const st = stageOf(G.round), first = st === 1 ? 1 : 4 + (st - 2) * 5;
@@ -696,6 +749,7 @@ function loopBody(now) {
     featuresFrame(dt);
     const t = nowS(); const due = []; sched = sched.filter(s => { if (t >= s.t) { due.push(s); return false; } return true; }); for (const s of due) { try { s.fn(); } catch (e) { console.error(e); } }
     hud();
+    if (scoutTeam() >= 0 && (S3.scoutT = (S3.scoutT || 0) + dt) > 0.6) { S3.scoutT = 0; renderPrep(); }
     s3Frame(dt * ((REPLAY ? G.speed : (G.phase === 'combat' ? G.speed : 1)) || 1));
   }
 }
@@ -743,10 +797,11 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.1'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.2'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
+  $('teamB').addEventListener('click', e => { if (!G) return; if (G.phase !== 'prep') { openScout(); return; } const r = e.target.closest('[data-st]'); const t = r ? +r.dataset.st : G.teams.length === 2 ? 1 - myTeam() : -1; if (t < 0 || G.teams[t].out) return; setScout(scoutTeam() === t ? myTeam() : t); });
   window.addEventListener('pointermove', e => { onMove(e); onItemMove(e); });
   window.addEventListener('pointerup', e => { onUp(e); onItemUp(e); });
   $('btnHelp').onclick = () => showDex();

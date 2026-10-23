@@ -191,5 +191,6 @@ function openLadderSrv() {
   GL.open = true; srvLadder();
 }
 window.__act = a => actMe(a); // 測試用
+window.__ff = (round, phase) => { if (!G || NET.role) return; let n = 0; while (G.phase !== 'over' && !(G.round >= round && G.phase === phase) && n++ < 2e5) { for (const P of G.players) if (P.augChoice && !P.ai) act(G, P.id, { t: 'aug', id: P.augChoice[0] }); update(G, 50); } return G.round + G.phase; }; // 測試用：快轉到指定回合
 window.__netClose = () => NET.ws && NET.ws.close(); // 測試用
 window.__netDbg = () => ({ code: NET.code, ws: NET.ws && NET.ws.readyState, tries: NET.tries, role: NET.role, srv: NET.srv });
