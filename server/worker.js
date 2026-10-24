@@ -1314,6 +1314,7 @@ function giftGoldLeft(G, P) { giftReset(G, P); return Math.max(0, stageArr(CFG.G
 function giftUnitLeft(G, P) { giftReset(G, P); return Math.max(0, CFG.GIFT_UNIT_STAGE - (P.giftedUnits || 0)); }
 function giftMaxStar(G) { return Math.min(2, stageArr(CFG.GIFT_UNIT_STAR, stageOf(Math.max(1, G.round)))); }
 function rollShop(G, P) {
+  if (G.td && typeof tdRollShop === 'function') return tdRollShop(G, P); // 塔防：小商店
   const odds = CFG.SHOP_ODDS[P.level];
   P.shop = [];
   for (let i = 0; i < CFG.SHOP_SIZE; i++) {
@@ -1343,7 +1344,7 @@ function act(G, pid, a) {
   }
   switch (a.t) {
     case 'reroll': {
-      const cost = P.firstRollFree ? 0 : rerollCost(P);
+      const cost = G.td && typeof TD_CFG !== 'undefined' ? TD_CFG.REROLL : P.firstRollFree ? 0 : rerollCost(P);
       if (P.gold < cost) return 'no_gold';
       P.gold -= cost; if (P.firstRollFree) P.firstRollFree = false; else if (P.freeRoll > 0 && cost === 0) P.freeRoll--;
       rollShop(G, P); G.log.push({ k: 'reroll', pid }); return 'ok';
@@ -2268,7 +2269,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'https://zoochess.pages.dev', 'http://localhost:8123', 'http://127.0.0.1:8123'], // 網站網址（Cloudflare Pages 的預覽網址 *.zoochess.pages.dev 也允許）
-  VERSION: '0.12.15',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.12.16',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）

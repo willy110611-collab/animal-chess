@@ -22,6 +22,8 @@ const TD_CFG = {
   LEASH: 2,           // 我方近戰棋子會往前追幾格（遠程不動）
   WAVE_MAX_SEC: 70,   // 一波最長秒數，時間到還沒打完的都算漏
   START_LEVEL: 3,     // 開局等級（＝可上場數量）
+  SHOP_SIZE: 3,       // 退潮小商店格數（只賣這關出現過的敵人）
+  REROLL: 1,          // 小商店刷新費用
 };
 // 關卡：waves 每波是 [動物, 星級, 數量, 間隔秒, 開始秒]；mul＝敵人血量與攻擊倍率（%）
 const TD_LEVELS = [
@@ -33,7 +35,7 @@ const TD_LEVELS = [
     waves: [[['rhino', 1, 2, 3, 0]], [['croc', 1, 3, 2, 0], ['squirrel', 1, 3, 1, 1]], [['rhino', 1, 3, 2, 0], ['bat', 1, 2, 1.5, 2]], [['croc', 1, 3, 1.5, 0], ['rhino', 1, 2, 2, 2]], [['rhino', 2, 2, 3, 0], ['wolf', 1, 4, 1, 1]], [['rhino', 1, 4, 1.5, 0], ['croc', 1, 3, 1.5, 1], ['bee', 1, 3, 1, 3]]] },
   { id: '1-4', name: '大潮', desc: '每兩波來一次大潮：敵人變多，但收編機率加倍。', arena: 'desert', start: ['frog', 'wolf', 'penguin'], gold: 4, mul: 32, tide: true,
     waves: [[['penguin', 1, 3, 1.2, 0]], [['penguin', 1, 3, 1, 0], ['croc', 1, 2, 1.5, 1]], [['wolf', 1, 4, 1, 0], ['bat', 1, 2, 1.2, 2]], [['croc', 1, 3, 1.2, 0], ['penguin', 1, 3, 1, 1]], [['rhino', 1, 2, 2, 0], ['bee', 1, 3, 1, 1]], [['penguin', 2, 2, 1.5, 0], ['croc', 1, 3, 1.2, 1]], [['wolf', 2, 2, 1.5, 0], ['bat', 1, 4, 0.9, 1]], [['rhino', 2, 2, 2, 0], ['penguin', 1, 4, 1, 1], ['bee', 1, 3, 1, 3]]] },
-  { id: '1-5', name: '野豬王', desc: '魔王帶著小兵來了。魔王不能收編，但打倒牠就通關。', arena: 'desert', start: ['wolf', 'frog', 'hedgehog'], gold: 5, mul: 40,
+  { id: '1-5', name: '野豬王', desc: '魔王帶著小兵來了。魔王不能收編，但打倒牠就通關。', arena: 'desert', start: ['wolf', 'frog', 'hedgehog'], gold: 5, mul: 52,
     waves: [[['boar', 1, 4, 1.2, 0]], [['boar', 1, 3, 1, 0], ['bat', 1, 2, 1.2, 1]], [['rhino', 1, 2, 2, 0], ['boar', 1, 3, 1, 1]], [['croc', 1, 3, 1.2, 0], ['bee', 1, 3, 1, 1]], [['boar', 2, 3, 1.2, 0], ['penguin', 1, 3, 1, 1]], [['wolf', 2, 3, 1, 0], ['bat', 2, 2, 1.5, 2]], [['rhino', 2, 2, 2, 0], ['croc', 1, 3, 1, 1]], [['kingboar', 1, 1, 1, 0], ['boar', 1, 6, 1.4, 1]]] },
 ];
 const TD_BOSS = { kingboar: 1 };
@@ -64,6 +66,7 @@ function tdStart(li) {
   L.start.forEach((key, i) => { const u = newUnit(G, key, 1, ME); const cell = tdCell(t, 3 + i, 1); if (cell >= 0) G.board[cell] = u; else P.bench[i] = u; });
   G.td = { li, wave: 0, front: TD_CFG.START_FRONT, leaks: 0, totalLeaks: 0, captured: 0, state: 'prep' };
   G.phase = 'prep'; G.timer = TD_CFG.PREP_SEC * 1000; G.round = 1;
+  P.locked = false; tdRollShop(G, P);
   $('game').classList.add('td');
   lastPhase = ''; // 讓 onPhase 跑一次
   tdPanel();
@@ -152,6 +155,7 @@ function tdEndWave(G, B) {
   P.gold += gold; D.lastMsg = { leaks: D.leaks, gold, front: D.front, moved: D.front - before };
   D.wave++;
   G.battles = []; G.phase = 'prep'; D.state = 'prep'; G.timer = TD_CFG.PREP_SEC * 1000; G.round++;
+  if (!P.locked) tdRollShop(G, P); P.locked = false;
   if (D.front <= 0) { tdOver(G, false); return; }
   if (D.wave >= L.waves.length) { tdOver(G, true); return; }
   // 前線後退：被擠出去的棋子回備戰席（滿了就留在最後一排的空位）
@@ -184,6 +188,13 @@ function tdOverModal() {
 }
 function tdLeave() { $('game').classList.remove('td'); tdFrontMesh(null); leaveToLobby(); }
 
+// 小商店：只賣這一關到下一波為止出現過的動物（含起始棋子），每波免費換一次
+function tdRollShop(G, P) {
+  const D = G.td, L = TD_LEVELS[D.li], keys = new Set(L.start);
+  for (let w = 0; w <= Math.min(D.wave, L.waves.length - 1); w++) for (const g of L.waves[w]) if (ANIMALS[g[0]]) keys.add(g[0]);
+  const list = [...keys].filter(k => (G.pool[k] || 0) > 0);
+  P.shop = []; for (let i = 0; i < TD_CFG.SHOP_SIZE; i++) P.shop.push(list.length ? list[Math.floor(Math.random() * list.length)] : null);
+}
 // ---- 畫面 ----
 // 階段切換（由 onPhase 呼叫；回傳 true 表示已處理）
 function tdOnPhase(ph) {

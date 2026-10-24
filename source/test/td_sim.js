@@ -19,7 +19,10 @@ this.sim = function (li, seed) {
   let guard = 0;
   while (G.td.state !== 'over' && guard++ < 200) {
     // 準備：升級、把備戰席的上場（前線最前面、從中間往外）
+    const ownK = () => new Set(Object.values(G.board).concat(P.bench.filter(Boolean)).map(u => u.key));
+    for (let i = 0; i < P.shop.length; i++) if (P.shop[i] && ownK().has(P.shop[i])) act(G, 0, { t: 'buy', slot: i }); // 先買能湊升星的
     while (P.gold >= 4 && P.level < 8 && act(G, 0, { t: 'level' }) === 'ok') {}
+    for (let i = 0; i < P.shop.length; i++) if (P.shop[i] && P.gold >= 3) act(G, 0, { t: 'buy', slot: i });
     const cells = []; for (let lr = G.td.front - 1; lr >= 0; lr--) for (const lc of [4, 3, 5, 2, 6, 1, 7, 0, 8]) cells.push(tdCell(t, lc, lr));
     for (let i = 0; i < P.bench.length; i++) { const u = P.bench[i]; if (!u) continue; const free = cells.find(c => !G.board[c]); if (free === undefined) break; act(G, 0, { t: 'move', uid: u.uid, to: { zone: 'board', cell: free } }); }
     tdStartWave(G);

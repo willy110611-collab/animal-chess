@@ -284,7 +284,7 @@ function renderDock() {
   prevGold = P.gold;
   const live = G.phase !== 'over';
   $('btnLevel').disabled = !live || P.level >= CFG.MAX_LEVEL || P.gold < CFG.XP_COST;
-  const rc = rerollCost(P); $('rollCost').textContent = rc === 0 ? '免費' : '$' + rc;
+  const rc = G.td ? TD_CFG.REROLL : rerollCost(P); $('rollCost').textContent = rc === 0 ? '免費' : '$' + rc;
   $('btnRoll').disabled = !live || P.gold < rc;
   renderAugs();
   $('btnLock').classList.toggle('on', P.locked);
@@ -976,7 +976,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.15'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.16'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });

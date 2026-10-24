@@ -90,6 +90,7 @@ function giftGoldLeft(G, P) { giftReset(G, P); return Math.max(0, stageArr(CFG.G
 function giftUnitLeft(G, P) { giftReset(G, P); return Math.max(0, CFG.GIFT_UNIT_STAGE - (P.giftedUnits || 0)); }
 function giftMaxStar(G) { return Math.min(2, stageArr(CFG.GIFT_UNIT_STAR, stageOf(Math.max(1, G.round)))); }
 function rollShop(G, P) {
+  if (G.td && typeof tdRollShop === 'function') return tdRollShop(G, P); // 塔防：小商店
   const odds = CFG.SHOP_ODDS[P.level];
   P.shop = [];
   for (let i = 0; i < CFG.SHOP_SIZE; i++) {
@@ -119,7 +120,7 @@ function act(G, pid, a) {
   }
   switch (a.t) {
     case 'reroll': {
-      const cost = P.firstRollFree ? 0 : rerollCost(P);
+      const cost = G.td && typeof TD_CFG !== 'undefined' ? TD_CFG.REROLL : P.firstRollFree ? 0 : rerollCost(P);
       if (P.gold < cost) return 'no_gold';
       P.gold -= cost; if (P.firstRollFree) P.firstRollFree = false; else if (P.freeRoll > 0 && cost === 0) P.freeRoll--;
       rollShop(G, P); G.log.push({ k: 'reroll', pid }); return 'ok';
