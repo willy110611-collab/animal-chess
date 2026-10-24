@@ -186,6 +186,22 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .avpick { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border-radius: 10px; font-size: 12px; font-weight: 800; }
 .avpick .tav { width: 54px; height: 54px; --tc: #3d7fc4; }
 .avpick.on { background: rgba(242,193,78,.25); outline: 2px solid var(--gold-2); }
+/* 潮線守衛（塔防）：可調顏色在 #tdPanel */
+#game.td .shopwrap, #game.td #items, #game.td #stg, #game.td #augs, #game.td .mate, #game.td .bank, #game.td #btnRoll, #game.td #btnLock, #game.td #teamB, #game.td .odds, #game.td #incomePill, #game.td .cmdbar, #game.td #mate { display: none !important; }
+#tdPanel { display: none; }
+#game.td #tdPanel { display: grid; gap: 6px; padding: 8px 10px; margin: 0 0 6px; border-radius: 12px; background: rgba(255,255,255,.08); color: var(--paper); font-size: 12px; font-weight: 800; grid-column: 1 / -1; }
+#tdPanel .tdw, #tdPanel .tdf, #tdPanel .tdn { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+#tdPanel .tdw b { font-size: 14px; } #tdPanel .tdw span { opacity: .8; }
+#tdPanel .tdf i { width: 22px; height: 10px; border-radius: 3px; background: rgba(255,255,255,.15); } #tdPanel .tdf i.on { background: #ffd34d; box-shadow: 0 0 6px rgba(255,211,77,.6); }
+#tdPanel small { opacity: .75; font-weight: 600; margin-left: auto; }
+#tdPanel .tdgo { display: grid; justify-items: center; gap: 1px; padding: 8px; font-size: 16px; } #tdPanel .tdgo small { margin: 0; font-size: 11px; opacity: .85; }
+#tdPanel .tdn img { width: 30px; height: 30px; object-fit: contain; border-radius: 50%; background: rgba(255,255,255,.12); }
+.tdhint { font-size: 13px; opacity: .8; margin: 0 0 10px; }
+.tdlv { display: grid; gap: 8px; }
+.tdl { display: grid !important; grid-template-columns: 1fr auto; text-align: left; gap: 2px 8px; }
+.tdl b { font-size: 15px; } .tdl small { grid-column: 1; font-size: 12px; opacity: .8; font-weight: 600; } .tdl i { grid-row: 1 / 3; grid-column: 2; align-self: center; font-style: normal; color: #f2b01e; font-size: 16px; letter-spacing: 1px; }
+.tdl.lock { opacity: .5; }
+.tdover { text-align: center; } .tdstars { font-size: 40px; color: #f2b01e; letter-spacing: 4px; } .tdsmall { font-size: 12px; opacity: .7; }
 /* 圖鑑技能展示 */
 .dex .demo { margin-top: 5px; padding: 3px 12px; font-size: 12px; min-height: 0; }
 #game.demo #dock, #game.demo .hud, #game.demo #traits, #game.demo .helpbtn, #game.demo .menubtn, #game.demo #incomePill, #game.demo .cmdbar { display: none !important; }

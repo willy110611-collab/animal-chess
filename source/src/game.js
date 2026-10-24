@@ -163,6 +163,7 @@ function act(G, pid, a) {
         return 'ok';
       }
       const cell = a.to.cell;
+      if (G.td && !tdCanPlace(G, cell)) return 'td_line';
       if (!canPlace(G, P, cell) || G.terrain[cellBase(cell)] === 'rock') return 'bad_cell';
       if (!inHalf(P.team, cell) && !(o.zone === 'board' && !inHalf(P.team, o.cell)) && intruders(G, pid) >= 1) return 'front_full';
       const occ = G.board[cell];
@@ -584,6 +585,7 @@ function endCombat(G) {
 
 // 主更新：dt 毫秒
 function update(G, dt) {
+  if (G.td) return tdUpdate(G, dt); // 塔防模式（只在玩家端）
   if (G.phase === 'prep') {
     const humans = G.players.filter(p => !p.ai && !p.out);
     if (G.portalVote && humans.every(p => p.vote)) resolvePortal(G);

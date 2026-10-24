@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 let ME = 0; // 自己的座位（連線時由房主分配）
 let G = null, sel = null, lastPhase = '', lastRound = 0, lastT = 0, cv = null, logIdx = 0, sched = [];
 let prevLevel = 0, prevGold = null, prevTiers = {}, drag = null, itemDrag = null, PORT = {};
-const ERR = { gift_gold_limit: '這個階段送金已達上限', gift_unit_limit: '這個階段已經送過動物了（每階段 1 隻）', gift_star: '這個階段還不能送這麼高星的動物', enemy_cell: '那格已經被敵人佔了', front_full: '每人最多放 1 隻到敵方前排', emblem_dup: '這隻已經有這個羈絆了', no_items: '這隻身上沒有裝備', cmd_used: '這場已經下過指令了', bank_empty: '金庫沒錢了', not_captain: '只有隊長可以做這件事', not_turn: '還沒輪到你', board_locked: '戰鬥中場上的棋子不能動，備戰席可以', no_gold: '金幣不夠', pool_empty: '卡池已經被買光了', bench_full: '備戰席滿了', pop_full: '人口滿了，先升級', teammate_cell: '那格是隊友的位置', bad_cell: '只能放在我方半場', full: '這隻的裝備欄滿了', their_bench_full: '隊友備戰席滿了', limit: '這回合送金已達上限 5', not_prep: '戰鬥中不能操作', no: '金幣不夠或已滿級', bad: '不行' };
+const ERR = { td_line: '前線外還不能放（守住一波不漏怪，前線就會往前推）', gift_gold_limit: '這個階段送金已達上限', gift_unit_limit: '這個階段已經送過動物了（每階段 1 隻）', gift_star: '這個階段還不能送這麼高星的動物', enemy_cell: '那格已經被敵人佔了', front_full: '每人最多放 1 隻到敵方前排', emblem_dup: '這隻已經有這個羈絆了', no_items: '這隻身上沒有裝備', cmd_used: '這場已經下過指令了', bank_empty: '金庫沒錢了', not_captain: '只有隊長可以做這件事', not_turn: '還沒輪到你', board_locked: '戰鬥中場上的棋子不能動，備戰席可以', no_gold: '金幣不夠', pool_empty: '卡池已經被買光了', bench_full: '備戰席滿了', pop_full: '人口滿了，先升級', teammate_cell: '那格是隊友的位置', bad_cell: '只能放在我方半場', full: '這隻的裝備欄滿了', their_bench_full: '隊友備戰席滿了', limit: '這回合送金已達上限 5', not_prep: '戰鬥中不能操作', no: '金幣不夠或已滿級', bad: '不行' };
 const TNAME = k => TRAITS[k].name;
 const myTeam = () => G.players[ME].team;
 const mySide = () => SIDE(myTeam()); // 我在自己棋盤上是下半場（0）還是上半場（1）
@@ -140,7 +140,7 @@ function renderScoutBar() {
 // ---- 準備階段同步 ----
 function prepList() {
   if (scoutTeam() >= 0) return scoutList(scoutTeam());
-  const vt = myTeam(), list = [], pve = isPve(G.round);
+  const vt = myTeam(), list = [], pve = isPve(G.round) && !G.td;
   for (const k in G.board) {
     const u = G.board[k], P = G.players[u.owner];
     if (pve && P.team !== vt) continue;
@@ -196,6 +196,7 @@ function idleVoice() {
 }
 // 回大廳（pick：直接打開選模式）
 function leaveToLobby(pick) {
+  $('game').classList.remove('td'); if (typeof tdFrontMesh === 'function') tdFrontMesh(null);
   if (NET.role) netLeave();
   else { G = null; for (const k in S3.V) s3Remove(k); $('game').hidden = true; $('lobby').hidden = false; }
   $('overlay').hidden = true; const am = $('augModal'); if (am) am.hidden = true; const m2 = $('modal2'); if (m2) m2.hidden = true;
@@ -372,13 +373,13 @@ function hud() {
   const t = myTeam();
   // 隊伍血量：圓形頭像＋外圈血量環（像幻想三國志），數字在頭像下方；只更新數值，環會平滑減少
   const team = (ti, el) => {
-    const T = G.teams[ti], hp = Math.max(0, T.hp);
+    const T = G.teams[ti], tdm = G.td && ti === myTeam(), hp = tdm ? Math.max(0, G.td.front) : Math.max(0, T.hp);
     const ps = G.players.filter(p => p.team === ti).map(p => `<span style="--c:${ownerColor(p.id)}">${esc(p.name)} Lv${p.level}</span>`).join('');
     if (el._ti !== ti || !el.querySelector('.tav')) { el._ti = ti; el.classList.add('av');
       el.innerHTML = `<span class="tav"><img alt=""><b class="tn"></b></span><span class="tinfo"><span class="tl"></span><span class="who"></span></span>`; }
-    const av = el.querySelector('.tav'); av.style.setProperty('--p', Math.round(hp / CFG.TEAM_HP * 100) + '%'); av.style.setProperty('--tc', teamColor(ti));
+    const av = el.querySelector('.tav'); av.style.setProperty('--p', Math.round(hp / (tdm ? TD_CFG.MAX_FRONT : CFG.TEAM_HP) * 100) + '%'); av.style.setProperty('--tc', teamColor(ti));
     const im = av.querySelector('img'), src = avSrc(teamAvatar(ti)); if (im.getAttribute('src') !== src) im.src = src;
-    av.querySelector('.tn').textContent = hp; el.querySelector('.tl').textContent = teamLabel(ti); el.querySelector('.who').innerHTML = ps;
+    av.querySelector('.tn').textContent = tdm ? hp + ' 排' : hp; el.querySelector('.tl').textContent = tdm ? '前線' : teamLabel(ti); el.querySelector('.who').innerHTML = ps;
     const sk = T.streak || 0; el.classList.toggle('onfire', sk >= 2); el.classList.toggle('cold', sk <= -2); el.dataset.streak = sk >= 2 ? sk + ' 連勝' : sk <= -2 ? (-sk) + ' 連敗' : '';
   };
   // 多隊模式：右上角排名表（單行、名字太長用…），點一列去看那隊的棋盤；戰鬥中改成「誰打誰」配對＋雙刀圖示
@@ -402,7 +403,7 @@ function hud() {
       return `<button class="srow ${cand.includes(i) ? 'cand' : ''} ${i === t ? 'me' : ''} ${fighting(i) || (!fight && i === opp) ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}${i === t ? '' : (G.phase === 'prep' ? '（點一下看他們的棋盤）' : '（點一下看他們的戰場）')}">
         <em>${T.out ? '#' + T.place : n + 1}</em><i class="dot" style="--c:${teamColor(i)}"></i><span class="sm">${nm(i)}<span class="shp"><i style="width:${Math.round(hp / maxHp * 100)}%"></i></span></span>${stk}${fighting(i) || (!fight && i === opp && !cand.length) ? `<span class="svs">${clashSvg('sm')}</span>` : cand.includes(i) ? '<span class="scand" title="下一場可能的對手">?</span>' : ''}<b>${hp}</b></button>`; }).join('');
   };
-  const hk = JSON.stringify(G.phase === 'prep' && G.nextCand ? G.nextCand[t] : 0) + G.teams.map(T => T.hp + (T.out ? 'x' : '') + 's' + (T.streak || 0)).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join() + '|' + (fight ? 'f' + G.round : 'p') + '|' + sc + (PORT.chick ? 'a' : '') + myAvatar();
+  const hk = JSON.stringify(G.phase === 'prep' && G.nextCand ? G.nextCand[t] : 0) + G.teams.map(T => T.hp + (T.out ? 'x' : '') + 's' + (T.streak || 0)).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join() + '|' + (fight ? 'f' + G.round : 'p') + '|' + sc + (PORT.chick ? 'a' : '') + myAvatar() + (G.td ? 'td' + G.td.front : '');
   $('stage').classList.toggle('multi', G.teams.length > 2);
   if (hud.k !== hk) { hud.k = hk; team(t, $('teamA')); if (G.teams.length === 2) { $('teamB').classList.remove('stand'); team(1 - t, $('teamB')); } else { $('teamB').classList.add('stand'); $('teamB').classList.remove('av'); $('teamB')._ti = -1; standings($('teamB')); } }
   $('clock').classList.toggle('fight', G.phase === 'combat');
@@ -418,6 +419,7 @@ function hud() {
   else if (G.phase === 'combat' && cv) { sec = Math.ceil((CFG.COMBAT_MAX_TICK - cv.B.t) / 20); ph = cv.B.t > CFG.OVERTIME_TICK ? '加時！' : '戰鬥'; }
   else if (G.phase === 'result') { sec = Math.ceil(Math.max(0, G.timer) / 1000); ph = '結算'; }
   if (G.tutorial && G.phase === 'prep') { sec = '教學'; ph = '慢慢來，不倒數'; }
+  if (G.td) { if (G.phase === 'prep') ph = '退潮・準備'; else if (cv) { sec = Math.max(0, Math.ceil(TD_CFG.WAVE_MAX_SEC - cv.B.t * CFG.TICK_MS / 1000)); ph = G.td.tide ? '大潮來襲' : '漲潮'; } }
   $('timer').textContent = sec; $('phaseTxt').textContent = ph;
   $('clock').classList.toggle('hurry', G.phase === 'prep' && sec <= 5);
   if (G.phase === 'prep' && sec <= 5 && sec >= 1 && hud.tick !== G.round * 100 + sec) { hud.tick = G.round * 100 + sec; sfx(sec === 1 ? 'tickLast' : 'tick', 200); } // 最後 5 秒滴答
@@ -699,6 +701,7 @@ function handleBattleEvents(bt) {
   {
     const B = bt.B;
     for (const ev of B.ev) {
+      if (ev.k.startsWith('td')) { tdEvent(B, ev); continue; }
       featuresEvent(B, ev);
       const u = ev.id !== undefined && ev.id >= 0 ? B.units[ev.id] : null, k = u ? kOf(u) : null, v = k ? S3.V[k] : null;
       switch (ev.k) {
@@ -887,6 +890,7 @@ function pickAug(id) {
 // ---- 階段切換 ----
 function onPhase() {
   const ph = G.phase;
+  if (G.td && tdOnPhase(ph)) return;
   if (ph !== 'prep' && SCOUT >= 0) { SCOUT = -1; renderScoutBar(); $('stage').classList.remove('scouting'); }
   if (ph === 'prep') {
     tutPrepHook();
@@ -972,7 +976,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.14'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.15'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });

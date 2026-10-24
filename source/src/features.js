@@ -583,6 +583,7 @@ function openModes() {
       <button class="btn primary" data-mode="p-duo"><b>雙人對戰</b><small>2 隊 4 人，你＋電腦隊友</small></button>
       <button class="btn primary" data-mode="p-duo8"><b>雙人混戰</b><small>4 隊 8 人</small></button>
     </div></div>
+    <div><h3>新模式</h3><div class="mgrid"><button class="btn moss tdbtn" data-mode="td"><b>潮線守衛</b><small>塔防・章節通關（單人）</small></button></div></div>
     ${online ? `<div><h3>排位配對 <small>跟全世界的玩家，計天梯分數</small></h3><div class="mgrid">
       <button class="btn" data-mode="r-solo"><b>單人排位</b><small>最多 8 人各自一隊</small></button>
       <button class="btn" data-mode="r-duel"><b>1 對 1 排位</b><small>單挑真人</small></button>
@@ -597,6 +598,7 @@ function openModes() {
   $('panel').querySelectorAll('[data-ailv]').forEach(b => b.onclick = () => { const r = loadRules(); r.aiLevel = b.dataset.ailv; saveRules(r); $('panel').querySelectorAll('[data-ailv]').forEach(x => x.classList.toggle('on', x === b)); });
   $('panel').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
     const m = b.dataset.mode; $('overlay').hidden = true;
+    if (m === 'td') { openTd(); return; }
     if (m === 'tutorial') startTutorialMatch();
     else if (m === 'p-solo') { ME = 0; netReset(); newGame(8, true); }
     else if (m === 'p-duel') { ME = 0; netReset(); newGame(2, true); }

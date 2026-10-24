@@ -728,6 +728,25 @@ function clusterCenter(B, u) {
   }
   return best;
 }
+// 塔防：往第 0 列（我方底線）走的下一步（會繞過擋路的棋子）
+function tdMarch(B, u) {
+  const start = idx(u.c, u.r), prev = new Map([[start, -1]]), q = [[u.c, u.r]];
+  let goal = -1;
+  for (let qi = 0; qi < q.length; qi++) {
+    const [c, r] = q[qi];
+    if (r === 0) { goal = idx(c, r); break; }
+    for (const [nc, nr] of hexNb(c, r, u.team)) {
+      const k = idx(nc, nr);
+      if (prev.has(k)) continue;
+      if (!passable(B, nc, nr, u.id)) continue;
+      prev.set(k, idx(c, r)); q.push([nc, nr]);
+    }
+  }
+  if (goal === -1 || goal === start) return null;
+  let k = goal; while (prev.get(k) !== start) k = prev.get(k);
+  const nc = k % CFG.COLS, nr = Math.floor(k / CFG.COLS);
+  return [nc, nr];
+}
 function pickTarget(B, u) {
   if (u.tauntUntil > B.t) { const tb = U(B, u.tauntBy); if (tb && tb.alive) return tb; }
   const cur = u.target >= 0 ? U(B, u.target) : null;
@@ -990,7 +1009,13 @@ function step(B) {
       cast(B, u); u.busy = t + 8;
       continue;
     }
-    const tg = pickTarget(B, u);
+    let tg = pickTarget(B, u);
+    if (B.td) { // 塔防模式：我方守住位置不追；敵方只在靠近時交戰，否則一路往我方底線走（飛行的直接飛過去，只會順手打射程內的）
+      if (u.team === 0 && tg && dist(u, tg) > effRange(B, u) + (u.rng <= 1 ? (B.td.leash || 0) : 0)) tg = null; // 近戰可以往前追幾格
+      if (u.team === 1 && (!tg || dist(u, tg) > effRange(B, u) + (hasTrait(u, 'sky') ? 0 : (B.td.engage || 0)))) {
+        const nx = tdMarch(B, u); if (nx) moveTo(B, u, nx[0], nx[1], u.mv); continue;
+      }
+    }
     if (!tg) continue;
     if (tg.id !== u.target) { u.target = tg.id; }
     if (dist(u, tg) <= effRange(B, u)) {
@@ -1018,6 +1043,7 @@ function step(B) {
   }
   B.zones = B.zones.filter(z => z.until >= t);
   B.temp = B.temp.filter(z => z.until > t);
+  if (B.td) return; // 塔防：結束與否由波次程式判斷
   const alive0 = B.units.some(u => u.alive && u.team === 0), alive1 = B.units.some(u => u.alive && u.team === 1);
   if (!alive0 || !alive1) { B.over = true; B.winner = alive0 ? 0 : alive1 ? 1 : -1; }
   else if (t >= CFG.COMBAT_MAX_TICK) { B.over = true; B.winner = -1; }
@@ -1361,6 +1387,7 @@ function act(G, pid, a) {
         return 'ok';
       }
       const cell = a.to.cell;
+      if (G.td && !tdCanPlace(G, cell)) return 'td_line';
       if (!canPlace(G, P, cell) || G.terrain[cellBase(cell)] === 'rock') return 'bad_cell';
       if (!inHalf(P.team, cell) && !(o.zone === 'board' && !inHalf(P.team, o.cell)) && intruders(G, pid) >= 1) return 'front_full';
       const occ = G.board[cell];
@@ -1782,6 +1809,7 @@ function endCombat(G) {
 
 // 主更新：dt 毫秒
 function update(G, dt) {
+  if (G.td) return tdUpdate(G, dt); // 塔防模式（只在玩家端）
   if (G.phase === 'prep') {
     const humans = G.players.filter(p => !p.ai && !p.out);
     if (G.portalVote && humans.every(p => p.vote)) resolvePortal(G);
@@ -2240,7 +2268,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'https://zoochess.pages.dev', 'http://localhost:8123', 'http://127.0.0.1:8123'], // 網站網址（Cloudflare Pages 的預覽網址 *.zoochess.pages.dev 也允許）
-  VERSION: '0.12.14',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.12.15',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）

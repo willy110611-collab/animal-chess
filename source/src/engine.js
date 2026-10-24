@@ -357,6 +357,25 @@ function clusterCenter(B, u) {
   }
   return best;
 }
+// 塔防：往第 0 列（我方底線）走的下一步（會繞過擋路的棋子）
+function tdMarch(B, u) {
+  const start = idx(u.c, u.r), prev = new Map([[start, -1]]), q = [[u.c, u.r]];
+  let goal = -1;
+  for (let qi = 0; qi < q.length; qi++) {
+    const [c, r] = q[qi];
+    if (r === 0) { goal = idx(c, r); break; }
+    for (const [nc, nr] of hexNb(c, r, u.team)) {
+      const k = idx(nc, nr);
+      if (prev.has(k)) continue;
+      if (!passable(B, nc, nr, u.id)) continue;
+      prev.set(k, idx(c, r)); q.push([nc, nr]);
+    }
+  }
+  if (goal === -1 || goal === start) return null;
+  let k = goal; while (prev.get(k) !== start) k = prev.get(k);
+  const nc = k % CFG.COLS, nr = Math.floor(k / CFG.COLS);
+  return [nc, nr];
+}
 function pickTarget(B, u) {
   if (u.tauntUntil > B.t) { const tb = U(B, u.tauntBy); if (tb && tb.alive) return tb; }
   const cur = u.target >= 0 ? U(B, u.target) : null;
@@ -619,7 +638,13 @@ function step(B) {
       cast(B, u); u.busy = t + 8;
       continue;
     }
-    const tg = pickTarget(B, u);
+    let tg = pickTarget(B, u);
+    if (B.td) { // 塔防模式：我方守住位置不追；敵方只在靠近時交戰，否則一路往我方底線走（飛行的直接飛過去，只會順手打射程內的）
+      if (u.team === 0 && tg && dist(u, tg) > effRange(B, u) + (u.rng <= 1 ? (B.td.leash || 0) : 0)) tg = null; // 近戰可以往前追幾格
+      if (u.team === 1 && (!tg || dist(u, tg) > effRange(B, u) + (hasTrait(u, 'sky') ? 0 : (B.td.engage || 0)))) {
+        const nx = tdMarch(B, u); if (nx) moveTo(B, u, nx[0], nx[1], u.mv); continue;
+      }
+    }
     if (!tg) continue;
     if (tg.id !== u.target) { u.target = tg.id; }
     if (dist(u, tg) <= effRange(B, u)) {
@@ -647,6 +672,7 @@ function step(B) {
   }
   B.zones = B.zones.filter(z => z.until >= t);
   B.temp = B.temp.filter(z => z.until > t);
+  if (B.td) return; // 塔防：結束與否由波次程式判斷
   const alive0 = B.units.some(u => u.alive && u.team === 0), alive1 = B.units.some(u => u.alive && u.team === 1);
   if (!alive0 || !alive1) { B.over = true; B.winner = alive0 ? 0 : alive1 ? 1 : -1; }
   else if (t >= CFG.COMBAT_MAX_TICK) { B.over = true; B.winner = -1; }
