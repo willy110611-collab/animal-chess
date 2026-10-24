@@ -311,6 +311,14 @@ const ENTR_SIG = {
   gorilla: p => { groundRing(p, 0xff8a4a, 1.1, 0.4); sprite('anger', p.clone().add(V3(0.2, 1.1, 0)), { scale: 0.18, scale1: 0.35, life: 0.6 }); },
   whale: p => burst(p.clone().add(V3(0, 0.8, 0)), 10, { tex: 'drop', scale: 0.1, speed: 0.6, up: 3, g: -7, life: 0.7 }),
   peacock: p => { for (let i = 0; i < 6; i++) sprite('feather', p.clone().add(V3(0, 0.6, 0)), { color: i % 2 ? 0x3f8a5a : 0x4a8aff, scale: 0.16, scale1: 0.08, life: 0.7, vel: V3(Math.cos(i) * 1.2, 0.8, Math.sin(i) * 1.2), g: -1, spin: 3 }); },
+  deer: p => burst(p.clone().add(V3(0, 0.8, 0)), 5, { tex: 'leaf', color: 0x9ad86a, scale: 0.1, speed: 0.8, up: 1, g: -2, life: 0.6 }),
+  zebra: p => sprite('star', p.clone().add(V3(0, 1.0, 0)), { scale: 0.18, scale1: 0.05, life: 0.6, vel: V3(0, 0.8, 0) }),
+  hippo: p => burst(p.clone().add(V3(0, 0.2, 0)), 6, { tex: 'drop', scale: 0.1, speed: 1.2, up: 1.6, g: -5, life: 0.5 }),
+  parrot: p => sprite('note', p.clone().add(V3(0.2, 1.0, 0)), { scale: 0.2, scale1: 0.35, life: 0.8, vel: V3(0.3, 0.8, 0), color: 0xe8423a }),
+  giraffe: p => sprite('puff', p.clone().add(V3(0, 1.4, 0.2)), { color: 0xf0c45a, scale: 0.25, scale1: 0.05, life: 0.5, add: true }),
+  flamingo: p => sprite('ring', p.clone().add(V3(0, 0.05, 0)), { color: 0xf49ab4, scale: 0.3, scale1: 1.0, life: 0.6, add: true }),
+  shark: p => sprite('cloud', p.clone().add(V3(0, 0.1, 0)), { color: 0x7fc8ff, scale: 0.3, scale1: 0.7, life: 0.5, opacity: 0.6 }),
+  panda: p => burst(p.clone().add(V3(0, 0.6, 0)), 4, { tex: 'leaf', color: 0x7ab84a, scale: 0.12, speed: 1, up: 1.2, g: -3, life: 0.6 }),
   komodo: p => sprite('cloud', p.clone().add(V3(0, 0.2, 0.3)), { color: 0x8fd34a, scale: 0.2, scale1: 0.4, life: 0.6, opacity: 0.6 }),
 };
 function burst(pos, n, o) {

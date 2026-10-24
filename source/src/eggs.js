@@ -18,6 +18,7 @@ const POKE_LINES = {
   cheetah: '你追不到我的', octopus: '八隻手都在忙', owl: '咕咕，現在幾點？', elephant: '我記得你戳過我', lion: '本王准你摸頭',
   penguin: '肚子滑起來很快喔', rhino: '近視眼，你是誰？', chameleon: '你看不到我、你看不到我', fox: '叮咚叮咚，狐狸怎麼叫？', eagle: '我在高空就看到你了',
   eel: '小心觸電 ⚡', gorilla: '（捶胸）我很溫柔的', whale: '噗——（噴水）', peacock: '我是不是很美？', komodo: '我口水有毒，退後',
+  deer: '鹿角是用來耍帥的', zebra: '我是白底黑紋還是黑底白紋？', hippo: '嘴巴張開～啊～', parrot: '戳我！戳我！戳我！', giraffe: '上面的空氣比較新鮮', flamingo: '單腳站比較不累', shark: '我只是想打招呼…', panda: '竹子分你一根',
 };
 let EGG_FOUND = (() => { try { return JSON.parse(localStorage.getItem('zoo_eggs') || '{}') || {}; } catch (e) { return {}; } })();
 const EGG_STATE = { taps: { k: null, n: 0, t: 0 }, chick: { n: 0, t: 0 }, keys: [], holiday: null, decoKey: '', snowAcc: 0, shownThisGame: {} };

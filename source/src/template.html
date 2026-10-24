@@ -677,6 +677,32 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   .team.stand .scells { grid-template-columns: repeat(4, 44px); gap: 5px 6px; } .team.stand .scell .tav { width: 40px; padding: 3.5px; } .team.stand .scell b { font-size: 13px; line-height: 14px; }
   .sheet > div { width: min(640px, 60vw); }
 }
+
+/* v0.13.4：手機橫放（矮螢幕）：商店與經濟移到右邊一欄，棋盤佔左邊整個高度 */
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; }
+  #game { flex-direction: row; }
+  #stage { flex: 1 1 auto; min-height: 0; height: 100%; }
+  #dock { flex: 0 0 clamp(250px, 34vw, 330px); height: 100%; box-sizing: border-box; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px; padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+  #dock .econ { flex-wrap: wrap; gap: 4px; }
+  #dock .econ .lvl { flex: 1 1 100%; }
+  #dock .econ .gold { margin-left: 0; font-size: 18px; }
+  #dock .econ .ebtn { min-width: 50px; padding: 3px 6px; font-size: 11px; flex: 1; }
+  #dock .econ .ebtn.lock { min-width: 32px; flex: 0; }
+  #dock .augs { flex-wrap: wrap; overflow: visible; font-size: 10px; gap: 3px; } #dock .augs .lbl { display: none; }
+  #dock .items { flex-wrap: wrap; overflow: visible; font-size: 10px; min-height: 0; }
+  #dock .shop { max-width: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  #dock .card { aspect-ratio: auto; height: clamp(70px, 24vh, 96px); }
+  #shopOdds { font-size: 10px; }
+  #dock .mate, #dock .bank { flex-wrap: wrap; font-size: 11px; gap: 4px; }
+  #stage .hud { padding-right: calc(max(8px, env(safe-area-inset-right, 0px)) + 70px); }
+  #traits { top: 50px; max-height: calc(100% - 60px); gap: 3px; }
+  .tr { grid-template-columns: 22px auto; padding: 1px 5px 1px 1px; } .tr .hex { width: 22px; height: 22px; } .tr .nm, .tr .tms { display: none; } .tr .ct { font-size: 10px; color: #fff; opacity: 1; font-weight: 900; } .tr .full { display: none; } .tr .short { display: inline; }
+  .tav { width: 36px; height: 36px; padding: 3px; } .tav .tn { font-size: 12px; line-height: 13px; bottom: -5px; } .team .who { display: none; }
+  .team.stand:not(.wide) { top: 44px; } .team.stand .scells.col { gap: 2px; } .team.stand .scells.col .scell .tav { width: 24px; padding: 2px; } .team.stand .scells.col .scell b { font-size: 9px; line-height: 10px; }
+  .helpbtn, .menubtn { width: 30px; height: 30px; }
+  .meter { left: auto; right: 44px; bottom: 50px; width: 190px; max-height: 60%; }
+}
 </style>
 
 <div id="splash">

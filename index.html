@@ -677,6 +677,32 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   .team.stand .scells { grid-template-columns: repeat(4, 44px); gap: 5px 6px; } .team.stand .scell .tav { width: 40px; padding: 3.5px; } .team.stand .scell b { font-size: 13px; line-height: 14px; }
   .sheet > div { width: min(640px, 60vw); }
 }
+
+/* v0.13.4：手機橫放（矮螢幕）：商店與經濟移到右邊一欄，棋盤佔左邊整個高度 */
+@media (orientation: landscape) and (max-height: 520px) {
+  #app { max-width: none; }
+  #game { flex-direction: row; }
+  #stage { flex: 1 1 auto; min-height: 0; height: 100%; }
+  #dock { flex: 0 0 clamp(250px, 34vw, 330px); height: 100%; box-sizing: border-box; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px; padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+  #dock .econ { flex-wrap: wrap; gap: 4px; }
+  #dock .econ .lvl { flex: 1 1 100%; }
+  #dock .econ .gold { margin-left: 0; font-size: 18px; }
+  #dock .econ .ebtn { min-width: 50px; padding: 3px 6px; font-size: 11px; flex: 1; }
+  #dock .econ .ebtn.lock { min-width: 32px; flex: 0; }
+  #dock .augs { flex-wrap: wrap; overflow: visible; font-size: 10px; gap: 3px; } #dock .augs .lbl { display: none; }
+  #dock .items { flex-wrap: wrap; overflow: visible; font-size: 10px; min-height: 0; }
+  #dock .shop { max-width: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  #dock .card { aspect-ratio: auto; height: clamp(70px, 24vh, 96px); }
+  #shopOdds { font-size: 10px; }
+  #dock .mate, #dock .bank { flex-wrap: wrap; font-size: 11px; gap: 4px; }
+  #stage .hud { padding-right: calc(max(8px, env(safe-area-inset-right, 0px)) + 70px); }
+  #traits { top: 50px; max-height: calc(100% - 60px); gap: 3px; }
+  .tr { grid-template-columns: 22px auto; padding: 1px 5px 1px 1px; } .tr .hex { width: 22px; height: 22px; } .tr .nm, .tr .tms { display: none; } .tr .ct { font-size: 10px; color: #fff; opacity: 1; font-weight: 900; } .tr .full { display: none; } .tr .short { display: inline; }
+  .tav { width: 36px; height: 36px; padding: 3px; } .tav .tn { font-size: 12px; line-height: 13px; bottom: -5px; } .team .who { display: none; }
+  .team.stand:not(.wide) { top: 44px; } .team.stand .scells.col { gap: 2px; } .team.stand .scells.col .scell .tav { width: 24px; padding: 2px; } .team.stand .scells.col .scell b { font-size: 9px; line-height: 10px; }
+  .helpbtn, .menubtn { width: 30px; height: 30px; }
+  .meter { left: auto; right: 44px; bottom: 50px; width: 190px; max-height: 60%; }
+}
 </style>
 
 <div id="splash">
@@ -4840,6 +4866,14 @@ const ENTR_SIG = {
   gorilla: p => { groundRing(p, 0xff8a4a, 1.1, 0.4); sprite('anger', p.clone().add(V3(0.2, 1.1, 0)), { scale: 0.18, scale1: 0.35, life: 0.6 }); },
   whale: p => burst(p.clone().add(V3(0, 0.8, 0)), 10, { tex: 'drop', scale: 0.1, speed: 0.6, up: 3, g: -7, life: 0.7 }),
   peacock: p => { for (let i = 0; i < 6; i++) sprite('feather', p.clone().add(V3(0, 0.6, 0)), { color: i % 2 ? 0x3f8a5a : 0x4a8aff, scale: 0.16, scale1: 0.08, life: 0.7, vel: V3(Math.cos(i) * 1.2, 0.8, Math.sin(i) * 1.2), g: -1, spin: 3 }); },
+  deer: p => burst(p.clone().add(V3(0, 0.8, 0)), 5, { tex: 'leaf', color: 0x9ad86a, scale: 0.1, speed: 0.8, up: 1, g: -2, life: 0.6 }),
+  zebra: p => sprite('star', p.clone().add(V3(0, 1.0, 0)), { scale: 0.18, scale1: 0.05, life: 0.6, vel: V3(0, 0.8, 0) }),
+  hippo: p => burst(p.clone().add(V3(0, 0.2, 0)), 6, { tex: 'drop', scale: 0.1, speed: 1.2, up: 1.6, g: -5, life: 0.5 }),
+  parrot: p => sprite('note', p.clone().add(V3(0.2, 1.0, 0)), { scale: 0.2, scale1: 0.35, life: 0.8, vel: V3(0.3, 0.8, 0), color: 0xe8423a }),
+  giraffe: p => sprite('puff', p.clone().add(V3(0, 1.4, 0.2)), { color: 0xf0c45a, scale: 0.25, scale1: 0.05, life: 0.5, add: true }),
+  flamingo: p => sprite('ring', p.clone().add(V3(0, 0.05, 0)), { color: 0xf49ab4, scale: 0.3, scale1: 1.0, life: 0.6, add: true }),
+  shark: p => sprite('cloud', p.clone().add(V3(0, 0.1, 0)), { color: 0x7fc8ff, scale: 0.3, scale1: 0.7, life: 0.5, opacity: 0.6 }),
+  panda: p => burst(p.clone().add(V3(0, 0.6, 0)), 4, { tex: 'leaf', color: 0x7ab84a, scale: 0.12, speed: 1, up: 1.2, g: -3, life: 0.6 }),
   komodo: p => sprite('cloud', p.clone().add(V3(0, 0.2, 0.3)), { color: 0x8fd34a, scale: 0.2, scale1: 0.4, life: 0.6, opacity: 0.6 }),
 };
 function burst(pos, n, o) {
@@ -6000,7 +6034,7 @@ function renderSheet() {
     const T = TRAITS[sel.k];
     const members = traitMembersHtml(sel.k, 'big');
     h = `<div style="display:grid;place-items:center;color:var(--ink);--ib:var(--paper)">${iconTrait(sel.k).replace('<svg', '<svg width="44" height="44"')}</div><div><h3>${T.name}</h3><div class="tmem">${members}</div></div>
-      <p>${T.tiers.map((n, i) => `(${n}) ${T.desc[i]}`).join('<br>')}<br>兩位隊友都有出這個羈絆時，效果 +${SYNERGY_BONUS}%（默契）。</p><div class="acts"><button class="btn" data-a="close">✕</button></div>`;
+      <p>${T.tiers.map((n, i) => `(${n}) ${T.desc[i]}`).join('<br>')}${G && G.rules && G.rules.solo ? '' : `<br>兩位隊友都有出這個羈絆時，效果 +${SYNERGY_BONUS}%（默契）。`}</p><div class="acts"><button class="btn" data-a="close">✕</button></div>`;
   } else if (sel.type === 'aug') {
     const A = AUG[sel.id];
     h = `<div style="display:grid;place-items:center">${augIcon(sel.id, 'big')}</div><div><h3>${A.name}</h3><div class="meta">${AUG_TIER_NAME[A.tier]}海克斯</div></div><p>${A.desc}</p><div class="acts"><button class="btn" data-a="close">✕</button></div>`;
@@ -6529,7 +6563,7 @@ function showDex(tab) {
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
   if (tab === 'augs') body = [1, 2, 3].map(tr => `<div class="plain"><div><b>${AUG_TIER_NAME[tr]}</b>（第 ${CFG.AUG_ROUNDS.join('、')} 回合三選一，銀／金／彩 依回合機率出現）</div></div>` + AUGMENTS.filter(x => x.tier === tr).map(x => `<div class="plain">${augIcon(x.id)}<div><b>${x.name}</b>　${x.desc}</div></div>`).join('')).join('');
   if (tab === 'arena') body = Object.keys(ARENAS).map(a => `<div class="plain"><div><b>${ARENAS[a].name}</b>　地形：${Object.keys(ARENAS[a].weights).sort((x, y) => ARENAS[a].weights[y] - ARENAS[a].weights[x]).map(t => TERRAIN_SKIN[a][t]).join('、')}（越前面越常見）</div></div>`).join('') + Object.keys(TERRAIN).map(t => `<div class="plain"><div><b>${TERRAIN[t].name}類</b>　${TERRAIN[t].desc}</div></div>`).join('') + `<div class="plain"><div><b>高台</b>（${Object.keys(ARENAS).map(a => TERRAIN_SKIN[a].high).join('、')}）　遠程射程 +${HIGH.RANGE}；從低處打上高台的普攻有 ${HIGH.MISS}% 落空；爬坡移動變慢</div></div>` + '<div class="plain"><div>每個階段換一個場地，地形與高台雙方對稱。</div></div>';
-  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（${CFG.COLS}×${CFG.ROWS_HALF} 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
+  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（${CFG.COLS}×${CFG.ROWS_HALF} 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用（每隻動物：${Object.entries(CFG.POOL).map(([c, n]) => `${c} 費 ${n} 張`).join('、')}），被買光的就不會出現在商店。<br>環境羈絆（森林、草原、水域、天空）湊到最高階＝「生態圈」：超強效果、戰場換裝、羈絆圖示變彩色。<br>海克斯、傳送門、奇遇的選擇都跟著準備倒數，時間到自動選第一個。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
   $('panel').innerHTML = `<button class="x" id="dexX" aria-label="關閉">✕</button><h2>圖鑑</h2><div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div><div class="dex">${body}</div>`;
   $('overlay').hidden = false;
   $('dexX').onclick = () => { $('overlay').hidden = true; };
@@ -6542,7 +6576,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.3'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.4'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -6567,7 +6601,7 @@ window.__zoo = { get G() { return G; }, S3 }; window.__upd = update; window.__s3
 
 // ===== 進階功能：統計、卡池、偵察、快捷鍵、陣容、代打投降、回放慢動作、技能預覽、
 //      傳送門、遭遇、選秀、天氣、指令、金庫隊長、標記、小小英雄、教學、收藏造型、自訂規則 =====
-let REPLAY = null, MENU_OPEN = false, METER = { on: window.innerWidth > 700, tab: 'dmg', last: 0 }, AVATARS = null, PRESS = null;
+let REPLAY = null, MENU_OPEN = false, METER = { on: window.innerWidth > 700 && window.innerHeight > 520, tab: 'dmg', last: 0 }, AVATARS = null, PRESS = null;
 const $$ = sel => document.querySelector(sel);
 
 // ---- 玩家檔案（本機）----
@@ -8365,6 +8399,7 @@ const POKE_LINES = {
   cheetah: '你追不到我的', octopus: '八隻手都在忙', owl: '咕咕，現在幾點？', elephant: '我記得你戳過我', lion: '本王准你摸頭',
   penguin: '肚子滑起來很快喔', rhino: '近視眼，你是誰？', chameleon: '你看不到我、你看不到我', fox: '叮咚叮咚，狐狸怎麼叫？', eagle: '我在高空就看到你了',
   eel: '小心觸電 ⚡', gorilla: '（捶胸）我很溫柔的', whale: '噗——（噴水）', peacock: '我是不是很美？', komodo: '我口水有毒，退後',
+  deer: '鹿角是用來耍帥的', zebra: '我是白底黑紋還是黑底白紋？', hippo: '嘴巴張開～啊～', parrot: '戳我！戳我！戳我！', giraffe: '上面的空氣比較新鮮', flamingo: '單腳站比較不累', shark: '我只是想打招呼…', panda: '竹子分你一根',
 };
 let EGG_FOUND = (() => { try { return JSON.parse(localStorage.getItem('zoo_eggs') || '{}') || {}; } catch (e) { return {}; } })();
 const EGG_STATE = { taps: { k: null, n: 0, t: 0 }, chick: { n: 0, t: 0 }, keys: [], holiday: null, decoKey: '', snowAcc: 0, shownThisGame: {} };
