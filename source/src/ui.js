@@ -623,7 +623,7 @@ function startCombatView() {
   sel = null; renderSheet(); WATCH = -1;
   const bt = myBattle(); cv = combatViewOf(bt, myTeam());
   MYB = { bt, B: bt.B, vt: cv.vt, mine: bt.teams.includes(myTeam()) };
-  if (MYB.mine) { REC_COMP = cv.B.units.filter(u => u.owner === ME && !u.summon).map(u => u.key); const tc = cv.B['traits' + cv.vt] || {}; questEvent('tier', { max: Math.max(-1, ...Object.values(tc).map(x => x.tier)) }); }
+  if (MYB.mine) { LAST_COMP = cv.B.units.filter(u => u.owner === ME && !u.summon).map(u => ({ key: u.key, star: u.star })); REC_COMP = cv.B.units.filter(u => u.owner === ME && !u.summon).map(u => u.key); const tc = cv.B['traits' + cv.vt] || {}; questEvent('tier', { max: Math.max(-1, ...Object.values(tc).map(x => x.tier)) }); }
   s3SetTerrain(cv.B.terrain, cv.vt, cv.B.temp, cv.B.height);
   combatSync();
   unitEntrance(cv.B);
@@ -959,12 +959,21 @@ function loopBody(now) {
     s3Frame(dt * ((REPLAY ? G.speed : (G.phase === 'combat' ? G.speed : 1)) || 1));
   }
 }
+// 結束畫面：我最後的陣容（貴的、星高的排前面）
+let LAST_COMP = [];
+function overCompHtml() {
+  const board = Object.values(G.board).filter(u => u.owner === ME), us = (board.length ? board : LAST_COMP).slice().sort((a, b) => (b.star - a.star) || ((ANIMALS[b.key] || {}).cost - (ANIMALS[a.key] || {}).cost));
+  if (!us.length) return '';
+  return `<div class="overcomp"><small>最後陣容</small><div>${us.slice(0, 10).map(u => `<span>${pimg(u.key)}<i>${'★'.repeat(u.star)}</i></span>`).join('')}</div></div>`;
+}
 function showOver() {
   const am = $('augModal'); if (am) { am.hidden = true; am.innerHTML = ''; am.dataset.k = ''; } // 結束畫面不要被海克斯選單蓋住
   const win = G.winner === myTeam(), place = G.teams[myTeam()].place || (win ? 1 : 2), n = G.teams.length;
-  $('panel').innerHTML = `<div class="over"><h2>${win ? (G.solo ? '你獲勝！' : '我隊獲勝！') : n > 2 ? `第 ${place} 名` : '這局輸了'}</h2><p>打到第 ${G.round} 回合，我隊剩 ${Math.max(0, G.teams[myTeam()].hp)} 血。${n > 2 ? `（${n} 隊中第 ${place} 名）` : ''}</p>${ladderOverHtml()}${mvpHtml() || pimg(win ? 'lion' : 'koala')}<div><button class="btn primary" id="btnAgain">再來一局</button></div></div>`;
+  $('panel').innerHTML = `<div class="over"><h2>${win ? (G.solo ? '你獲勝！' : '我隊獲勝！') : n > 2 ? `第 ${place} 名` : '這局輸了'}</h2><p>打到第 ${G.round} 回合，我隊剩 ${Math.max(0, G.teams[myTeam()].hp)} 血。${n > 2 ? `（${n} 隊中第 ${place} 名）` : ''}</p>${ladderOverHtml()}${mvpHtml() || pimg(win ? 'lion' : 'koala')}${overCompHtml()}<div class="overbtns"><button class="btn primary" id="btnAgain">${NET.role ? '回大廳' : '再來一局'}</button>${NET.role ? '' : '<button class="btn" id="btnOverLobby">回大廳</button>'}</div></div>`;
   $('overlay').hidden = false;
-  $('btnAgain').onclick = () => { $('overlay').hidden = true; if (NET.role) { netLeave(); return; } newGame(G && G.teams.length > 2 ? 4 : 2); };
+  // 再來一局：照這局的模式（單人混戰／1 對 1／雙人）重開
+  $('btnAgain').onclick = () => { $('overlay').hidden = true; if (NET.role) { netLeave(); return; } const solo = !!(G && G.solo), nT = G ? G.teams.length : 2; newGame(solo ? nT : (nT > 2 ? 4 : 2), solo); };
+  if ($('btnOverLobby')) $('btnOverLobby').onclick = () => leaveToLobby();
 }
 function newGame(teams, solo) {
   for (const k in S3.V) s3Remove(k);
@@ -1004,7 +1013,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.7'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.8'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
