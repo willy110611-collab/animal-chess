@@ -112,20 +112,21 @@ sheet('基本參數', ['代號', '名稱', '數值', '說明'], rows, [20, 22, 2
 A_COLS = [('hp', '生命'), ('atk', '攻擊'), ('ai', '攻擊間隔'), ('rng', '射程'), ('arm', '護甲'), ('mr', '魔抗'), ('mana', '能量上限'), ('sm', '起始能量'), ('mv', '移動')]
 rows = []
 for k, a in D['ANIMALS'].items():
-    tr = [TR_NAME[t] for t in a['traits']] + ['', '']
-    rows.append([k, a['name'], a['cost'], tr[0], tr[1], a.get('role', '')] + [a[c] for c, _ in A_COLS] + [a.get('skill', ''), a.get('desc', ''), D['EVOLVE'].get(k, '')])
-headers = ['代號', '名稱', '費用', '羈絆1', '羈絆2', '定位'] + [n for _, n in A_COLS] + ['技能名稱', '技能說明', '3 星進化名稱']
-ws, r0 = sheet('動物', headers, rows, [12, 12, 7, 9, 9, 10] + [8] * len(A_COLS) + [12, 70, 14], wrap_cols=(16,))
+    tr = [TR_NAME[t] for t in a['traits']] + ['', '', '']
+    rows.append([k, a['name'], a['cost'], tr[0], tr[1], tr[2], a.get('role', '')] + [a[c] for c, _ in A_COLS] + [a.get('skill', ''), a.get('desc', ''), D['EVOLVE'].get(k, '')])
+headers = ['代號', '名稱', '費用', '羈絆1', '羈絆2', '羈絆3', '定位'] + [n for _, n in A_COLS] + ['技能名稱', '技能說明', '3 星進化名稱']
+ws, r0 = sheet('動物', headers, rows, [12, 12, 7, 9, 9, 9, 10] + [8] * len(A_COLS) + [12, 70, 14], wrap_cols=(17,))
 n = len(rows) + 60
-add_list(ws, list(TR_NAME.values()), f'D{r0+1}:E{r0+n}')
+add_list(ws, list(TR_NAME.values()), f'D{r0+1}:F{r0+n}')
 dv = DataValidation(type='whole', operator='between', formula1='0', formula2='5'); dv.error = '費用要 0～5'; ws.add_data_validation(dv); dv.add(f'C{r0+1}:C{r0+n}')
 
 # ---- 羈絆 ----
 rows = []
 for k, t in D['TRAITS'].items():
-    rows.append([k, t['name']] + t['tiers'] + t['val'] + t['desc'])
-sheet('羈絆', ['代號', '名稱', '門檻1', '門檻2', '門檻3', '數值1', '數值2', '數值3', '說明1', '說明2', '說明3'], rows,
-      [10, 8, 7, 7, 7, 7, 7, 7, 36, 24, 24], wrap_cols=(8, 9, 10), note='門檻＝需要幾隻；數值＝效果強度（意義見說明）')
+    pad = lambda L: list(L) + [''] * (4 - len(L))
+    rows.append([k, t['name']] + pad(t['tiers']) + pad(t['val']) + pad(t['desc']))
+sheet('羈絆', ['代號', '名稱', '門檻1', '門檻2', '門檻3', '門檻4', '數值1', '數值2', '數值3', '數值4', '說明1', '說明2', '說明3', '說明4'], rows,
+      [10, 8, 7, 7, 7, 7, 7, 7, 7, 7, 30, 24, 24, 30], wrap_cols=(10, 11, 12, 13), note='門檻＝需要幾隻（最多 4 階，沒有第 4 階就留空）；數值＝效果強度（意義見說明）')
 
 # ---- 材料 ----
 rows = []

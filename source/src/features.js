@@ -175,7 +175,7 @@ function featuresLog(L) {
     case 'buy': if (mine) sfx('buy'); break;
     case 'sell': if (mine) sfx('sell'); break;
     case 'reroll': if (mine) { sfx('reroll'); questEvent('roll'); } break;
-    case 'merge': if (mine) { sfx('star'); if (L.star >= 3) { PROFILE.three++; saveProfile(); unlockSkin('snow'); questEvent('three'); setTimeout(() => banner(`進化！${EVOLVE[L.key] || ''}`, '生命攻擊 +20%、技能 +30%', 'win'), 600); } } break;
+    case 'merge': if (mine) { sfx(L.star >= 3 ? 'star3' : 'star'); if (L.star >= 3) { PROFILE.three++; saveProfile(); unlockSkin('snow'); questEvent('three'); setTimeout(() => banner(`進化！${EVOLVE[L.key] || ''}`, '生命攻擊 +20%、技能 +30%', 'win'), 600); } } break;
     case 'aug': if (mine) sfx('aug'); break;
     case 'craft': case 'equip': if (mine) sfx('coin'); break;
     case 'portal': { const p = PORTALS.find(x => x.id === L.id); banner(`傳送門：${p.name}`, p.desc); sfx('aug'); break; }
@@ -183,7 +183,7 @@ function featuresLog(L) {
     case 'captainChoice': if (L.team === myTeam()) toast(`隊長選擇了：${L.choice === 'gold' ? '每人 +4 金' : '每人 1 件成品裝備'}`, 2000); break;
     case 'draft': sfx('draft'); break;
     case 'drafted': if (mine) { sfx('buy'); toast(`選到 ${ANIMALS[L.key].name}＋${itemDef(L.item).name}`); } break;
-    case 'loot': if (mine) { const d = L.d; lootToast.push(d.type === 'gold' ? `${d.n} 金` : d.type === 'unit' ? ANIMALS[d.k].name : itemDef(d.k).name); clearTimeout(lootToast.h); lootToast.h = setTimeout(() => { if (lootToast.length) toast('戰利品：' + lootToast.join('、'), 2400); lootToast.length = 0; }, 400); sfx('coin'); } break;
+    case 'loot': if (mine) { sfx('chest', 400); const d = L.d; lootToast.push(d.type === 'gold' ? `${d.n} 金` : d.type === 'unit' ? ANIMALS[d.k].name : itemDef(d.k).name); clearTimeout(lootToast.h); lootToast.h = setTimeout(() => { if (lootToast.length) toast('戰利品：' + lootToast.join('、'), 2400); lootToast.length = 0; }, 400); sfx('coin'); } break;
     case 'consume': if (mine) { sfx('star'); toast(`使用了${CONSUMABLES[L.item].name}`); } break;
     case 'bank': if (mine) sfx('coin'); break;
     case 'captain': toast(`隊長換成 ${G.players[L.to].name}`); break;
@@ -346,6 +346,31 @@ function skillDemo(key) {
   $('stage').insertAdjacentHTML('beforeend', `<div class="replaybar" id="replaybar">${ANIMALS[key].name}・${ANIMALS[key].skill}<button class="btn" id="rpSlow">慢動作</button><button class="btn" id="rpNorm">1×</button><button class="btn primary" id="rpEnd">回圖鑑</button></div>`);
   $('rpSlow').onclick = () => { G.speed = 0.4; }; $('rpNorm').onclick = () => { G.speed = 1; }; $('rpEnd').onclick = () => endReplay();
 }
+// 全部按鈕按下都有「啵」；面板打開／關閉各有音效
+document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('button, .btn, [data-slot]')) { audInit(); sfx('click', 70); } }, true);
+{ const ov = document.getElementById('overlay'); if (ov && window.MutationObserver) { let was = ov.hidden; new MutationObserver(() => { if (ov.hidden !== was) { was = ov.hidden; sfx(was ? 'panelClose' : 'panelOpen', 120); } }).observe(ov, { attributes: true, attributeFilter: ['hidden'] }); } }
+// 背景音樂自動選曲：大廳＝lobby；塔防＝td；魔王回合戰鬥＝boss；我方環境羈絆湊到最高階＝生態圈專屬曲；戰鬥＝battle；準備＝場地曲
+const ECO_TRAITS = ['forest', 'savanna', 'water', 'sky'];
+function ecoActive() { // 回傳湊到最高階的環境羈絆（只看自己這邊）
+  if (!G) return null; let tc = null;
+  if (cv && cv.B && MYB && MYB.mine) tc = cv.B['traits' + cv.vt];
+  if (!tc) try { tc = traitCounts(battleUnitsForTeam(G, myTeam(), 0), 0); } catch (e) {}
+  if (!tc) return null;
+  for (const t of ECO_TRAITS) { const x = tc[t], T = TRAITS[t]; if (x && T && x.tier >= T.tiers.length - 1) return t; }
+  return null;
+}
+function bgmAuto() {
+  if (!AUD.ctx) return;
+  const inGame = G && !$('game').hidden;
+  if (!inGame) { bgmPlay('lobby'); return; }
+  const eco = ecoActive();
+  let key = G.arena;
+  if (G.td) key = 'td';
+  else if (eco) key = 'eco_' + eco;
+  else if (G.phase === 'combat' || G.phase === 'result') key = isBoss(G.round) ? 'boss' : 'battle';
+  bgmPlay(key, G.arena);
+}
+setInterval(() => { try { bgmAuto(); } catch (e) {} }, 500);
 // ---- 回放 ----
 function startReplay() {
   const bt = G.battles.find(b => b.teams.includes(myTeam())); if (!bt || !bt.input) return;

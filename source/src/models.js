@@ -537,6 +537,114 @@ BUILD.chick = R => {
 };
 
 // 建立一隻：回傳 rig
+// ---- v0.13 新動物 ----
+Object.assign(BUILD, {
+  deer(R) {
+    plush(R, { fur: '#c98a52', belly: '#f4e2c4', muzzle: '#f4e2c4', nose: '#3a2418', headR: 0.27, limb: '#a86e3e' });
+    const M = R.M;
+    for (let i = 0; i < 5; i++) R.body.add(mesh(GEO.sph, M('#fbf2e2'), [(i % 2 ? 1 : -1) * 0.1, 0.36 - i * 0.03, -0.12 - i * 0.02], 0.03)); // 背上白點
+    for (const s of [-1, 1]) { // 鹿角
+      const a = saveBase(grp(R.head, [s * 0.1, 0.4, -0.02], [0, 0, -s * 0.25]));
+      a.add(mesh(GEO.cyl, M('#8a5a32'), [0, 0.08, 0], [0.018, 0.16, 0.018]));
+      a.add(mesh(GEO.cyl, M('#8a5a32'), [s * 0.04, 0.12, 0], [0.014, 0.08, 0.014], [0, 0, -s * 0.8]));
+      a.add(mesh(GEO.sph, M('#9a6a3e'), [0, 0.17, 0], 0.022));
+    }
+    triEar(R, R.head, -0.2, 0.3, -0.02, '#b87a46', '#f4d2b4', 0.12, 1.1); triEar(R, R.head, 0.2, 0.3, -0.02, '#b87a46', '#f4d2b4', 0.12, 1.1);
+    const t = saveBase(grp(R.body, [0, 0.3, -0.24])); R.tail = t; t.add(mesh(GEO.sph, M('#fbf2e2'), [0, 0, -0.02], [0.05, 0.07, 0.04]));
+    R.headTop = 1.02;
+  },
+  zebra(R) {
+    plush(R, { fur: '#fafafa', belly: '#fafafa', muzzle: '#3a3638', nose: '#1e1b1c', headR: 0.27, limb: '#f4f2ee', bodyW: 0.27 });
+    const M = R.M;
+    for (const s of [-1, 1]) for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [s * 0.24, 0.27, -0.15 + i * 0.09], [0.035, 0.2 - Math.abs(i - 1.5) * 0.03, 0.035], [0, 0, s * 0.15])); // 身體條紋
+    for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.18 + i * 0.09, 0.225 - Math.abs(i - 1) * 0.01], [0.17 - Math.abs(i - 1) * 0.03, 0.022, 0.03])); // 胸前條紋
+    for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.47, -0.12 + i * 0.09], [0.12, 0.02, 0.025])); // 背上條紋
+    for (const s of [-1, 1]) for (let i = 0; i < 3; i++) R.head.add(mesh(GEO.sph, M('#2a2628'), [s * 0.24, 0.24 + i * 0.08, -0.02], [0.03, 0.03, 0.13], [0, 0, s * 0.3])); // 臉頰條紋
+    for (let i = 0; i < 6; i++) R.head.add(mesh(GEO.box, M('#2a2628'), [0, 0.46 - i * 0.02, -0.04 - i * 0.06], [0.04, 0.08, 0.05], [-0.3 - i * 0.15, 0, 0])); // 鬃毛
+    triEar(R, R.head, -0.16, 0.38, 0, '#f4f2ee', '#2a2628', 0.12, 0.4); triEar(R, R.head, 0.16, 0.38, 0, '#f4f2ee', '#2a2628', 0.12, 0.4);
+    const t = saveBase(grp(R.body, [0, 0.2, -0.24])); R.tail = t; t.add(mesh(GEO.cyl, M('#f4f2ee'), [0, -0.05, -0.03], [0.015, 0.12, 0.015], [-0.4, 0, 0])); t.add(mesh(GEO.sph, M('#2a2628'), [0, -0.12, -0.06], [0.035, 0.06, 0.035]));
+    R.headTop = 1.0;
+  },
+  hippo(R) {
+    plush(R, { fur: '#9a8aa8', belly: '#c8b4c8', headR: 0.32, bodyW: 0.31, bodyH: 0.29, limb: '#8a7a98', blush: true });
+    const M = R.M;
+    R.jaw = saveBase(grp(R.head, [0, 0.14, 0.14]));
+    R.jaw.add(mesh(GEO.sph, M('#b4a2c0'), [0, -0.02, 0.1], [0.24, 0.1, 0.17]));
+    R.jaw.add(mesh(GEO.sph, M('#e98a9a'), [0, 0.04, 0.12], [0.18, 0.04, 0.12]));
+    for (const s of [-1, 1]) R.jaw.add(mesh(GEO.cone, M('#fbf6ea'), [s * 0.1, 0.07, 0.2], [0.025, 0.06, 0.025]));
+    R.head.add(mesh(GEO.sph, M('#a898b4'), [0, 0.28, 0.24], [0.2, 0.12, 0.13]));
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, M('#5a4a68'), [s * 0.06, 0.32, 0.36], [0.02, 0.015, 0.01])); roundEar(R, R.head, s * 0.17, 0.48, -0.04, '#8a7a98', '#e8b0c0', 0.05); }
+    R.headTop = 1.05;
+  },
+  parrot(R) {
+    plush(R, { fur: '#3cb44a', belly: '#f2d24a', headR: 0.27, limb: '#3a3a3a', bodyW: 0.23, blush: false });
+    const M = R.M;
+    R.head.children[0].material = M('#e8423a');
+    R.head.add(mesh(GEO.sph, M('#f4f1ea'), [0, 0.2, 0.18], [0.16, 0.13, 0.1]));
+    R.beak = saveBase(grp(R.head, [0, 0.15, 0.25])); R.beak.add(mesh(GEO.sph, M('#3a3638'), [0, 0, 0.02], [0.07, 0.08, 0.07])); R.beak.add(mesh(GEO.cone, M('#3a3638'), [0, -0.05, 0.05], [0.04, 0.08, 0.03], [Math.PI * 0.8, 0, 0]));
+    for (let i = 0; i < 3; i++) R.head.add(mesh(GEO.cone, M(['#f2d24a', '#e8423a', '#3a8ad8'][i]), [0, 0.42, -0.06 - i * 0.06], [0.03, 0.12, 0.03], [-0.5 - i * 0.3, 0, 0]));
+    for (const a of [R.armL, R.armR]) { a.children[0].material = M('#3a8ad8'); a.children[0].scale.set(0.05, 0.16, 0.12); }
+    R.wingL = R.armL; R.wingR = R.armR;
+    const t = saveBase(grp(R.body, [0, 0.2, -0.2])); R.tail = t;
+    ['#3a8ad8', '#e8423a', '#f2d24a'].forEach((c, i) => t.add(mesh(GEO.sph, M(c), [(i - 1) * 0.05, -0.05 - i * 0.02, -0.1 - i * 0.03], [0.04, 0.03, 0.16], [0.5, (i - 1) * 0.3, 0])));
+    R.fly = 0.3; R.headTop = 0.98;
+  },
+  giraffe(R) {
+    plush(R, { fur: '#f0c45a', belly: '#f8e6b0', muzzle: '#f8e6b0', nose: '#6a4a2a', headR: 0.25, limb: '#e0b04a' });
+    const M = R.M;
+    // 長脖子：頭往上抬高
+    R.head.position.y += 0.35; saveBase(R.head);
+    R.neck = R.body.add(mesh(GEO.cap, M('#f0c45a'), [0, 0.66, 0.02], [0.17, 0.38, 0.17]));
+    for (let i = 0; i < 8; i++) { const a = i * 1.7; R.body.add(mesh(GEO.sph, M('#b06a2a'), [Math.cos(a) * 0.15, 0.25 + (i % 4) * 0.12, Math.sin(a) * 0.15 + 0.02], [0.06, 0.05, 0.03])); }
+    for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#b06a2a'), [(i % 2 ? 1 : -1) * 0.08, 0.55 + i * 0.09, 0.12], [0.04, 0.04, 0.02]));
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.cyl, M('#e0b04a'), [s * 0.08, 0.45, -0.02], [0.02, 0.12, 0.02])); R.head.add(mesh(GEO.sph, M('#8a5a2a'), [s * 0.08, 0.52, -0.02], 0.035)); }
+    triEar(R, R.head, -0.2, 0.32, -0.04, '#e0b04a', '#f8e6b0', 0.1, 1.2); triEar(R, R.head, 0.2, 0.32, -0.04, '#e0b04a', '#f8e6b0', 0.1, 1.2);
+    R.headTop = 1.4;
+  },
+  flamingo(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#f49ab4'), [0, 0.42, -0.02], [0.24, 0.2, 0.28])); R.body.add(R.torso);
+    for (const s of [-1, 1]) { const l = saveBase(grp(R.body, [s * 0.06, 0.3, 0])); l.add(mesh(GEO.cyl, M('#e8708e'), [0, -0.14, 0], [0.015, 0.3, 0.015])); l.add(mesh(GEO.sph, M('#e8708e'), [0, -0.28, 0.03], [0.04, 0.015, 0.06])); s < 0 ? (R.legL = l) : (R.legR = l); }
+    R.legR.rotation.x = -1.2; saveBase(R.legR); // 單腳站
+    R.body.add(mesh(GEO.cap, M('#f49ab4'), [0, 0.6, 0.12], [0.06, 0.3, 0.06], [0.3, 0, 0]));
+    R.head = saveBase(grp(R.body, [0, 0.78, 0.17]));
+    R.head.add(mesh(GEO.sph, M('#f7aac0'), [0, 0.06, 0], [0.13, 0.12, 0.13]));
+    R.beak = saveBase(grp(R.head, [0, 0.03, 0.12])); R.beak.add(mesh(GEO.cone, M('#2e2a2c'), [0, -0.04, 0.04], [0.03, 0.12, 0.03], [Math.PI * 0.7, 0, 0])); R.beak.add(mesh(GEO.sph, M('#fbe6ea'), [0, 0, 0], [0.04, 0.035, 0.05]));
+    addEyes(R, R.head, 0.09, 0.07, 0.1, 0.022);
+    for (const s of [-1, 1]) { const w = saveBase(grp(R.body, [s * 0.2, 0.46, -0.02])); w.add(mesh(GEO.sph, M('#e8708e'), [s * 0.03, -0.04, -0.04], [0.06, 0.13, 0.2])); s < 0 ? (R.wingL = w) : (R.wingR = w); }
+    R.armL = R.wingL; R.armR = R.wingR;
+    const t = saveBase(grp(R.body, [0, 0.44, -0.28])); R.tail = t; t.add(mesh(GEO.cone, M('#e8708e'), [0, 0, -0.04], [0.06, 0.12, 0.04], [-Math.PI / 2, 0, 0]));
+    R.headR = 0.13; R.headTop = 1.0;
+  },
+  shark(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#6c8aa8'), [0, 0.3, 0], [0.26, 0.24, 0.38])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#f2f2ee'), [0, 0.22, 0.06], [0.2, 0.15, 0.3]));
+    R.body.add(mesh(GEO.cone, M('#5a7894'), [0, 0.6, -0.05], [0.09, 0.22, 0.05], [-0.3, 0, 0])); // 背鰭
+    R.head = saveBase(grp(R.body, [0, 0.3, 0.26]));
+    R.head.add(mesh(GEO.sph, M('#6c8aa8'), [0, 0.04, 0.02], [0.2, 0.17, 0.16]));
+    R.jaw = saveBase(grp(R.head, [0, -0.05, 0.08])); R.jaw.add(mesh(GEO.sph, M('#f2f2ee'), [0, -0.02, 0.02], [0.15, 0.06, 0.1]));
+    for (let i = 0; i < 5; i++) R.jaw.add(mesh(GEO.cone, M('#ffffff'), [(i - 2) * 0.05, 0.03, 0.09], [0.015, 0.035, 0.015]));
+    addEyes(R, R.head, 0.1, 0.11, 0.12, 0.03, '#7ff0ff');
+    for (const s of [-1, 1]) { const f = saveBase(grp(R.body, [s * 0.22, 0.22, 0.05], [0, 0, s * 0.6])); f.add(mesh(GEO.sph, M('#5a7894'), [s * 0.08, 0, 0], [0.12, 0.03, 0.08])); s < 0 ? (R.armL = f) : (R.armR = f); }
+    for (const s of [-1, 1]) { const l = saveBase(grp(R.body, [s * 0.1, 0.1, -0.1])); l.add(mesh(GEO.sph, M('#5a7894'), [0, -0.04, 0], [0.05, 0.04, 0.07])); s < 0 ? (R.legL = l) : (R.legR = l); }
+    const t = saveBase(grp(R.body, [0, 0.32, -0.36])); R.tail = t; t.add(mesh(GEO.cone, M('#5a7894'), [0, 0.1, -0.05], [0.06, 0.22, 0.03], [-0.6, 0, 0])); t.add(mesh(GEO.cone, M('#5a7894'), [0, -0.06, -0.05], [0.05, 0.15, 0.03], [-2.4, 0, 0]));
+    R.headR = 0.2; R.headTop = 0.8;
+  },
+  panda(R) {
+    plush(R, { fur: '#f6f4ef', belly: '#f6f4ef', limb: '#2a2628', muzzle: '#f6f4ef', nose: '#1e1b1c', headR: 0.32, bodyW: 0.3, bodyH: 0.3 });
+    const M = R.M;
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#2a2628'), [s * 0.12, 0.27, 0.24], [0.08, 0.1, 0.05], [0, 0, s * 0.5]));
+    roundEar(R, R.head, -0.22, 0.46, -0.02, '#2a2628', '#3a3638', 0.08); roundEar(R, R.head, 0.22, 0.46, -0.02, '#2a2628', '#3a3638', 0.08);
+    R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.42, -0.02], [0.3, 0.08, 0.27]));
+    R.prop = saveBase(grp(R.armR, [0, -0.2, 0.05])); // 竹子
+    R.prop.add(mesh(GEO.cyl, M('#7ab84a'), [0, 0.12, 0], [0.022, 0.42, 0.022])); for (let i = 0; i < 3; i++) R.prop.add(mesh(GEO.cyl, M('#5a983a'), [0, i * 0.13, 0], [0.026, 0.015, 0.026]));
+    R.prop.add(mesh(GEO.sph, M('#9ad86a'), [0.05, 0.33, 0], [0.06, 0.02, 0.03], [0, 0, 0.6]));
+    R.headTop = 1.08;
+  },
+});
 function buildAnimal(key) {
   geos();
   const R = { key, M: Mats(), root: new THREE.Group(), fly: 0 };
@@ -715,6 +823,41 @@ Object.assign(ACT, {
   },
 });
 // 每幀姿勢：st = {t 秒, moving, sleep, stun, act:{kind,p}, dead:p, hit:p, night, face}
+// v0.13 新動物的動作
+Object.assign(ACT, {
+  deer: {
+    atk: { dur: 0.45, hit: 0.5, fx: 'leafShot', fn(R, p) { R.head.rotation.x += 0.45 * bell(p, 0.1, 0.6); R.armR.rotation.x -= 1.2 * bell(p, 0, 0.5); } },
+    skill: { dur: 1.1, hit: 0.5, fx: 'blessing', fn(R, p) { hopUp(R, ramp(p, 0.1, 0.6), 0.3); R.head.rotation.x -= 0.6 * bell(p, 0, 1); R.armL.rotation.z -= 1.5 * bell(p, 0.1, 0.9); R.armR.rotation.z += 1.5 * bell(p, 0.1, 0.9); } },
+  },
+  zebra: {
+    atk: { dur: 0.42, hit: 0.5, fx: 'bite', fn(R, p) { lunge(R, p, 0.35, 0.2); R.head.rotation.x += 0.3 * bell(p, 0.2, 0.6); } },
+    skill: { dur: 0.9, hit: 0.5, fx: 'backKick', fn(R, p) { const k = bell(p, 0.2, 0.8); R.body.rotation.x += 0.9 * k; R.legL.rotation.x -= 1.6 * k; R.legR.rotation.x -= 1.6 * k; R.body.position.y += 0.15 * k; } },
+  },
+  hippo: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'bite', fn(R, p) { R.jaw.rotation.x += 0.9 * bell(p, 0, 0.55); lunge(R, p, 0.25, 0.35); } },
+    skill: { dur: 1.2, hit: 0.55, fx: 'hippoGulp', fn(R, p) { const o = bell(p, 0, 0.6); R.jaw.rotation.x += 1.3 * o; R.head.rotation.x -= 0.5 * o; R.body.scale.y *= 1 + 0.12 * o; lunge(R, ramp(p, 0.45, 1), 0.35); } },
+  },
+  parrot: {
+    atk: { dur: 0.45, hit: 0.5, fx: 'feather', fn(R, p) { R.wingR.rotation.z += 1.4 * bell(p, 0, 0.5); R.head.rotation.x += 0.3 * bell(p, 0.3, 0.7); } },
+    skill: { dur: 1.0, hit: 0.5, fx: 'featherVolley', fn(R, p) { const f = Math.abs(Math.sin(p * 24)); R.wingL.rotation.z -= 1.3 * f; R.wingR.rotation.z += 1.3 * f; R.head.rotation.x -= 0.5 * bell(p, 0.3, 0.6); R.beak.scale.y = 1 + 0.6 * bell(p, 0.35, 0.6); } },
+  },
+  giraffe: {
+    atk: { dur: 0.55, hit: 0.55, fx: 'headbutt', fn(R, p) { R.head.rotation.x += 0.9 * bell(p, 0.1, 0.7); R.head.position.z += 0.25 * bell(p, 0.2, 0.7); } },
+    skill: { dur: 1.2, hit: 0.5, fx: 'neckSwing', fn(R, p) { const k = bell(p, 0, 1); R.body.rotation.y += Math.sin(ramp(p, 0.1, 0.8) * Math.PI * 2) * 1.4 * k; R.head.rotation.z += 0.8 * Math.sin(p * 12) * k; } },
+  },
+  flamingo: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'waterShot', fn(R, p) { R.head.position.z += 0.15 * bell(p, 0.1, 0.7); R.head.rotation.x += 0.6 * bell(p, 0.1, 0.7); R.wingR.rotation.z += 0.8 * bell(p, 0, 0.6); } },
+    skill: { dur: 1.3, hit: 0.45, fx: 'swirlDance', fn(R, p) { R.body.rotation.y += ease.inOut(ramp(p, 0, 0.9)) * Math.PI * 4; const f = bell(p, 0, 1); R.wingL.rotation.z -= 1.4 * f; R.wingR.rotation.z += 1.4 * f; } },
+  },
+  shark: {
+    atk: { dur: 0.42, hit: 0.5, fx: 'bite', fn(R, p) { R.jaw.rotation.x += 0.8 * bell(p, 0, 0.5); lunge(R, p, 0.4, 0.25); } },
+    skill: { dur: 1.1, hit: 0.6, fx: 'sharkBite', fn(R, p) { R.jaw.rotation.x += 1.2 * bell(p, 0.35, 0.75); R.tail.rotation.y += 0.8 * Math.sin(p * 30) * bell(p, 0, 1); } },
+  },
+  panda: {
+    atk: { dur: 0.55, hit: 0.6, fx: 'slam', fn(R, p) { const up = bell(p, 0, 0.6); R.armR.rotation.x -= 2.6 * up; R.body.rotation.x += 0.3 * bell(p, 0.5, 0.85); } },
+    skill: { dur: 1.3, hit: 0.5, fx: 'pandaRoll', fn(R, p) { const k = bell(p, 0, 1); R.head.scale.setScalar(1 - 0.3 * Math.min(1, k * 2)); R.body.rotation.x += ease.inOut(ramp(p, 0.05, 0.85)) * Math.PI * 4; R.body.position.y += 0.25 * k; } },
+  },
+});
 function poseRig(R, st) {
   for (const g of R.groups) resetG(g);
   const t = st.t + R.phase;

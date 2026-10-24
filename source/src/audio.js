@@ -13,7 +13,7 @@ function audInit() {
     const nb = C.createBuffer(1, C.sampleRate, C.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; AUD.noise = nb;
   } catch (e) { AUD.ctx = null; }
 }
-function audApply() { if (!AUD.ctx) return; AUD.master.gain.value = AUD.set.mute ? 0 : 1; AUD.sfxG.gain.value = AUD.set.sfx; AUD.musG.gain.value = AUD.set.mus * 0.6; }
+function audApply() { if (typeof bgmApplyVol === 'function') bgmApplyVol(); if (!AUD.ctx) return; AUD.master.gain.value = AUD.set.mute ? 0 : 1; AUD.sfxG.gain.value = AUD.set.sfx; AUD.musG.gain.value = AUD.set.mus * 0.6; }
 // ---- 基本音源 ----
 function tone(freq, dur, o) {
   const C = AUD.ctx; if (!C) return;
@@ -85,13 +85,46 @@ const SFX = {
   emote: () => { tone(1100, 0.06, { type: 'triangle', vol: 0.1 }); tone(1650, 0.1, { type: 'triangle', vol: 0.08, at: 0.05 }); },
   sting: () => { tone(2400, 0.05, { to: 3200, vol: 0.06 }); noise(0.04, { f: 5000, q: 2, vol: 0.05 }); },
 };
+
+// ===== Q 版音效（v0.12.17）：短、圓、有彈性。每個按鈕與動作各自一個，名字＝用途 =====
+const boing = (f, at, vol, up) => tone(f, 0.14, { type: 'sine', to: f * (up || 1.9), vol: vol || 0.16, at: at || 0, att: 0.004 });
+Object.assign(SFX, {
+  click: () => { tone(660, 0.06, { type: 'sine', to: 1250, vol: 0.13 }); }, // 一般按鈕：啵
+  panelOpen: () => { tone(420, 0.12, { type: 'triangle', to: 980, vol: 0.12 }); tone(1320, 0.08, { vol: 0.05, at: 0.08 }); },
+  panelClose: () => tone(900, 0.1, { type: 'triangle', to: 380, vol: 0.1 }),
+  pick: () => { tone(500, 0.09, { type: 'sine', to: 1100, vol: 0.12 }); noise(0.07, { f: 1800, fto: 3500, q: 1, vol: 0.05 }); }, // 拿起棋子：咻
+  place: () => { tone(220, 0.1, { to: 110, vol: 0.28 }); boing(330, 0.05, 0.1, 1.5); }, // 放下：咚＋小彈
+  buy: () => { tone(1568, 0.07, { type: 'triangle', vol: 0.18 }); tone(2093, 0.12, { type: 'triangle', vol: 0.15, at: 0.05 }); boing(440, 0.1, 0.12, 2); },
+  sell: () => { for (let i = 0; i < 4; i++) tone(1800 - i * 160 + Math.random() * 80, 0.06, { type: 'triangle', vol: 0.12, at: i * 0.045 }); noise(0.12, { ft: 'lowpass', f: 900, vol: 0.08, at: 0.16 }); },
+  reroll: () => { for (let i = 0; i < 6; i++) noise(0.04, { f: 2500 + i * 300, q: 2, vol: 0.09, at: i * 0.035 }); boing(520, 0.2, 0.1, 1.6); }, // 洗牌刷刷
+  level: () => [523, 659, 784, 1047].forEach((f, i) => boing(f, i * 0.07, 0.14, 1.12)),
+  star: () => { [523, 659, 784].forEach((f, i) => tone(f, 0.16, { type: 'square', vol: 0.07, lp: 2400, at: i * 0.08 })); tone(1047, 0.35, { type: 'square', vol: 0.08, lp: 2600, at: 0.24 }); SFX.sparkle(); }, // 2 星：小號短奏
+  star3: () => { [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, 0.2, { type: 'square', vol: 0.08, lp: 2600, at: i * 0.09 })); [1047, 1319, 1568].forEach(f => tone(f, 0.8, { type: 'triangle', vol: 0.08, at: 0.48 })); noise(0.8, { f: 7000, q: 0.4, vol: 0.06, at: 0.45 }); tone(65, 0.5, { to: 40, vol: 0.3, at: 0.45 }); },
+  ready: () => { tone(1760, 0.5, { vol: 0.1 }); tone(2637, 0.4, { vol: 0.05, at: 0.01 }); }, // 鈴鐺
+  horn: () => { tone(392, 0.18, { type: 'sawtooth', vol: 0.09, lp: 1800 }); tone(523, 0.45, { type: 'sawtooth', vol: 0.1, lp: 2000, at: 0.16 }); tone(196, 0.6, { vol: 0.12, at: 0.16 }); }, // 戰鬥開始：號角
+  win: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.15, { type: 'square', vol: 0.07, lp: 2600, at: i * 0.09 })); tone(1319, 0.6, { type: 'square', vol: 0.08, lp: 2800, at: 0.36 }); for (let i = 0; i < 8; i++) noise(0.05, { f: 1500, q: 1, vol: 0.06, at: 0.4 + i * 0.07 }); }, // 歡呼＋拍手
+  lose: () => [392, 370, 349, 262].forEach((f, i) => tone(f, i === 3 ? 0.6 : 0.22, { type: 'triangle', to: i === 3 ? 180 : f, vol: 0.15, at: i * 0.24 })), // 滑稽下降：哇哇哇～
+  death: () => { tone(600, 0.35, { type: 'triangle', to: 120, vol: 0.12 }); noise(0.25, { ft: 'lowpass', f: 1200, fto: 300, vol: 0.12 }); }, // 漏氣
+  capture: () => { boing(784, 0, 0.14, 1.3); tone(1175, 0.3, { type: 'triangle', vol: 0.12, at: 0.12 }); SFX.sparkle(); }, // 收編：叮咚
+  leak: () => { tone(988, 0.1, { type: 'square', vol: 0.08, lp: 3000 }); tone(988, 0.1, { type: 'square', vol: 0.08, lp: 3000, at: 0.16 }); }, // 漏怪：嗶嗶
+  chest: () => { tone(200, 0.08, { type: 'square', vol: 0.08, lp: 900 }); [988, 1319, 1568, 1976].forEach((f, i) => tone(f, 0.25, { vol: 0.08, at: 0.1 + i * 0.05 })); }, // 寶箱打開
+  emote: () => boing(700 + Math.random() * 300, 0, 0.12, 1.6),
+  // 羈絆亮起：每個羈絆一個音色
+  trait_forest: () => [523, 659, 784].forEach((f, i) => tone(f, 0.25, { type: 'triangle', vol: 0.12, at: i * 0.06 })), // 木琴
+  trait_water: () => [880, 1175, 1568].forEach((f, i) => tone(f * 0.5, 0.18, { to: f, vol: 0.1, at: i * 0.07 })), // 水滴
+  trait_savanna: () => { [0, 0.12, 0.2].forEach(a => tone(120, 0.12, { to: 70, vol: 0.3, at: a })); tone(392, 0.3, { type: 'triangle', vol: 0.08, at: 0.2 }); }, // 鼓
+  trait_sky: () => [1568, 2093, 2637, 3136].forEach((f, i) => tone(f, 0.5, { vol: 0.05, at: i * 0.05 })), // 風鈴
+  trait_pack: () => { for (let i = 0; i < 4; i++) noise(0.05, { f: 1400, q: 1.2, vol: 0.12, at: i * 0.08 }); }, // 拍手
+  trait_armor: () => { tone(330, 0.3, { type: 'square', vol: 0.06, lp: 1500 }); tone(1650, 0.35, { vol: 0.06 }); tone(2475, 0.3, { vol: 0.04 }); }, // 金屬
+  trait_night: () => [1319, 988, 1319, 1760].forEach((f, i) => tone(f, 0.3, { vol: 0.06, at: i * 0.09 })), // 鈴鐺
+});
 // 每個攻擊／技能特效配的音效（沒列到的用預設）
 const FX_SOUND = {
   bump: ['thud'], acorn: ['tok'], acornVolley: ['whoosh', 'tok'], bite: ['bite'], biteDrain: ['bite', 'sparkle'], bigBite: ['crunch', 'sparkle'], claw1: ['claw'], claw3: ['claw', 'whoosh'], claw3big: ['claw', 'thud'],
   tongue: ['bloop'], tongueGrab: ['bloop', 'whoosh'], howl: [], taunt: ['roar'], stinkBall: ['bloop'], gasSpray: ['hiss', 'bloop'], deathRoll: ['splashBig', 'crunch'], sting: ['sting'], swarm: ['sparkle', 'hiss'],
   slam: ['thud'], bodySlam: ['slam'], crossSlash: ['whoosh', 'claw'], inkBall: ['bloop'], inkCloud: ['bloop', 'splash'], feather: ['whoosh'], swoop: ['whoosh', 'claw'], trunkSlap: ['thud', 'whoosh'], stomp: ['boom'],
   roar: [], spikeBurst: ['crunch', 'sparkle'], flipper: ['splash'], slideHit: ['splashBig'], headbutt: ['thud'], rhinoCharge: ['slam', 'whoosh'], chamStrike: ['bloop', 'claw'], pounce: ['whoosh', 'claw'],
-  talonShot: ['whoosh'], grabLift: ['whoosh', 'claw'], zap: ['zap'], chainZap: ['zap', 'sparkle'], fistSlam: ['thud'], chestBeat: ['slam', 'roar'], spout: ['splash'], tidal: ['splashBig'], fanOpen: ['chime', 'whoosh'], venomBite: ['crunch', 'hiss'],
+  talonShot: ['whoosh'], grabLift: ['whoosh', 'claw'], zap: ['zap'], chainZap: ['zap', 'sparkle'], fistSlam: ['thud'], chestBeat: ['slam', 'roar'], spout: ['splash'], tidal: ['splashBig'], leafShot: ['tok'], waterShot: ['bloop'], backKick: ['thud', 'sparkle'], blessing: ['chime'], hippoGulp: ['crunch', 'splash'], featherVolley: ['whoosh', 'whoosh'], neckSwing: ['whoosh', 'thud'], swirlDance: ['splashBig', 'sparkle'], sharkBite: ['crunch', 'splashBig'], pandaRoll: ['slam', 'whoosh'], fanOpen: ['chime', 'whoosh'], venomBite: ['crunch', 'hiss'],
 };
 function fxSound(fx, gap) { const L = FX_SOUND[fx]; if (!L) return false; L.forEach((n, i) => i ? setTimeout(() => sfx(n, gap), 60 * i) : sfx(n, gap)); return true; }
 function sfx(name, minGap) {
@@ -126,6 +159,14 @@ const VOICE = {
   whale: () => { tone(300, 0.9, { to: 500, vol: 0.07, att: 0.2 }); tone(500, 0.6, { to: 260, vol: 0.06, at: 0.7 }); },
   peacock: () => { tone(900, 0.18, { type: 'triangle', to: 1400, vol: 0.07 }); tone(1400, 0.25, { type: 'triangle', to: 1000, vol: 0.06, at: 0.18 }); },
   komodo: () => { noise(0.4, { ft: 'highpass', f: 3000, vol: 0.06, att: 0.05 }); },
+  deer: () => { tone(1250, 0.12, { to: 1600, vol: 0.06 }); tone(1500, 0.15, { to: 1200, vol: 0.05, at: 0.16 }); },
+  zebra: () => { for (let i = 0; i < 3; i++) tone(700 - i * 60, 0.09, { type: 'square', vol: 0.04, lp: 1800, at: i * 0.1 }); },
+  hippo: () => { tone(110, 0.4, { type: 'sawtooth', to: 90, vol: 0.08, lp: 500 }); tone(140, 0.3, { to: 100, vol: 0.06, at: 0.3 }); },
+  parrot: () => { tone(1800, 0.08, { type: 'square', to: 2600, vol: 0.04, lp: 4000 }); tone(2400, 0.1, { type: 'square', to: 1700, vol: 0.04, lp: 4000, at: 0.12 }); },
+  giraffe: () => { tone(300, 0.3, { to: 380, vol: 0.06, att: 0.05 }); },
+  flamingo: () => { tone(800, 0.15, { type: 'triangle', to: 600, vol: 0.06 }); tone(700, 0.15, { type: 'triangle', to: 500, vol: 0.05, at: 0.18 }); },
+  shark: () => { noise(0.3, { f: 600, fto: 200, q: 0.6, vol: 0.08 }); tone(70, 0.3, { to: 50, vol: 0.08 }); },
+  panda: () => { tone(160, 0.25, { type: 'triangle', to: 120, vol: 0.08 }); tone(180, 0.2, { type: 'triangle', to: 130, vol: 0.07, at: 0.28 }); },
 };
 function voice(key) { if (!AUD.ctx || AUD.set.mute) return; try { (VOICE[key] || VOICE.squirrel)(); } catch (e) {} }
 // ---- 配樂：依場地生成的循環 ----
@@ -137,6 +178,7 @@ const SONGS = {
 const midi = n => 440 * Math.pow(2, (n - 69) / 12);
 function musicStart(arena) {
   if (!AUD.ctx) return;
+  if (typeof BGM !== 'undefined' && BGM.key && !BGM.bad[BGM.key]) return; // 已經在放音檔
   if (AUD.music && AUD.music.arena === arena) return;
   musicStop();
   const S = SONGS[arena] || SONGS.jungle, beat0 = 60 / S.bpm / 2; // 八分音符
@@ -167,3 +209,51 @@ function musicStart(arena) {
 const MOOD_CFG = { calm: { tempo: 1 }, tense: { tempo: 1.12 }, hype: { tempo: 1.15 } }; // 配樂依戰況：速度倍率
 function musicMood(m) { AUD.mood = m; }
 function musicStop() { if (AUD.music) { clearInterval(AUD.music.timer); AUD.music = null; } }
+
+// ===== 背景音樂（音檔，全部 CC0；用到才載入，載入失敗就回到上面的電腦合成配樂）=====
+// 可調：BGM_CFG.TRACKS 換曲目檔名、FADE 交叉淡入秒數、VOL 音檔音量（再乘上設定裡的音樂音量）
+const BGM_CFG = {
+  FADE: 1.0, VOL: 0.9,
+  TRACKS: {
+    lobby: 'music/lobby.mp3',     // Happy Clappy Loop — OwlishMedia
+    jungle: 'music/jungle.mp3',   // Joyful Jungle — MintoDog
+    desert: 'music/desert.mp3',   // Tropical Loop — wipics
+    city: 'music/city.mp3',       // 8bit Bossa — Joth
+    battle: 'music/battle.mp3',   // 5 Action Chiptunes — Juhani Junkala
+    boss: 'music/boss.mp3',       // 同上
+    td: 'music/td.mp3',           // Happy Adventure Loop — TinyWorlds
+    eco_forest: 'music/eco_forest.mp3',   // Joyful Jungle（Climax）— MintoDog
+    eco_savanna: 'music/eco_savanna.mp3', // 5 Action Chiptunes — Juhani Junkala
+    eco_water: 'music/eco_water.mp3',     // Underwater Theme — Cleyton Kauffman
+    eco_sky: 'music/eco_sky.mp3',         // Up in the Sky — Memoraphile
+  },
+};
+const BGM = { key: '', el: {}, bad: {}, on: null };
+function bgmVol() { return AUD.set.mute ? 0 : AUD.set.mus * BGM_CFG.VOL; }
+function bgmEl(key) {
+  if (BGM.el[key]) return BGM.el[key];
+  const src = BGM_CFG.TRACKS[key]; if (!src) return null;
+  const a = new Audio(); a.src = src; a.loop = true; a.preload = 'auto'; a.volume = 0;
+  a.addEventListener('error', () => { BGM.bad[key] = 1; if (BGM.key === key) { BGM.key = ''; bgmFallback(); } });
+  BGM.el[key] = a; return a;
+}
+let BGM_FB = null; // 音檔不能用時，遊戲中改用電腦合成配樂
+function bgmFallback() { if (BGM_FB) musicStart(BGM_FB); }
+// 切到指定曲目（同一首不重來）；key 為空字串＝安靜
+function bgmPlay(key, fallbackArena) {
+  BGM_FB = fallbackArena || null;
+  if (key && BGM.bad[key]) { if (BGM.key) bgmFade(BGM.el[BGM.key], 0, true); BGM.key = ''; bgmFallback(); return; }
+  if (key === BGM.key) { const a = BGM.el[key]; if (a && a.paused && AUD.ctx) a.play().catch(() => {}); return; }
+  const old = BGM.key ? BGM.el[BGM.key] : null; BGM.key = key;
+  if (old) bgmFade(old, 0, true);
+  if (!key) return;
+  const a = bgmEl(key); if (!a) { bgmFallback(); return; }
+  musicStop(); // 有音檔就不用電腦合成的
+  a.volume = 0; const p = a.play(); if (p && p.catch) p.catch(() => {});
+  bgmFade(a, bgmVol(), false);
+}
+function bgmFade(a, to, pause) {
+  if (!a) return; clearInterval(a._fade); const from = a.volume, t0 = performance.now(), dur = BGM_CFG.FADE * 1000;
+  a._fade = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / dur); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) { clearInterval(a._fade); if (pause && to === 0) a.pause(); } }, 50);
+}
+function bgmApplyVol() { const a = BGM.key && BGM.el[BGM.key]; if (a) { clearInterval(a._fade); a.volume = Math.min(1, bgmVol()); } }

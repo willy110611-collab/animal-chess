@@ -6,6 +6,7 @@ const ICON_TRAIT = {
   sky: '<path d="M3 15c3-8 10-10 18-9-3 2-4 3-5 5 2 0 3 0 4 1-3 1-5 2-7 4 1 0 2 0 3 1-5 1-9 0-13-2z" fill="currentColor"/>',
   pack: '<ellipse cx="12" cy="16" rx="5" ry="4" fill="currentColor"/><circle cx="6" cy="10" r="2.2" fill="currentColor"/><circle cx="10" cy="6.5" r="2.2" fill="currentColor"/><circle cx="14" cy="6.5" r="2.2" fill="currentColor"/><circle cx="18" cy="10" r="2.2" fill="currentColor"/>',
   armor: '<path d="M12 2l8 3v6c0 5-4 9-8 11-4-2-8-6-8-11V5z" fill="currentColor"/><path d="M12 6v12" stroke="var(--ib)" stroke-width="1.6"/>',
+  king: '<path d="M3 18l2-10 4.5 4L12 5l2.5 7L19 8l2 10z" fill="currentColor"/><rect x="3" y="18.5" width="18" height="2.5" rx="1" fill="currentColor"/>',
   night: '<path d="M15 3a9 9 0 1 0 6 13A7 7 0 0 1 15 3z" fill="currentColor"/><circle cx="18" cy="6" r="1.2" fill="currentColor"/>',
 };
 const ICON_ITEM = {

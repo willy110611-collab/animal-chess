@@ -1,0 +1,12 @@
+背景音樂（全部 CC0 公眾領域，可商用、不需署名；這裡仍列出作者以示感謝）
+lobby.mp3       Happy Clappy Loop — OwlishMedia — https://opengameart.org/content/happy-clappy-loop
+jungle.mp3      Joyful Jungle — MintoDog — https://opengameart.org/content/joyful-jungle
+eco_forest.mp3  Joyful Jungle (Climax) — MintoDog — 同上
+desert.mp3      Tropical Loop — wipics — https://opengameart.org/content/tropical-loop
+city.mp3        8bit Bossa — Joth — https://opengameart.org/content/bossa-nova
+battle.mp3      Level 1 — Juhani Junkala (5 Action Chiptunes) — https://opengameart.org/content/5-chiptunes-action
+boss.mp3        Level 3 — Juhani Junkala — 同上
+eco_savanna.mp3 Level 2 — Juhani Junkala — 同上
+eco_water.mp3   Underwater Theme — Cleyton Kauffman — https://opengameart.org/content/underwater-theme
+eco_sky.mp3     Up in the Sky — Memoraphile @ You're Perfect Studio — https://opengameart.org/content/up-in-the-sky
+td.mp3          Happy Adventure Loop — TinyWorlds — https://opengameart.org/content/happy-adventure-loop

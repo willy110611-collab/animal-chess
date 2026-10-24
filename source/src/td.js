@@ -208,7 +208,7 @@ function tdOnPhase(ph) {
     banner(`${L.id}　第 ${D.wave + 1}/${L.waves.length} 波`, m ? (m.leaks ? `漏了 ${m.leaks} 隻・${m.moved < 0 ? '前線後退' + (m.moved < -1 ? ' 2 排' : '') : '前線守住'}` : '完美防守・前線往前推！') + `　+${m.gold} 金` : L.desc);
     if (m && m.moved > 0) sfx('chime'); if (m && m.moved < 0) sfx('sting');
   } else if (ph === 'combat') {
-    startCombatView();
+    startCombatView(); sfx('horn');
     banner(D.tide ? '大潮來襲！' : `第 ${D.wave + 1} 波來襲`, D.tide ? '敵人加倍・收編機率加倍' : '守住底線！');
   }
   tdPanel(); tdFrontMesh(D.front);
@@ -218,10 +218,10 @@ function tdOnPhase(ph) {
 function tdEvent(B, ev) {
   if (!G || !G.td) return;
   const D = G.td, P = G.players[ME];
-  if (ev.k === 'tdleak') { sfx('sting', 120); screenFlash('rgba(255,60,40,.35)'); tdPanel(); }
+  if (ev.k === 'tdleak') { sfx('leak', 120); screenFlash('rgba(255,60,40,.35)'); tdPanel(); }
   else if (ev.k === 'tdcap') {
     const sl = P.bench.indexOf(null), A = ANIMALS[ev.key];
-    if (sl >= 0) { P.bench[sl] = newUnit(G, ev.key, 1, ME); D.captured++; checkMerge(G, ME); toast(`收編了 ${A.name}！`, 1500); sfx('coin'); }
+    if (sl >= 0) { P.bench[sl] = newUnit(G, ev.key, 1, ME); D.captured++; checkMerge(G, ME); toast(`收編了 ${A.name}！`, 1500); sfx('capture'); }
     else { P.gold += 1; toast(`備戰席滿了，${A.name} 換成 1 金`, 1500); }
     const v = S3.V['b' + ev.id]; if (v) { const p = v.pos.clone().add(V3(0, 0.6, 0)); sprite('ring', p, { color: 0xffe27a, scale: 0.3, scale1: 1.4, life: 0.6, add: true }); burst(p, 10, { tex: 'spark', color: 0xffd34d, scale: 0.12, add: true, speed: 2 }); }
     renderDock(); tdPanel();
@@ -238,7 +238,7 @@ function tdPanel() {
     <div class="tdf"><span>前線</span>${Array.from({ length: TD_CFG.MAX_FRONT }, (_, i) => `<i class="${i < D.front ? 'on' : ''}"></i>`).join('')}<small>${G.phase === 'combat' ? `剩 ${left} 隻・漏 ${D.leaks}` : '守住不漏怪就往前推'}</small></div>
     <div class="tdn"><span>${G.phase === 'combat' ? '這一波' : '下一波'}</span>${keys.map(k => `<img src="${PORT[k] || ''}" alt="" title="${(ANIMALS[k] || EXTRA[k] || {}).name || k}">`).join('')}<small>收編 ${D.captured}</small></div>
     ${showGo ? '<button class="btn primary tdgo" id="tdGo">開始這一波 ▶<small id="tdGoT"></small></button>' : ''}`;
-  if (el._h !== html) { el._h = html; el.innerHTML = html; const go = $('tdGo'); if (go) go.onclick = () => { G.players[ME].ready = true; sfx('click'); }; }
+  if (el._h !== html) { el._h = html; el.innerHTML = html; const go = $('tdGo'); if (go) go.onclick = () => { G.players[ME].ready = true; sfx('ready'); }; }
   const gt = $('tdGoT'); if (gt) { const sec = Math.max(0, G.timer) / 1000; gt.textContent = `${Math.ceil(sec)} 秒・提早開打 +${Math.min(TD_CFG.EARLY_GOLD_MAX, Math.floor(sec / TD_CFG.EARLY_GOLD_SEC))} 金`; }
 }
 // 前線外（還不能擺）的格子蓋一層紅色

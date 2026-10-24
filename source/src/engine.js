@@ -142,15 +142,26 @@ function applyTraits(B) {
     const v = t => { const x = tc[t]; if (x.tier < 0) return 0; const b = TRAITS[t].val[x.tier]; return x.duo ? Math.floor(b * (100 + SYNERGY_BONUS) / 100) : b; };
     for (const u of B.units) {
       if (u.team !== team) continue;
+      const top = t => tc[t] && tc[t].tier >= 0 && tc[t].tier === TRAITS[t].tiers.length - 1; // 湊到最高階
       if (hasTrait(u, 'forest')) u.regenPct = v('forest');
+      if (top('forest')) u.regenPct = Math.max(u.regenPct, 4); // 生態圈：全隊回血
       if (v('savanna')) { if (hasTrait(u, 'savanna')) u.asPct += v('savanna'); u.mv = Math.max(3, u.mv - 1); }
+      if (top('savanna')) u.ecoRush = true; // 生態圈：開場全隊攻速 +50%
       if (hasTrait(u, 'water')) u.waterShieldPct = v('water');
       if (hasTrait(u, 'sky')) u.dodge += v('sky');
-      if (hasTrait(u, 'pack')) u.packPct = v('pack');
-      if (v('armor')) { const add = hasTrait(u, 'armor') ? v('armor') : (tc.armor.tier >= 2 ? 20 : 10); u.arm += add; u.mr += add; }
+      if (top('sky')) { u.dodge += 20; u.atkPct += 15; }
+      if (hasTrait(u, 'pack') || top('pack')) u.packPct = v('pack');
+      if (top('pack')) u.packAll = true; // 9 群居：全隊都算群居
+      if (v('armor')) { const add = hasTrait(u, 'armor') ? v('armor') : [10, 15, 30][tc.armor.tier] || 10; u.arm += add; u.mr += add; }
       if (hasTrait(u, 'night')) u.nightCrit = v('night');
+      if (v('king')) { const k = v('king'); u.maxhp = Math.floor(u.maxhp * (100 + k) / 100); u.hp = u.maxhp; u.atkPct += k; if (top('king') && hasTrait(u, 'king')) u.manaMax = Math.floor(u.manaMax * 70 / 100); }
     }
     B['traits' + team] = tc;
+    // 生態圈（環境羈絆最高階）：記在戰場上，畫面換裝與專屬音樂也看這個
+    B.eco = B.eco || {};
+    for (const t of ['forest', 'savanna', 'water', 'sky']) if (tc[t] && tc[t].tier >= 0 && tc[t].tier === TRAITS[t].tiers.length - 1) { (B.eco[team] = B.eco[team] || {})[t] = 1; B.ev.push({ k: 'eco', team, t }); }
+    if (B.eco[team] && B.eco[team].forest) B.ecoRevive = Object.assign(B.ecoRevive || {}, { [team]: 1 });
+    if (tc.night && tc.night.tier === TRAITS.night.tiers.length - 1 && !B.night) { B.night = true; B.ev.push({ k: 'night' }); } // 永夜
   }
 }
 
@@ -190,6 +201,8 @@ function effAtk(B, u) {
 function effInterval(B, u) {
   let p = 100 + u.asPct + buffSum(B, u, 'as');
   if (u.key === 'cheetah') p += Math.min(5, u.sameHits) * 8;
+  if (u.ecoRush && B.t < 80) p += 50;
+  if (inZone(B, u, 'swirl')) p -= 25;
   if (u.galeStacks) p += u.galeStacks * 3;
   if (B.weather === 'heat') p += 15 + (hasTrait(u, 'savanna') ? 10 : 0);
   if (onTile(B, u, 'burn')) p += BURN_AS;
@@ -225,7 +238,7 @@ function damage(B, src, tgt, raw, type, o) {
   let amt = raw, crit = !!o.crit;
   if (o.skill && src.skillAmp) amt = Math.floor(amt * 130 / 100);
   if (src.packPct && (o.atk || o.skill)) {
-    let n = 0; for (const a of B.units) if (a.alive && a !== src && a.team === src.team && hasTrait(a, 'pack') && dist(a, src) <= 1) n++;
+    let n = 0; for (const a of B.units) if (a.alive && a !== src && a.team === src.team && (src.packAll || hasTrait(a, 'pack')) && dist(a, src) <= 1) n++;
     amt = Math.floor(amt * (100 + n * src.packPct) / 100);
   }
   if (o.atk && src.forceCrit) { crit = true; src.forceCrit = false; }
@@ -243,7 +256,7 @@ function damage(B, src, tgt, raw, type, o) {
     if (tgt.plague) arm = Math.floor(arm * Math.max(10, 100 - 6 * tgt.plague) / 100);
     if (inDomain(B, tgt)) arm = Math.floor(arm * 60 / 100);
     amt = Math.floor(amt * 100 / (100 + Math.max(0, arm)));
-  } else if (type === 'magic') amt = Math.floor(amt * 100 / (100 + Math.max(0, tgt.mr)));
+  } else if (type === 'magic') amt = Math.floor(amt * 100 / (100 + Math.max(0, tgt.mr - buffSum(B, tgt, 'mrd'))));
   let dr = Math.min(80, tgt.baseDr + buffSum(B, tgt, 'dr'));
   if (hasAug(B, tgt, 'united')) { let n = 0; for (const a of B.units) if (a.alive && a !== tgt && a.team === tgt.team && dist(a, tgt) <= 1) n++; dr = Math.min(80, dr + Math.min(20, 5 * n)); }
   amt = Math.floor(amt * (100 - dr) / 100);
@@ -281,6 +294,7 @@ function kill(B, u, killer) {
   u.alive = false; u.hp = 0;
   if (u.neutral) { if (B.grid[idx(u.c, u.r)] === u.id) B.grid[idx(u.c, u.r)] = -1; B.ev.push({ k: 'die', id: u.id, key: u.key, team: 2, by: killer ? killer.id : -1 }); if (killer && killer.owner >= 0) B.loot.push({ owner: killer.owner, key: u.key }); return; }
   if (!u.summon && u.owner >= 0) B.deaths[u.owner] = (B.deaths[u.owner] || 0) + 1;
+  if (B.ecoRevive && B.ecoRevive[u.team] === 1 && !u.summon && !u.revived) { B.ecoRevive[u.team] = 2; u.revived = true; B.revives.push({ id: u.id, t: B.t + 20, c: u.c, r: u.r, eco: true }); } // 森林生態圈：第一個倒下的復活
   if (hasAug(B, u, 'riposte') && killer && killer.alive && killer !== u && B.rng(100) < 50) { B.ev.push({ k: 'aug', id: u.id, a: 'riposte', to: killer.id }); damage(B, u, killer, Math.floor(killer.maxhp * 30 / 100), 'true', {}); }
   if (hasAug(B, u, 'necro') && (B.necroUsed[u.owner] || 0) < 2 && !u.summon && !u.revived) { B.necroUsed[u.owner] = (B.necroUsed[u.owner] || 0) + 1; u.revived = true; B.revives.push({ id: u.id, t: B.t + 20, c: u.c, r: u.r }); }
   if (killer && killer.alive && killer.team !== u.team && killer.owner >= 0) {
@@ -546,6 +560,52 @@ function cast(B, u) {
       const ids = []; for (const a of allies(B, u)) if (dist(a, u) <= 3) { a.buffs.push({ s: 'as', v: 30, u: B.t + 80 }); a.buffs.push({ s: 'dr', v: 20, u: B.t + 80 }); ids.push(a.id); }
       B.ev.push({ k: 'buff', id: u.id, ids, s: 'as' });
       break; }
+    // ---- v0.13 新動物 ----
+    case 'deer': {
+      let low = null; for (const a of allies(B, u)) if (!low || a.hp * 1000 / a.maxhp < low.hp * 1000 / low.maxhp) low = a;
+      if (low) heal(B, low, sk(200));
+      const ids = []; for (const a of allies(B, u)) if (hasTrait(a, 'forest') && dist(a, u) <= 2) { heal(B, a, Math.floor(a.maxhp * 6 / 100)); ids.push(a.id); }
+      B.ev.push({ k: 'buff', id: u.id, ids: low ? ids.concat(low.id) : ids, s: 'heal' });
+      break; }
+    case 'zebra': {
+      const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
+      damage(B, u, t0, sk(170), 'phys', { skill: 1 }); t0.blind = Math.max(t0.blind, B.t + 40); B.ev.push({ k: 'cc', id: t0.id, s: '致盲' });
+      break; }
+    case 'hippo': {
+      const ids = []; for (const e of es) if (dist(e, u) <= 1) { e.tauntBy = u.id; e.tauntUntil = B.t + 40; e.target = u.id; ids.push(e.id); } B.ev.push({ k: 'taunt', id: u.id, ids });
+      if (tgt && tgt.alive) damage(B, u, tgt, sk(200), 'magic', { skill: 1 });
+      u.shield += Math.floor(u.maxhp * 22 / 100);
+      break; }
+    case 'parrot': {
+      const list = es.filter(e => e.alive && !e.neutral).sort((a, b) => dist(a, u) - dist(b, u) || a.id - b.id).slice(0, 3);
+      for (const e of list) { B.ev.push({ k: 'proj', id: u.id, tg: e.id, s: 'feather' }); damage(B, u, e, sk(130), 'phys', { skill: 1 }); e.buffs.push({ s: 'mrd', v: 20, u: B.t + 80 }); }
+      break; }
+    case 'giraffe': {
+      for (const e of es) if (e.alive && dist(e, u) <= 2) {
+        damage(B, u, e, sk(200), 'phys', { skill: 1 });
+        if (e.alive && e.invuln <= B.t) { const dc = Math.sign(e.c - u.c), dr = Math.sign(e.r - u.r), nc = e.c + dc, nr = e.r + dr; if (nc >= 0 && nc < CFG.COLS && nr >= 0 && nr < CFG.ROWS && passable(B, nc, nr, e.id)) teleport(B, e, nc, nr); }
+      }
+      B.ev.push({ k: 'shake', id: u.id });
+      break; }
+    case 'flamingo': {
+      const cc = clusterCenter(B, u); if (!cc) break;
+      B.zones.push({ kind: 'swirl', team: u.team, c: cc.c, r: cc.r, until: B.t + 60, per: sk(90), src: u.id }); B.ev.push({ k: 'zone', kind: 'swirl', c: cc.c, r: cc.r, id: u.id });
+      break; }
+    case 'shark': {
+      let low = null; for (const e of es) if (!e.neutral && (!low || e.hp * 1000 / e.maxhp < low.hp * 1000 / low.maxhp)) low = e;
+      if (!low) break;
+      if (dist(low, u) > 1) { const spot = freeNear(B, low.c, low.r, u); if (spot) teleport(B, u, spot[0], spot[1]); }
+      u.target = low.id;
+      const bonus = low.hp * 2 < low.maxhp ? 160 : 100;
+      damage(B, u, low, Math.floor(sk(260) * bonus / 100), 'phys', { skill: 1 });
+      if (!low.alive) u.mana += 50;
+      break; }
+    case 'panda': {
+      const fwd = u.team === 0 ? 1 : -1, hit = [];
+      for (const e of es) if (e.alive && dist(e, u) <= 2 && (e.r - u.r) * fwd >= -1) { damage(B, u, e, sk(240), 'magic', { skill: 1 }); stun(B, e, 20); hit.push(e.id); }
+      heal(B, u, Math.floor(u.maxhp * 18 / 100));
+      B.ev.push({ k: 'shake', id: u.id });
+      break; }
     case 'komodo': {
       const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
       damage(B, u, t0, sk(260), 'phys', { skill: 1 });
@@ -602,6 +662,12 @@ function step(B) {
   B.t++;
   const t = B.t;
   if (!B.night && t >= CFG.NIGHT_TICK) { B.night = true; B.ev.push({ k: 'night' }); }
+  if (B.eco && t % 120 === 0) for (const team of [0, 1]) if (B.eco[team] && B.eco[team].water) { // 水域生態圈：每 6 秒巨浪
+    const src = B.units.find(x => x.alive && x.team === team && hasTrait(x, 'water')) || B.units.find(x => x.alive && x.team === team); if (!src) continue;
+    B.ev.push({ k: 'ecowave', team, id: src.id });
+    for (const e of B.units) if (e.alive && e.team !== team && !e.neutral) damage(B, src, e, 120, 'magic', {});
+    for (const a of B.units) if (a.alive && a.team === team) heal(B, a, Math.floor(a.maxhp * 5 / 100));
+  }
   augTick(B);
   // 開場：蝙蝠飛向後排
   if (t === 1) for (const u of B.units) if (u.key === 'bat' && u.alive) {
@@ -831,8 +897,8 @@ function augTick(B) {
     const u = B.units[rv.id];
     const spot = passable(B, rv.c, rv.r, -2) ? [rv.c, rv.r] : freeNear(B, rv.c, rv.r, null);
     if (!spot) return false;
-    u.alive = true; u.hp = u.maxhp; u.c = spot[0]; u.r = spot[1]; u.mvFrom = null; u.stun = 0; u.mana = Math.min(u.manaMax - 1, 50); u.dots = [];
-    B.grid[idx(u.c, u.r)] = u.id; B.ev.push({ k: 'revive', id: u.id }); B.ev.push({ k: 'aug', id: u.id, a: 'necro' });
+    u.alive = true; u.hp = rv.eco ? Math.floor(u.maxhp / 2) : u.maxhp; u.c = spot[0]; u.r = spot[1]; u.mvFrom = null; u.stun = 0; u.mana = Math.min(u.manaMax - 1, 50); u.dots = [];
+    B.grid[idx(u.c, u.r)] = u.id; B.ev.push({ k: 'revive', id: u.id }); B.ev.push(rv.eco ? { k: 'txt', id: u.id, s: '萬木回春' } : { k: 'aug', id: u.id, a: 'necro' });
     return false;
   });
 }

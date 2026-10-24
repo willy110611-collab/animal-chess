@@ -273,7 +273,7 @@ function renderDock() {
   const need = CFG.XP_NEED[P.level], frac = need ? P.xp / need : 1;
   $('xpFill').style.width = (frac * 100).toFixed(1) + '%';
   $('xpTxt').textContent = need ? `XP ${P.xp} / ${need}` : 'XP 已滿級';
-  if (prevLevel && P.level > prevLevel) { const l = $('lvl'); l.classList.remove('up'); void l.offsetWidth; l.classList.add('up'); toast(`升到 Lv.${P.level}！人口 +1`); groundRing(V3(0, 0, 1.5), 0x6fc0ff, 4.5, 0.9); }
+  if (prevLevel && P.level > prevLevel) { const l = $('lvl'); l.classList.remove('up'); void l.offsetWidth; l.classList.add('up'); toast(`升到 Lv.${P.level}！人口 +1`); sfx('level'); groundRing(V3(0, 0, 1.5), 0x6fc0ff, 4.5, 0.9); }
   prevLevel = P.level;
   $('pop').innerHTML = `<b>Lv.${P.level}</b>（${boardCount(G, ME)}/${popCap(P)}）`;
   // 金幣
@@ -336,9 +336,10 @@ function renderTraits() {
   let h = ''; const ost = traitOwnState();
   for (const t of order) {
     const x = tc[t], T = TRAITS[t], next = T.tiers.find(n => n > x.count);
-    const tierCls = x.tier < 0 ? '' : 't' + Math.min(2, x.tier + (T.tiers.length === 2 && x.tier === 1 ? 1 : 0));
+    const tierCls = x.tier < 0 ? '' : (x.tier === T.tiers.length - 1 && (T.tiers.length >= 4 || t === 'king')) ? 't3' : 't' + Math.min(2, x.tier + (T.tiers.length === 2 && x.tier === 1 ? 1 : 0)); // t3＝彩色（生態圈／傳說）
     const flash = (prevTiers[t] === undefined ? -1 : prevTiers[t]) < x.tier && x.tier >= 0;
     h += `<button class="tr ${tierCls} ${flash ? 'flash' : ''}" data-trait="${t}"><span class="hex">${iconTrait(t)}</span><span><span class="nm">${T.name}${x.duo ? '<span class="duo">默契</span>' : ''}</span><span class="ct"><em>${x.count}</em><span class="full"> / ${T.tiers.map(n => n <= x.count ? `<em>${n}</em>` : n).join(' › ')}</span><span class="short">/${next || T.tiers[T.tiers.length - 1]}</span></span><span class="tms">${traitMembersHtml(t, '', ost)}</span></span></button>`;
+    if (flash && G.phase === 'prep' && prevTiers[t] !== undefined) sfx('trait_' + t, 300);
     prevTiers[t] = x.tier;
   }
   for (const t in prevTiers) if (!order.includes(t)) prevTiers[t] = -1;
@@ -501,7 +502,7 @@ function onMove(e) {
   if (!drag && G && !$('game').hidden && e.target && e.target.id === 'cv') { const p = s3PickAt(e.clientX, e.clientY); S3.hoverK = p && p.type === 'unit' ? p.k : null; }
   if (!drag || drag.none) return;
   if (!drag.on && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) {
-    drag.on = true; sel = null; renderSheet();
+    drag.on = true; sel = null; renderSheet(); sfx('pick');
     const v = S3.V[drag.k]; if (v) { v.dragging = true; v.lift = 0.45; }
     const sz = $('sellzone'); sz.hidden = !!drag.mate; sz.innerHTML = `出售 <b>+${sellValue(drag.f.u)} 金</b>${drag.f.u.items && drag.f.u.items.length ? `<span class="szit">退回 ${drag.f.u.items.map(x => iconItem(x)).join('')}</span>` : ''}`;
   }
@@ -685,8 +686,31 @@ function combatSync() {
   S3.nightTarget = B.night ? 1 : 0;
   // 站在灼燒地塊上的單位身上冒火
   if (Math.random() < 0.25) for (const u of B.units) if (u.alive && terrainAt(B, u.c, u.r) === 'burn') { const p = posOf(kOf(u), 0.2); if (p) sprite('flame', p.add(V3((Math.random() - .5) * 0.3, 0, 0.15)), { scale: 0.22, scale1: 0.05, life: 0.5, vel: V3(0, 0.9, 0), add: true }); }
+  // 紅鶴的水花漩渦
+  if (Math.random() < 0.4) for (const zn of B.zones) if (zn.kind === 'swirl' && zn.until > B.t) { const [x, z] = bWorld(zn.c, zn.r), a = Math.random() * 6.28; sprite('drop', V3(x + Math.cos(a) * 1.1, 0.2, z + Math.sin(a) * 1.1), { scale: 0.1, scale1: 0.04, life: 0.6, vel: V3(-Math.sin(a) * 2, 1.2, Math.cos(a) * 2), g: -4 }); }
+  // 生態圈：整個戰場換裝（環境粒子）＋該羈絆的角色身上發光
+  if (B.eco) ecoAmbient(B);
   // 臭氣持續冒煙
   if (Math.random() < 0.35) for (const zn of B.zones) if (zn.kind === 'gas' && zn.until > B.t) { const [x, z] = bWorld(zn.c, zn.r); sprite('cloud', V3(x + (Math.random() - .5) * 2.4, 0.15, z + (Math.random() - .5) * 2.4), { color: 0x9bc24a, scale: 0.4, scale1: 0.9, life: 1.1, opacity: 0.6, vel: V3(0, 0.25, 0) }); }
+}
+// 生態圈畫面（可調：ECO_LOOK 每種的顏色、粒子、出現頻率）
+const ECO_LOOK = {
+  forest: { name: '萬木回春', col: 0x8fd35a, css: 'rgba(143,211,90,.35)', tex: 'leaf', rate: 0.6, fall: true },
+  savanna: { name: '獸群狂奔', col: 0xffc15a, css: 'rgba(255,193,90,.35)', tex: 'puff', rate: 0.5, dust: true },
+  water: { name: '深海巨浪', col: 0x7fc8ff, css: 'rgba(127,200,255,.35)', tex: 'drop', rate: 0.6, rise: true },
+  sky: { name: '萬里晴空', col: 0xf2f6ff, css: 'rgba(242,246,255,.45)', tex: 'feather', rate: 0.45, fall: true },
+};
+function ecoAmbient(B) {
+  for (const team of [0, 1]) for (const t in (B.eco[team] || {})) {
+    const L = ECO_LOOK[t]; if (!L || Math.random() > L.rate) continue;
+    const x = (Math.random() - 0.5) * 9, z = (Math.random() - 0.5) * 9;
+    if (L.fall) sprite(L.tex, V3(x, 3.2, z), { color: L.col, scale: 0.16, scale1: 0.12, life: 2.2, vel: V3(0.3, -1.3, 0), g: 0, spin: 3, opacity: 0.9 });
+    else if (L.rise) sprite('drop', V3(x, 0.1, z), { scale: 0.08, scale1: 0.14, life: 1.6, vel: V3(0, 1.1, 0), g: 0, opacity: 0.7 });
+    else if (L.dust) sprite('puff', V3(x, 0.15, z), { color: L.col, scale: 0.4, scale1: 0.9, life: 1.2, vel: V3(1.4, 0.2, 0), g: 0, opacity: 0.35 });
+    // 角色光環
+    const us = B.units.filter(u => u.alive && u.team === team && hasTrait(u, t)); const u = us[Math.floor(Math.random() * us.length)];
+    if (u) { const p = posOf(kOf(u), 0.1); if (p) sprite('ring', p, { color: L.col, scale: 0.3, scale1: 0.9, life: 0.6, add: true, opacity: 0.8 }); }
+  }
 }
 function actDur(B, u, kind) { const A = (ACT[u.key] || {})[kind]; if (!A) return 0.4; if (kind !== 'atk') return A.dur; return Math.min(A.dur, effInterval(B, u) * 0.05 * 0.95); }
 function hitDelay(k, kind) { const v = S3.V[k]; if (!v || !v.act || v.act.kind !== kind) return 0; const A = (ACT[v.unitKey] || {})[kind]; return Math.max(0, v.act.t0 + v.act.dur * (A ? A.hit : 0.5) - nowS()); }
@@ -758,6 +782,8 @@ function handleBattleEvents(bt) {
         case 'revive': if (v) { v.deadT = null; v.R.root.visible = true; v.pop = nowS(); augFx('necro', k); } break;
         case 'aug': augEventFx(B, ev); break;
         case 'night': banner('入夜', '夜行動物暴擊提升'); break;
+        case 'eco': { const L = ECO_LOOK[ev.t]; if (!L) break; const mine = MYB && MYB.mine && ev.team === cv.vt; at(0.6, () => { banner(`生態圈：${L.name}`, (mine ? '我方' : '敵方') + TRAITS[ev.t].name + '羈絆湊滿了！'); screenFlash(L.css); sfx('trait_' + ev.t); }); break; }
+        case 'ecowave': { for (let rr = 0; rr < CFG.ROWS; rr += 2) { const [x, z] = bWorld(4, rr); at(rr * 0.04, () => { burst(V3(x, 0.2, z), 10, { tex: 'drop', scale: 0.14, speed: 3, up: 2.6, g: -7, life: 0.8 }); groundRing(V3(x, 0, z), 0x7fc8ff, 5, 0.6); }); } sfx('splashBig', 200); screenFlash('rgba(127,200,255,.25)'); break; }
         case 'dash': { if (!v) break; const tk = kOf(B.units[ev.tg]); v.faceK = tk; v.faceUntil = nowS() + 0.8; const from = v.pos.clone(); for (let i = 0; i < 6; i++) at(i * 0.05, () => { const vv = S3.V[k]; if (vv) sprite(ev.s === 'slide' ? 'drop' : 'puff', vv.pos.clone().add(V3(0, 0.12 + groundH(vv.pos.x, vv.pos.z), 0)), { color: ev.s === 'slide' ? 0xbfe6ff : 0xe8d8b8, scale: 0.28, scale1: 0.05, life: 0.5, opacity: 0.8 }); }); groundRing(from, 0xe8d8b8, 0.8, 0.35); break; }
         case 'grab': { const tk = kOf(B.units[ev.tg]); if (v) { v.faceK = tk; v.faceUntil = nowS() + 1.5; } at(0.45, () => { const p = posOf(tk, 0.6); if (p) burst(p, 6, { tex: 'feather', scale: 0.15, speed: 1.2, up: 1.5, g: -1, life: 0.9, spin: 4 }); }); break; }
         case 'chain': { const ids = ev.ids.map(id => kOf(B.units[id])); const d0 = hitDelay(k, 'skill'); for (let i = 0; i + 1 < ids.length; i++) at(d0 + i * 0.09, () => { const a = posOf(ids[i], i ? 0.5 : 1.0), b = posOf(ids[i + 1], 0.5); if (a && b) { lightning(a, b, 0xfff27a, 0.3); burst(b, 5, { tex: 'spark', color: 0xfff27a, scale: 0.12, add: true, speed: 2 }); } }); at(d0, () => { S3.shake = Math.max(S3.shake, 0.08); }); break; }
@@ -901,7 +927,7 @@ function onPhase() {
     banner(`${st}-${G.round - first + 1}　${isPve(G.round) ? '野生回合' : '對戰回合'}`, `${ARENAS[G.arena].name}・準備 ${CFG.PREP_SEC} 秒`);
     const inc = G.players[ME].lastIncome;
     if (inc && G.round > 1) at(0.8, () => showIncome(inc));
-  } else if (ph === 'combat') { startCombatView(); banner(isBoss(G.round) ? '魔王來襲！' : isPve(G.round) ? '野生動物出沒！' : '戰鬥開始！', isBoss(G.round) ? '野豬王出現了' : ''); }
+  } else if (ph === 'combat') { startCombatView(); sfx('horn'); banner(isBoss(G.round) ? '魔王來襲！' : isPve(G.round) ? '野生動物出沒！' : '戰鬥開始！', isBoss(G.round) ? '野豬王出現了' : ''); }
   else if (ph === 'result') {
     waitChip(0);
     if (!(MYB && MYB.mine && !REPLAY)) roundResultBanner(); // 觀戰或回放：照舊在結算時顯示；自己的戰場由 myBattleDoneCheck 在播完時顯示
@@ -976,7 +1002,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.16'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.0'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -988,7 +1014,7 @@ function boot() {
   $('shop').addEventListener('click', e => { const c = e.target.closest('[data-slot]'); if (!c) return; const rect = c.getBoundingClientRect(), src = c.querySelector('img').src; const r = doAct({ t: 'buy', slot: +c.dataset.slot }, true); if (r === 'ok') buyFx(rect, src); else { toast(ERR[r] || '不行'); const el = document.querySelector(`[data-slot="${c.dataset.slot}"]`); if (el) { el.classList.add('nope'); } } });
   $('items').addEventListener('pointerdown', onItemDown);
   $('traits').addEventListener('click', e => { const c = e.target.closest('[data-trait],[data-combo]'); if (!c) return; sel = c.dataset.trait ? { type: 'trait', k: c.dataset.trait } : { type: 'combo', id: c.dataset.combo }; renderSheet(); });
-  $('mate').addEventListener('click', e => { if (e.target.id === 'btnGiftGold') { if (doAct({ t: 'gift', gold: 1 }) === 'ok') toast('送了 1 金給隊友'); } if (e.target.id === 'btnReady') { actMe({ t: 'ready' }); renderDock(); } });
+  $('mate').addEventListener('click', e => { if (e.target.id === 'btnGiftGold') { if (doAct({ t: 'gift', gold: 1 }) === 'ok') toast('送了 1 金給隊友'); } if (e.target.id === 'btnReady') { actMe({ t: 'ready' }); renderDock(); if (G.players[ME].ready) sfx('ready'); } });
   $('btnLevel').onclick = () => doAct({ t: 'level' });
   $('augs').addEventListener('click', e => { const c = e.target.closest('[data-aug]'); if (c) { sel = { type: 'aug', id: c.dataset.aug }; renderSheet(); } });
   $('augModal').addEventListener('click', e => { const c = e.target.closest('[data-pick]'); if (c) { c.classList.add('chosen'); setTimeout(() => pickAug(c.dataset.pick), 220); return; } if (e.target.id === 'augHide') $('augModal').classList.add('min'); if (e.target.id === 'augShow') $('augModal').classList.remove('min'); });

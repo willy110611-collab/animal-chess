@@ -66,14 +66,14 @@ A_COLS = ['hp', 'atk', 'ai', 'rng', 'arm', 'mr', 'mana', 'sm', 'mv']
 for r in rows(wb['動物']):
     k = str(r[0]).strip().lower()
     tr = []
-    for t in r[3:5]:
-        if t is None: continue
+    for t in r[3:6]:
+        if t is None or t == '': continue
         if t not in TR_BY_NAME: errs.append(f'動物 {r[1]}：不認得羈絆「{t}」'); continue
         tr.append(TR_BY_NAME[t])
-    rec = {'name': r[1], 'cost': num(r[2], f'動物 {r[1]} 費用'), 'traits': tr, 'role': r[5] or ''}
-    for i, c in enumerate(A_COLS): rec[c] = num(r[6 + i], f'動物 {r[1]} {c}')
-    rec['skill'] = r[15] or ''; rec['desc'] = r[16] or ''
-    evo = r[17] or ''
+    rec = {'name': r[1], 'cost': num(r[2], f'動物 {r[1]} 費用'), 'traits': tr, 'role': r[6] or ''}
+    for i, c in enumerate(A_COLS): rec[c] = num(r[7 + i], f'動物 {r[1]} {c}')
+    rec['skill'] = r[16] or ''; rec['desc'] = r[17] or ''
+    evo = r[18] or ''
     if k not in RAW['ANIMALS']:
         S['NEW_ANIMALS'][k] = rec; need_claude.append(f'新動物「{r[1]}」（{k}）：需要 3D 模型、技能效果、攻擊動畫'); continue
     old = RAW['ANIMALS'][k]; diff = {f: v for f, v in rec.items() if v is not None and old.get(f) != v}
@@ -83,7 +83,8 @@ for r in rows(wb['動物']):
 for r in rows(wb['羈絆']):
     k = r[0]
     if k not in RAW['TRAITS']: need_claude.append(f'新羈絆「{r[1]}」：效果需要寫程式'); continue
-    rec = {'name': r[1], 'tiers': [num(x, f'羈絆 {r[1]} 門檻') for x in r[2:5]], 'val': [num(x, f'羈絆 {r[1]} 數值') for x in r[5:8]], 'desc': [x or '' for x in r[8:11]]}
+    n = len([x for x in r[2:6] if x not in (None, '')])
+    rec = {'name': r[1], 'tiers': [num(x, f'羈絆 {r[1]} 門檻') for x in r[2:2 + n]], 'val': [num(x, f'羈絆 {r[1]} 數值') for x in r[6:6 + n]], 'desc': [x or '' for x in r[10:10 + n]]}
     old = RAW['TRAITS'][k]; diff = {f: v for f, v in rec.items() if old.get(f) != v}
     if diff: S['TRAITS'][k] = diff
 # 材料

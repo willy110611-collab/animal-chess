@@ -417,6 +417,14 @@ const AIR_CFG = {
   peacock: { kind: 'float', h: 2.4, spin: 1, toss: 0, shake: 0 },
   komodo: { kind: 'leap', h: 2.2, toss: 1.0, shake: 0.16 },
   kingboar: { kind: 'jump', h: 2.4, toss: 1.6, shake: 0.36 },
+  deer: { kind: 'jump', h: 1.4, flip: 1, toss: 0, shake: 0 },
+  zebra: { kind: 'flip', h: 1.2, flip: 1, toss: 1.0, shake: 0.08 },
+  hippo: { kind: 'leap', h: 1.6, toss: 0.8, shake: 0.24 },
+  parrot: { kind: 'dive', h: 2.6, spin: 1, toss: 0, shake: 0.04 },
+  giraffe: { kind: 'jump', h: 1.0, spin: 1, toss: 1.2, shake: 0.14 },
+  flamingo: { kind: 'float', h: 1.8, spin: 2, toss: 0, shake: 0 },
+  shark: { kind: 'breach', h: 2.8, flip: 1, toss: 1.4, shake: 0.16 },
+  panda: { kind: 'leap', h: 2.0, flip: 2, toss: 1.0, shake: 0.26 },
 };
 const AIR_ON = { on: true };
 const DEMO_CAM = { x: 0, y: 8.6, z: 9.6 }; // 設成 false 可整個關掉立體技能動作
@@ -539,6 +547,14 @@ const ULT = {
   whale(c) { const dir = c.tp.clone().sub(c.sp).setY(0).normalize(), side = V3(-dir.z, 0, dir.x); for (let w = 0; w < 4; w++) for (let i = -4; i <= 4; i++) { const p0 = c.sp.clone().addScaledVector(side, i * 0.45).setY(0.2); sprite('drop', p0, { scale: 0.22, scale1: 0.12, life: 1.0, vel: dir.clone().multiplyScalar(4).add(V3(0, 1.2, 0)), g: -2.5, delay: 0.15 + w * 0.12 }); } },
   peacock(c) { radial(c.A, 10, (a, x, z, i) => sprite('ring', c.A.clone().add(V3(x * 1.4, 0.6, z * 1.4)), { color: i % 2 ? 0x3fbf8a : 0x4a8aff, scale: 0.2, scale1: 0.45, life: 0.8, add: true, opacity: 0.85, delay: 0.1 + i * 0.02 })); },
   komodo(c) { for (let i = 0; i < 10; i++) sprite('spark', c.tp.clone().add(V3((Math.random() - .5) * 1.2, 0.05, (Math.random() - .5) * 1.2)), { color: 0x8fd34a, scale: 0.14, scale1: 0.22, life: 1.0, vel: V3(0, 0.6, 0), g: 0, opacity: 0.8, delay: i * 0.05 }); const d = mesh(GEO.disc, MB(0x6aa82a, 0.5)); d.rotation.x = -Math.PI / 2; d.position.set(c.tp.x, 0.02, c.tp.z); d.scale.setScalar(1.4); meshFx(d, { life: 1.6, custom: (f, q) => { d.material.opacity = 0.5 * (1 - q); } }); },
+  deer(c) { for (let i = 0; i < 12; i++) sprite('leaf', c.sp.clone().add(V3((Math.random() - .5) * 1.6, 1.6, (Math.random() - .5) * 1.6)), { color: 0x9ad86a, scale: 0.14, scale1: 0.1, life: 1.1, vel: V3(0, -1.2, 0), g: 0, spin: 4, delay: i * 0.04 }); },
+  zebra(c) { for (let i = 0; i < 6; i++) sprite('star', c.tp.clone().add(V3(Math.cos(i) * 0.4, 0.7, Math.sin(i) * 0.4)), { scale: 0.14, scale1: 0.05, life: 0.8, vel: V3(Math.cos(i) * 0.8, 0.6, Math.sin(i) * 0.8) }); },
+  hippo(c) { burst(c.tp, 12, { tex: 'drop', scale: 0.12, speed: 2, up: 2, g: -6, life: 0.7 }); },
+  parrot(c) { for (let i = 0; i < 10; i++) sprite('spark', c.sp.clone().add(V3(0, 0.6, 0)), { color: [0xe8423a, 0xf2d24a, 0x3a8ad8][i % 3], scale: 0.1, scale1: 0.02, life: 0.6, vel: V3(Math.cos(i) * 2, 0.8, Math.sin(i) * 2), g: -2, add: true }); },
+  giraffe(c) { radial(c.A, 10, (a, x, z) => sprite('puff', c.A.clone().add(V3(x * 1.4, 0.15, z * 1.4)), { color: 0xf0c45a, scale: 0.35, scale1: 0.05, life: 0.5, vel: V3(x, 0, z) })); },
+  flamingo(c) { radial(c.sp, 8, (a, x, z, i) => sprite('ring', c.sp.clone().add(V3(0, 0.1, 0)), { color: 0xf49ab4, scale: 0.3, scale1: 1.8, life: 0.7, delay: i * 0.05, add: true, opacity: 0.6 })); },
+  shark(c) { groundRing(c.tp, 0x6c8aa8, 1.8, 0.6); sprite('ring', c.tp.clone().add(V3(0, 0.1, 0)), { color: 0xffffff, scale: 0.3, scale1: 2, life: 0.4, add: true }); },
+  panda(c) { for (let i = 0; i < 4; i++) groundRing(c.A, 0x7ab84a, 1.2 + i * 0.5, 0.6, i * 0.1); },
 };
 function playFx(name, sk, tk, ex) {
   const sv = S3.V[sk], tv = tk !== undefined ? S3.V[tk] : null;
@@ -549,6 +565,16 @@ function playFx(name, sk, tk, ex) {
   if (SKILL_FX && SKILL_FX.has(name) && ULT[sv.unitKey]) { try { ULT[sv.unitKey]({ A, sp, tp, tv, sv }); } catch (e) {} if (ULT_FLASH[sv.unitKey]) screenFlash(ULT_FLASH[sv.unitKey]); }
   switch (name) {
     case 'bump': case 'kick': slash('burst', tp, { scale: 0.35, color: 0xffd9a0 }); burst(tp, 5, { color: 0xf2e6cf, scale: 0.12, speed: 1.6 }); break;
+    case 'leafShot': projectile(hand, tp, 'leaf', 0.25, { scale: 0.2, arc: 0.3, spin: 8, color: 0x7ab84a, onEnd: () => burst(tp, 4, { tex: 'leaf', color: 0x9ad86a, scale: 0.1, speed: 1.2 }) }); break;
+    case 'waterShot': projectile(posOf(sk, 0.8), tp, 'drop', 0.22, { scale: 0.18, arc: 0.25, onEnd: () => burst(tp, 6, { tex: 'drop', scale: 0.08, speed: 1.4, up: 1.2, g: -5, life: 0.4 }) }); break;
+    case 'backKick': slash('burst', tp, { scale: 0.7, color: 0xffffff }); burst(tp, 8, { tex: 'star', scale: 0.12, speed: 2, up: 1, g: -2 }); S3.shake = Math.max(S3.shake, 0.06); break;
+    case 'blessing': groundRing(A, 0x9ad86a, 2.2, 0.7); burst(sp, 14, { tex: 'leaf', color: 0x9ad86a, scale: 0.14, speed: 1, up: 1.5, g: -0.5, life: 1.0, spin: 3 }); break;
+    case 'hippoGulp': slash('bite', tp, { scale: 0.9, color: 0xf6c0d0 }); groundRing(A, 0xc8b4c8, 1.4, 0.5); S3.shake = Math.max(S3.shake, 0.08); break;
+    case 'featherVolley': for (let i = 0; i < 6; i++) projectile(hand, tp.clone().add(V3((Math.random() - .5) * 1.6, 0, (Math.random() - .5) * 1.6)), 'feather', 0.3, { scale: 0.28, arc: 0.2, delay: i * 0.04 }); break;
+    case 'neckSwing': groundRing(A, 0xf0c45a, 2.6, 0.5); slash('cross', tp, { scale: 1.0, life: 0.3 }); S3.shake = Math.max(S3.shake, 0.12); break;
+    case 'swirlDance': { const z = ex && ex.zone ? ex.zone : tp; for (let i = 0; i < 3; i++) sprite('ring', z.clone().add(V3(0, 0.05 + i * 0.05, 0)), { color: 0x7fd0ff, scale: 0.4 + i * 0.3, scale1: 1.6, life: 0.8, delay: i * 0.15, rot: i, add: true, opacity: 0.7 }); burst(z, 18, { tex: 'drop', scale: 0.12, speed: 1.8, up: 2.5, g: -6, life: 0.9 }); break; }
+    case 'sharkBite': slash('bite', tp, { scale: 1.1, color: 0xffffff }); burst(tp, 14, { tex: 'drop', scale: 0.14, speed: 2.4, up: 2.5, g: -7, life: 0.8 }); S3.shake = Math.max(S3.shake, 0.12); break;
+    case 'pandaRoll': groundRing(A, 0x7ab84a, 2.4, 0.6); burst(A.clone().add(V3(0, 0.1, 0)), 14, { tex: 'leaf', color: 0x7ab84a, scale: 0.16, speed: 2.4, up: 1, g: -3, life: 0.7, spin: 5 }); S3.shake = Math.max(S3.shake, 0.18); break;
     case 'acorn': break; // 由 proj 事件處理
     case 'acornVolley': burst(hand, 6, { tex: 'leaf', scale: 0.12, speed: 1.4, color: 0xd9a050 }); break;
     case 'bite': slash('bite', tp, { scale: 0.55, life: 0.3, color: 0xffffff }); burst(tp, 4, { tex: 'spark', color: 0xff8a6a, scale: 0.12, add: true }); break;

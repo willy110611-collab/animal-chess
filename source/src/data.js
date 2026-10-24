@@ -77,10 +77,10 @@ const ANIMALS = {
   owl: { name: '貓頭鷹', cost: 4, traits: ['sky', 'night'], role: '遠程',
     hp: 760, atk: 82, ai: 20, rng: 4, arm: 20, mr: 30, mana: 70, sm: 0, mv: 7,
     skill: '無聲撲擊', desc: '撲向血最少的敵人，350 物理傷害必定暴擊。' },
-  elephant: { name: '大象', cost: 5, traits: ['savanna', 'pack'], role: '坦',
+  elephant: { name: '大象', cost: 5, traits: ['savanna', 'pack', 'king'], role: '坦',
     hp: 1800, atk: 95, ai: 26, rng: 1, arm: 55, mr: 45, mana: 110, sm: 40, mv: 10,
     skill: '踩踏', desc: '震地：2 格內敵人暈 1.5 秒，220 魔法傷害。' },
-  lion: { name: '獅子', cost: 5, traits: ['savanna', 'pack'], role: '領袖',
+  lion: { name: '獅子', cost: 5, traits: ['savanna', 'pack', 'king'], role: '領袖',
     hp: 1480, atk: 118, ai: 20, rng: 1, arm: 45, mr: 40, mana: 90, sm: 20, mv: 8,
     skill: '王者咆哮', desc: '全隊攻擊 +25% 持續 6 秒；2 格內敵人恐懼 1.5 秒。' },
   // ---- v0.5 新增 ----
@@ -105,15 +105,40 @@ const ANIMALS = {
   gorilla: { name: '大猩猩', cost: 4, traits: ['forest', 'armor'], role: '坦',
     hp: 1280, atk: 76, ai: 24, rng: 1, arm: 45, mr: 40, mana: 100, sm: 40, mv: 9,
     skill: '捶胸震地', desc: '捶胸嘲諷 2 格內敵人 2.5 秒，獲得 18% 生命護盾，再雙拳砸地，周圍 1 格 200 魔法傷害。' },
-  whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor'], role: '坦／法師',
+  whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor', 'king'], role: '坦／法師',
     hp: 1850, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
     skill: '潮汐巨浪', desc: '噴出巨浪，沿自己左右各 1 格寬的直線橫掃全場：敵人 260 魔法傷害並暈 1 秒，友軍回復 15% 生命。' },
-  peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest'], role: '輔助',
+  peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest', 'king'], role: '輔助',
     hp: 1350, atk: 95, ai: 20, rng: 3, arm: 30, mr: 40, mana: 100, sm: 30, mv: 8,
     skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
-  komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor'], role: '戰士',
+  komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor', 'king'], role: '戰士',
     hp: 1440, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
     skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 20% 生命。' },
+  // ---- v0.13 新增：讓高階羈絆湊得到 ----
+  deer: { name: '小鹿', cost: 1, traits: ['forest', 'pack'], role: '輔助',
+    hp: 520, atk: 38, ai: 20, rng: 2, arm: 15, mr: 25, mana: 70, sm: 20, mv: 7,
+    skill: '林間祝福', desc: '治療生命最低的友軍 200，並讓 2 格內的森林友軍回復 6% 生命。' },
+  zebra: { name: '斑馬', cost: 1, traits: ['savanna', 'pack'], role: '戰士',
+    hp: 690, atk: 60, ai: 18, rng: 1, arm: 25, mr: 20, mana: 70, sm: 0, mv: 6,
+    skill: '斑紋後踢', desc: '後腿一踢：目標 170 物理傷害並致盲 2 秒（普攻落空）。' },
+  hippo: { name: '河馬', cost: 2, traits: ['water', 'armor'], role: '坦',
+    hp: 900, atk: 52, ai: 24, rng: 1, arm: 40, mr: 35, mana: 90, sm: 30, mv: 9,
+    skill: '河馬大口', desc: '張大嘴嘲諷周圍 1 格敵人 2 秒，咬目標 200 魔法傷害，獲得 22% 生命護盾。' },
+  parrot: { name: '鸚鵡', cost: 2, traits: ['sky', 'forest'], role: '遠程',
+    hp: 500, atk: 50, ai: 17, rng: 3, arm: 15, mr: 20, mana: 70, sm: 10, mv: 6,
+    skill: '尖嘯羽箭', desc: '一次射出 3 根羽箭打 3 個不同的敵人，各 130 物理傷害，被打到的魔抗 −20 持續 4 秒。' },
+  giraffe: { name: '長頸鹿', cost: 3, traits: ['savanna', 'armor'], role: '戰士',
+    hp: 940, atk: 66, ai: 22, rng: 2, arm: 35, mr: 30, mana: 90, sm: 20, mv: 8,
+    skill: '長頸甩擊', desc: '甩動長脖子橫掃 2 格內所有敵人 200 物理傷害，並把他們擊退 1 格。' },
+  flamingo: { name: '紅鶴', cost: 3, traits: ['sky', 'water'], role: '法師',
+    hp: 700, atk: 50, ai: 20, rng: 3, arm: 20, mr: 35, mana: 80, sm: 20, mv: 7,
+    skill: '單腳旋舞', desc: '在敵人密集處掀起水花漩渦 3 秒（中心＋周圍 6 格）：每秒 90 魔法傷害，區內敵人攻速 −25%。' },
+  shark: { name: '鯊魚', cost: 3, traits: ['water', 'night'], role: '刺客',
+    hp: 740, atk: 70, ai: 16, rng: 1, arm: 25, mr: 20, mana: 70, sm: 0, mv: 6,
+    skill: '嗜血突襲', desc: '鑽進地下衝到血最少的敵人腳下 260 物理傷害；目標生命低於 50% 時傷害 +60%，擊殺回滿 50 能量。' },
+  panda: { name: '熊貓', cost: 4, traits: ['forest', 'armor'], role: '坦',
+    hp: 1300, atk: 74, ai: 24, rng: 1, arm: 45, mr: 45, mana: 100, sm: 40, mv: 10,
+    skill: '竹林滾滾', desc: '抱成一團滾過前方，沿路 2 格內的敵人 240 魔法傷害並暈 1 秒，自己回復 18% 生命。' },
 };
 
 // 召喚物與野生動物（不進商店）
@@ -125,13 +150,15 @@ const EXTRA = {
 };
 
 const TRAITS = {
-  forest:  { name: '森林', tiers: [2, 4, 6], desc: ['森林單位每秒回 2% 生命', '每秒回 4% 生命', '每秒回 6% 生命'] , val: [2, 4, 6] },
-  savanna: { name: '草原', tiers: [2, 4, 6], desc: ['草原單位攻速 +20%，全隊移動加快', '攻速 +45%', '攻速 +70%'], val: [20, 45, 70] },
-  water:   { name: '水域', tiers: [2, 3, 5], desc: ['水域單位開場護盾 15% 生命', '護盾 30%；站水格加倍', '護盾 45%'], val: [15, 30, 45] },
-  sky:     { name: '天空', tiers: [2, 3, 4], desc: ['天空單位閃避 20%', '閃避 35%', '閃避 45%'], val: [20, 35, 45] },
-  pack:    { name: '群居', tiers: [2, 4, 6], desc: ['每個相鄰群居友軍 +8% 傷害', '+12%', '+18%'], val: [8, 12, 18] },
-  armor:   { name: '甲冑', tiers: [2, 3, 5], desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +10', '甲冑 +90，全隊 +20'], val: [30, 60, 90] },
-  night:   { name: '夜行', tiers: [2, 4, 6], desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +50%', '暴擊 +80%'], val: [25, 50, 80] },
+  // v0.13：參考聯盟戰棋，低階好湊、高階很難；環境羈絆（森林、草原、水域、天空）湊到最高階＝「生態圈」，有專屬音樂與戰場特效
+  forest:  { name: '森林', tiers: [2, 4, 6, 8], desc: ['森林單位每秒回 2% 生命', '每秒回 4% 生命', '每秒回 6% 生命', '生態圈「萬木回春」：全隊每秒回 4% 生命，森林單位回 8%；每場第一個倒下的我方棋子 1 秒後復活（50% 生命）'], val: [2, 4, 6, 8], eco: 8 },
+  savanna: { name: '草原', tiers: [2, 4, 6, 8], desc: ['草原單位攻速 +20%，全隊移動加快', '攻速 +40%', '攻速 +65%', '生態圈「獸群狂奔」：草原單位攻速 +90%；開場 4 秒全隊攻速 +50%'], val: [20, 40, 65, 90], eco: 8 },
+  water:   { name: '水域', tiers: [2, 4, 6, 8], desc: ['水域單位開場護盾 15% 生命', '護盾 25%；站水格加倍', '護盾 40%', '生態圈「深海巨浪」：護盾 55%；每 6 秒一道巨浪打全場敵人 120 魔法傷害，我方回 5% 生命'], val: [15, 25, 40, 55], eco: 8 },
+  sky:     { name: '天空', tiers: [2, 3, 4, 6], desc: ['天空單位閃避 20%', '閃避 30%', '閃避 40%', '生態圈「萬里晴空」：天空單位閃避 50%，全隊閃避 +20%、攻擊 +15%'], val: [20, 30, 40, 50], eco: 6 },
+  pack:    { name: '群居', tiers: [3, 6, 9], desc: ['每個相鄰群居友軍 +8% 傷害', '+14%', '+22%，而且全隊都算群居（互相加成）'], val: [8, 14, 22] },
+  armor:   { name: '甲冑', tiers: [2, 4, 6], desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +15', '甲冑 +100，全隊 +30'], val: [30, 60, 100] },
+  night:   { name: '夜行', tiers: [2, 4, 6, 8], desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +45%', '暴擊 +70%', '永夜：開場就入夜，暴擊 +100%'], val: [25, 45, 70, 100] },
+  king:    { name: '百獸之王', tiers: [2, 3, 4], desc: ['（只有 5 費動物）全隊生命與攻擊 +8%', '+16%', '傳說：+30%，百獸之王的技能能量需求 −30%'], val: [8, 16, 30] },
 };
 let SYNERGY_BONUS = 20; // 默契加成：兩位隊友都有出該羈絆時效果 +20%
 
@@ -187,7 +214,7 @@ const RECIPE = {};
 for (const k in ITEMS) RECIPE[ITEMS[k].from.slice().sort().join('+')] = k;
 // 紋章：裝上後多算一個羈絆（同一隻只能裝一個同名紋章，已有該羈絆的動物裝了無效）
 const EMBLEMS = {};
-for (const t in TRAITS) EMBLEMS['emb_' + t] = { name: TRAITS[t].name + '紋章', trait: t, stat: {}, desc: '裝上後這隻動物多算一個「' + TRAITS[t].name + '」羈絆' };
+for (const t in TRAITS) if (t !== 'king') EMBLEMS['emb_' + t] = { name: TRAITS[t].name + '紋章', trait: t, stat: {}, desc: '裝上後這隻動物多算一個「' + TRAITS[t].name + '」羈絆' }; // 百獸之王沒有紋章
 // 消耗品：拖到棋子身上立即使用
 const CONSUMABLES = {
   reforge: { name: '重鑄器', desc: '把這隻身上的裝備全部換成其他隨機裝備（材料換材料、成品換成品）' },
@@ -293,6 +320,7 @@ const EVOLVE = {
   hedgehog: '鋼刺蝟王', squirrel: '松果將軍', wolf: '狼王', frog: '蛙王', bat: '吸血伯爵', redpanda: '小熊貓武尊', skunk: '毒霧公爵',
   croc: '鱷魚霸主', bee: '蜂后', koala: '尤加利神', cheetah: '閃電獵豹', octopus: '深海巫師', owl: '月夜梟王', elephant: '萬象巨神', lion: '百獸之王',
   penguin: '冰原皇帝', rhino: '鋼角戰車', chameleon: '千面幻影', fox: '九尾狐', eagle: '蒼穹霸鷹', eel: '雷霆鰻神', gorilla: '叢林金剛', whale: '深藍巨鯨', peacock: '鳳凰孔雀', komodo: '龍蜥之王',
+  deer: '森之聖鹿', zebra: '雷紋斑馬', hippo: '河神巨口', parrot: '虹羽鸚鵡', giraffe: '天梯長頸鹿', flamingo: '晚霞紅鶴', shark: '深淵鯊王', panda: '功夫熊貓',
 };
 // ===== 食物鏈：天敵對獵物傷害 +25% =====
 const PREY = {
@@ -301,6 +329,7 @@ const PREY = {
   frog: ['bee', 'minibee'], skunk: ['bee', 'minibee'], hedgehog: ['frog'], bee: ['elephant'], elephant: ['lion'], octopus: ['croc'],
   eagle: ['squirrel', 'hare', 'fox', 'penguin', 'chameleon'], fox: ['hare', 'squirrel', 'frog'], komodo: ['boar', 'hare', 'wolf', 'rhino'],
   chameleon: ['bee', 'minibee'], peacock: ['frog', 'chameleon'], eel: ['frog', 'penguin'], whale: ['octopus'], penguin: ['eel'],
+  shark: ['penguin', 'frog', 'flamingo'], lion: ['zebra', 'deer', 'cheetah', 'wolf', 'boar', 'hare'], croc: ['zebra', 'deer', 'frog', 'wolf', 'boar', 'hare'], hippo: ['croc'], parrot: ['bee', 'minibee'],
 };
 let PREY_BONUS = 25;
 // ===== 天氣（依場地抽，每回合一次）=====

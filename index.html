@@ -247,6 +247,8 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .tr .hex { width: 26px; height: 26px; display: grid; place-items: center; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); background: #5a4a42; color: #c9b8a8; --ib: #5a4a42; }
 .tr .hex svg { width: 16px; height: 16px; }
 .tr.t0 .hex { background: var(--bronze); color: #fff2e0; --ib: var(--bronze); } .tr.t1 .hex { background: var(--silver); color: #2a2a3a; --ib: var(--silver); } .tr.t2 .hex { background: var(--goldt); color: #5a3a10; --ib: var(--goldt); }
+.tr.t3 .hex { background: conic-gradient(from 0deg, #ff7ab8, #ffd34d, #7fe08a, #6fc8ff, #b48cff, #ff7ab8); color: #fff; --ib: #6a3aa0; animation: prism 3s linear infinite; box-shadow: 0 0 10px rgba(255,255,255,.6); } .tr.t3 { box-shadow: 0 0 0 1.5px rgba(255,255,255,.7), 0 0 12px rgba(180,140,255,.6); }
+@keyframes prism { to { filter: hue-rotate(360deg); } }
 .tr .nm { font-weight: 900; display: block; }
 .tr .ct { opacity: .85; font-variant-numeric: tabular-nums; }
 .tr .ct em { font-style: normal; color: var(--gold-2); }
@@ -870,10 +872,10 @@ const ANIMALS = {
   owl: { name: '貓頭鷹', cost: 4, traits: ['sky', 'night'], role: '遠程',
     hp: 760, atk: 82, ai: 20, rng: 4, arm: 20, mr: 30, mana: 70, sm: 0, mv: 7,
     skill: '無聲撲擊', desc: '撲向血最少的敵人，350 物理傷害必定暴擊。' },
-  elephant: { name: '大象', cost: 5, traits: ['savanna', 'pack'], role: '坦',
+  elephant: { name: '大象', cost: 5, traits: ['savanna', 'pack', 'king'], role: '坦',
     hp: 1800, atk: 95, ai: 26, rng: 1, arm: 55, mr: 45, mana: 110, sm: 40, mv: 10,
     skill: '踩踏', desc: '震地：2 格內敵人暈 1.5 秒，220 魔法傷害。' },
-  lion: { name: '獅子', cost: 5, traits: ['savanna', 'pack'], role: '領袖',
+  lion: { name: '獅子', cost: 5, traits: ['savanna', 'pack', 'king'], role: '領袖',
     hp: 1480, atk: 118, ai: 20, rng: 1, arm: 45, mr: 40, mana: 90, sm: 20, mv: 8,
     skill: '王者咆哮', desc: '全隊攻擊 +25% 持續 6 秒；2 格內敵人恐懼 1.5 秒。' },
   // ---- v0.5 新增 ----
@@ -898,15 +900,40 @@ const ANIMALS = {
   gorilla: { name: '大猩猩', cost: 4, traits: ['forest', 'armor'], role: '坦',
     hp: 1280, atk: 76, ai: 24, rng: 1, arm: 45, mr: 40, mana: 100, sm: 40, mv: 9,
     skill: '捶胸震地', desc: '捶胸嘲諷 2 格內敵人 2.5 秒，獲得 18% 生命護盾，再雙拳砸地，周圍 1 格 200 魔法傷害。' },
-  whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor'], role: '坦／法師',
+  whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor', 'king'], role: '坦／法師',
     hp: 1850, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
     skill: '潮汐巨浪', desc: '噴出巨浪，沿自己左右各 1 格寬的直線橫掃全場：敵人 260 魔法傷害並暈 1 秒，友軍回復 15% 生命。' },
-  peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest'], role: '輔助',
+  peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest', 'king'], role: '輔助',
     hp: 1350, atk: 95, ai: 20, rng: 3, arm: 30, mr: 40, mana: 100, sm: 30, mv: 8,
     skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
-  komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor'], role: '戰士',
+  komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor', 'king'], role: '戰士',
     hp: 1440, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
     skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 20% 生命。' },
+  // ---- v0.13 新增：讓高階羈絆湊得到 ----
+  deer: { name: '小鹿', cost: 1, traits: ['forest', 'pack'], role: '輔助',
+    hp: 520, atk: 38, ai: 20, rng: 2, arm: 15, mr: 25, mana: 70, sm: 20, mv: 7,
+    skill: '林間祝福', desc: '治療生命最低的友軍 200，並讓 2 格內的森林友軍回復 6% 生命。' },
+  zebra: { name: '斑馬', cost: 1, traits: ['savanna', 'pack'], role: '戰士',
+    hp: 690, atk: 60, ai: 18, rng: 1, arm: 25, mr: 20, mana: 70, sm: 0, mv: 6,
+    skill: '斑紋後踢', desc: '後腿一踢：目標 170 物理傷害並致盲 2 秒（普攻落空）。' },
+  hippo: { name: '河馬', cost: 2, traits: ['water', 'armor'], role: '坦',
+    hp: 900, atk: 52, ai: 24, rng: 1, arm: 40, mr: 35, mana: 90, sm: 30, mv: 9,
+    skill: '河馬大口', desc: '張大嘴嘲諷周圍 1 格敵人 2 秒，咬目標 200 魔法傷害，獲得 22% 生命護盾。' },
+  parrot: { name: '鸚鵡', cost: 2, traits: ['sky', 'forest'], role: '遠程',
+    hp: 500, atk: 50, ai: 17, rng: 3, arm: 15, mr: 20, mana: 70, sm: 10, mv: 6,
+    skill: '尖嘯羽箭', desc: '一次射出 3 根羽箭打 3 個不同的敵人，各 130 物理傷害，被打到的魔抗 −20 持續 4 秒。' },
+  giraffe: { name: '長頸鹿', cost: 3, traits: ['savanna', 'armor'], role: '戰士',
+    hp: 940, atk: 66, ai: 22, rng: 2, arm: 35, mr: 30, mana: 90, sm: 20, mv: 8,
+    skill: '長頸甩擊', desc: '甩動長脖子橫掃 2 格內所有敵人 200 物理傷害，並把他們擊退 1 格。' },
+  flamingo: { name: '紅鶴', cost: 3, traits: ['sky', 'water'], role: '法師',
+    hp: 700, atk: 50, ai: 20, rng: 3, arm: 20, mr: 35, mana: 80, sm: 20, mv: 7,
+    skill: '單腳旋舞', desc: '在敵人密集處掀起水花漩渦 3 秒（中心＋周圍 6 格）：每秒 90 魔法傷害，區內敵人攻速 −25%。' },
+  shark: { name: '鯊魚', cost: 3, traits: ['water', 'night'], role: '刺客',
+    hp: 740, atk: 70, ai: 16, rng: 1, arm: 25, mr: 20, mana: 70, sm: 0, mv: 6,
+    skill: '嗜血突襲', desc: '鑽進地下衝到血最少的敵人腳下 260 物理傷害；目標生命低於 50% 時傷害 +60%，擊殺回滿 50 能量。' },
+  panda: { name: '熊貓', cost: 4, traits: ['forest', 'armor'], role: '坦',
+    hp: 1300, atk: 74, ai: 24, rng: 1, arm: 45, mr: 45, mana: 100, sm: 40, mv: 10,
+    skill: '竹林滾滾', desc: '抱成一團滾過前方，沿路 2 格內的敵人 240 魔法傷害並暈 1 秒，自己回復 18% 生命。' },
 };
 
 // 召喚物與野生動物（不進商店）
@@ -918,13 +945,15 @@ const EXTRA = {
 };
 
 const TRAITS = {
-  forest:  { name: '森林', tiers: [2, 4, 6], desc: ['森林單位每秒回 2% 生命', '每秒回 4% 生命', '每秒回 6% 生命'] , val: [2, 4, 6] },
-  savanna: { name: '草原', tiers: [2, 4, 6], desc: ['草原單位攻速 +20%，全隊移動加快', '攻速 +45%', '攻速 +70%'], val: [20, 45, 70] },
-  water:   { name: '水域', tiers: [2, 3, 5], desc: ['水域單位開場護盾 15% 生命', '護盾 30%；站水格加倍', '護盾 45%'], val: [15, 30, 45] },
-  sky:     { name: '天空', tiers: [2, 3, 4], desc: ['天空單位閃避 20%', '閃避 35%', '閃避 45%'], val: [20, 35, 45] },
-  pack:    { name: '群居', tiers: [2, 4, 6], desc: ['每個相鄰群居友軍 +8% 傷害', '+12%', '+18%'], val: [8, 12, 18] },
-  armor:   { name: '甲冑', tiers: [2, 3, 5], desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +10', '甲冑 +90，全隊 +20'], val: [30, 60, 90] },
-  night:   { name: '夜行', tiers: [2, 4, 6], desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +50%', '暴擊 +80%'], val: [25, 50, 80] },
+  // v0.13：參考聯盟戰棋，低階好湊、高階很難；環境羈絆（森林、草原、水域、天空）湊到最高階＝「生態圈」，有專屬音樂與戰場特效
+  forest:  { name: '森林', tiers: [2, 4, 6, 8], desc: ['森林單位每秒回 2% 生命', '每秒回 4% 生命', '每秒回 6% 生命', '生態圈「萬木回春」：全隊每秒回 4% 生命，森林單位回 8%；每場第一個倒下的我方棋子 1 秒後復活（50% 生命）'], val: [2, 4, 6, 8], eco: 8 },
+  savanna: { name: '草原', tiers: [2, 4, 6, 8], desc: ['草原單位攻速 +20%，全隊移動加快', '攻速 +40%', '攻速 +65%', '生態圈「獸群狂奔」：草原單位攻速 +90%；開場 4 秒全隊攻速 +50%'], val: [20, 40, 65, 90], eco: 8 },
+  water:   { name: '水域', tiers: [2, 4, 6, 8], desc: ['水域單位開場護盾 15% 生命', '護盾 25%；站水格加倍', '護盾 40%', '生態圈「深海巨浪」：護盾 55%；每 6 秒一道巨浪打全場敵人 120 魔法傷害，我方回 5% 生命'], val: [15, 25, 40, 55], eco: 8 },
+  sky:     { name: '天空', tiers: [2, 3, 4, 6], desc: ['天空單位閃避 20%', '閃避 30%', '閃避 40%', '生態圈「萬里晴空」：天空單位閃避 50%，全隊閃避 +20%、攻擊 +15%'], val: [20, 30, 40, 50], eco: 6 },
+  pack:    { name: '群居', tiers: [3, 6, 9], desc: ['每個相鄰群居友軍 +8% 傷害', '+14%', '+22%，而且全隊都算群居（互相加成）'], val: [8, 14, 22] },
+  armor:   { name: '甲冑', tiers: [2, 4, 6], desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +15', '甲冑 +100，全隊 +30'], val: [30, 60, 100] },
+  night:   { name: '夜行', tiers: [2, 4, 6, 8], desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +45%', '暴擊 +70%', '永夜：開場就入夜，暴擊 +100%'], val: [25, 45, 70, 100] },
+  king:    { name: '百獸之王', tiers: [2, 3, 4], desc: ['（只有 5 費動物）全隊生命與攻擊 +8%', '+16%', '傳說：+30%，百獸之王的技能能量需求 −30%'], val: [8, 16, 30] },
 };
 let SYNERGY_BONUS = 20; // 默契加成：兩位隊友都有出該羈絆時效果 +20%
 
@@ -980,7 +1009,7 @@ const RECIPE = {};
 for (const k in ITEMS) RECIPE[ITEMS[k].from.slice().sort().join('+')] = k;
 // 紋章：裝上後多算一個羈絆（同一隻只能裝一個同名紋章，已有該羈絆的動物裝了無效）
 const EMBLEMS = {};
-for (const t in TRAITS) EMBLEMS['emb_' + t] = { name: TRAITS[t].name + '紋章', trait: t, stat: {}, desc: '裝上後這隻動物多算一個「' + TRAITS[t].name + '」羈絆' };
+for (const t in TRAITS) if (t !== 'king') EMBLEMS['emb_' + t] = { name: TRAITS[t].name + '紋章', trait: t, stat: {}, desc: '裝上後這隻動物多算一個「' + TRAITS[t].name + '」羈絆' }; // 百獸之王沒有紋章
 // 消耗品：拖到棋子身上立即使用
 const CONSUMABLES = {
   reforge: { name: '重鑄器', desc: '把這隻身上的裝備全部換成其他隨機裝備（材料換材料、成品換成品）' },
@@ -1086,6 +1115,7 @@ const EVOLVE = {
   hedgehog: '鋼刺蝟王', squirrel: '松果將軍', wolf: '狼王', frog: '蛙王', bat: '吸血伯爵', redpanda: '小熊貓武尊', skunk: '毒霧公爵',
   croc: '鱷魚霸主', bee: '蜂后', koala: '尤加利神', cheetah: '閃電獵豹', octopus: '深海巫師', owl: '月夜梟王', elephant: '萬象巨神', lion: '百獸之王',
   penguin: '冰原皇帝', rhino: '鋼角戰車', chameleon: '千面幻影', fox: '九尾狐', eagle: '蒼穹霸鷹', eel: '雷霆鰻神', gorilla: '叢林金剛', whale: '深藍巨鯨', peacock: '鳳凰孔雀', komodo: '龍蜥之王',
+  deer: '森之聖鹿', zebra: '雷紋斑馬', hippo: '河神巨口', parrot: '虹羽鸚鵡', giraffe: '天梯長頸鹿', flamingo: '晚霞紅鶴', shark: '深淵鯊王', panda: '功夫熊貓',
 };
 // ===== 食物鏈：天敵對獵物傷害 +25% =====
 const PREY = {
@@ -1094,6 +1124,7 @@ const PREY = {
   frog: ['bee', 'minibee'], skunk: ['bee', 'minibee'], hedgehog: ['frog'], bee: ['elephant'], elephant: ['lion'], octopus: ['croc'],
   eagle: ['squirrel', 'hare', 'fox', 'penguin', 'chameleon'], fox: ['hare', 'squirrel', 'frog'], komodo: ['boar', 'hare', 'wolf', 'rhino'],
   chameleon: ['bee', 'minibee'], peacock: ['frog', 'chameleon'], eel: ['frog', 'penguin'], whale: ['octopus'], penguin: ['eel'],
+  shark: ['penguin', 'frog', 'flamingo'], lion: ['zebra', 'deer', 'cheetah', 'wolf', 'boar', 'hare'], croc: ['zebra', 'deer', 'frog', 'wolf', 'boar', 'hare'], hippo: ['croc'], parrot: ['bee', 'minibee'],
 };
 let PREY_BONUS = 25;
 // ===== 天氣（依場地抽，每回合一次）=====
@@ -1305,15 +1336,26 @@ function applyTraits(B) {
     const v = t => { const x = tc[t]; if (x.tier < 0) return 0; const b = TRAITS[t].val[x.tier]; return x.duo ? Math.floor(b * (100 + SYNERGY_BONUS) / 100) : b; };
     for (const u of B.units) {
       if (u.team !== team) continue;
+      const top = t => tc[t] && tc[t].tier >= 0 && tc[t].tier === TRAITS[t].tiers.length - 1; // 湊到最高階
       if (hasTrait(u, 'forest')) u.regenPct = v('forest');
+      if (top('forest')) u.regenPct = Math.max(u.regenPct, 4); // 生態圈：全隊回血
       if (v('savanna')) { if (hasTrait(u, 'savanna')) u.asPct += v('savanna'); u.mv = Math.max(3, u.mv - 1); }
+      if (top('savanna')) u.ecoRush = true; // 生態圈：開場全隊攻速 +50%
       if (hasTrait(u, 'water')) u.waterShieldPct = v('water');
       if (hasTrait(u, 'sky')) u.dodge += v('sky');
-      if (hasTrait(u, 'pack')) u.packPct = v('pack');
-      if (v('armor')) { const add = hasTrait(u, 'armor') ? v('armor') : (tc.armor.tier >= 2 ? 20 : 10); u.arm += add; u.mr += add; }
+      if (top('sky')) { u.dodge += 20; u.atkPct += 15; }
+      if (hasTrait(u, 'pack') || top('pack')) u.packPct = v('pack');
+      if (top('pack')) u.packAll = true; // 9 群居：全隊都算群居
+      if (v('armor')) { const add = hasTrait(u, 'armor') ? v('armor') : [10, 15, 30][tc.armor.tier] || 10; u.arm += add; u.mr += add; }
       if (hasTrait(u, 'night')) u.nightCrit = v('night');
+      if (v('king')) { const k = v('king'); u.maxhp = Math.floor(u.maxhp * (100 + k) / 100); u.hp = u.maxhp; u.atkPct += k; if (top('king') && hasTrait(u, 'king')) u.manaMax = Math.floor(u.manaMax * 70 / 100); }
     }
     B['traits' + team] = tc;
+    // 生態圈（環境羈絆最高階）：記在戰場上，畫面換裝與專屬音樂也看這個
+    B.eco = B.eco || {};
+    for (const t of ['forest', 'savanna', 'water', 'sky']) if (tc[t] && tc[t].tier >= 0 && tc[t].tier === TRAITS[t].tiers.length - 1) { (B.eco[team] = B.eco[team] || {})[t] = 1; B.ev.push({ k: 'eco', team, t }); }
+    if (B.eco[team] && B.eco[team].forest) B.ecoRevive = Object.assign(B.ecoRevive || {}, { [team]: 1 });
+    if (tc.night && tc.night.tier === TRAITS.night.tiers.length - 1 && !B.night) { B.night = true; B.ev.push({ k: 'night' }); } // 永夜
   }
 }
 
@@ -1353,6 +1395,8 @@ function effAtk(B, u) {
 function effInterval(B, u) {
   let p = 100 + u.asPct + buffSum(B, u, 'as');
   if (u.key === 'cheetah') p += Math.min(5, u.sameHits) * 8;
+  if (u.ecoRush && B.t < 80) p += 50;
+  if (inZone(B, u, 'swirl')) p -= 25;
   if (u.galeStacks) p += u.galeStacks * 3;
   if (B.weather === 'heat') p += 15 + (hasTrait(u, 'savanna') ? 10 : 0);
   if (onTile(B, u, 'burn')) p += BURN_AS;
@@ -1388,7 +1432,7 @@ function damage(B, src, tgt, raw, type, o) {
   let amt = raw, crit = !!o.crit;
   if (o.skill && src.skillAmp) amt = Math.floor(amt * 130 / 100);
   if (src.packPct && (o.atk || o.skill)) {
-    let n = 0; for (const a of B.units) if (a.alive && a !== src && a.team === src.team && hasTrait(a, 'pack') && dist(a, src) <= 1) n++;
+    let n = 0; for (const a of B.units) if (a.alive && a !== src && a.team === src.team && (src.packAll || hasTrait(a, 'pack')) && dist(a, src) <= 1) n++;
     amt = Math.floor(amt * (100 + n * src.packPct) / 100);
   }
   if (o.atk && src.forceCrit) { crit = true; src.forceCrit = false; }
@@ -1406,7 +1450,7 @@ function damage(B, src, tgt, raw, type, o) {
     if (tgt.plague) arm = Math.floor(arm * Math.max(10, 100 - 6 * tgt.plague) / 100);
     if (inDomain(B, tgt)) arm = Math.floor(arm * 60 / 100);
     amt = Math.floor(amt * 100 / (100 + Math.max(0, arm)));
-  } else if (type === 'magic') amt = Math.floor(amt * 100 / (100 + Math.max(0, tgt.mr)));
+  } else if (type === 'magic') amt = Math.floor(amt * 100 / (100 + Math.max(0, tgt.mr - buffSum(B, tgt, 'mrd'))));
   let dr = Math.min(80, tgt.baseDr + buffSum(B, tgt, 'dr'));
   if (hasAug(B, tgt, 'united')) { let n = 0; for (const a of B.units) if (a.alive && a !== tgt && a.team === tgt.team && dist(a, tgt) <= 1) n++; dr = Math.min(80, dr + Math.min(20, 5 * n)); }
   amt = Math.floor(amt * (100 - dr) / 100);
@@ -1444,6 +1488,7 @@ function kill(B, u, killer) {
   u.alive = false; u.hp = 0;
   if (u.neutral) { if (B.grid[idx(u.c, u.r)] === u.id) B.grid[idx(u.c, u.r)] = -1; B.ev.push({ k: 'die', id: u.id, key: u.key, team: 2, by: killer ? killer.id : -1 }); if (killer && killer.owner >= 0) B.loot.push({ owner: killer.owner, key: u.key }); return; }
   if (!u.summon && u.owner >= 0) B.deaths[u.owner] = (B.deaths[u.owner] || 0) + 1;
+  if (B.ecoRevive && B.ecoRevive[u.team] === 1 && !u.summon && !u.revived) { B.ecoRevive[u.team] = 2; u.revived = true; B.revives.push({ id: u.id, t: B.t + 20, c: u.c, r: u.r, eco: true }); } // 森林生態圈：第一個倒下的復活
   if (hasAug(B, u, 'riposte') && killer && killer.alive && killer !== u && B.rng(100) < 50) { B.ev.push({ k: 'aug', id: u.id, a: 'riposte', to: killer.id }); damage(B, u, killer, Math.floor(killer.maxhp * 30 / 100), 'true', {}); }
   if (hasAug(B, u, 'necro') && (B.necroUsed[u.owner] || 0) < 2 && !u.summon && !u.revived) { B.necroUsed[u.owner] = (B.necroUsed[u.owner] || 0) + 1; u.revived = true; B.revives.push({ id: u.id, t: B.t + 20, c: u.c, r: u.r }); }
   if (killer && killer.alive && killer.team !== u.team && killer.owner >= 0) {
@@ -1709,6 +1754,52 @@ function cast(B, u) {
       const ids = []; for (const a of allies(B, u)) if (dist(a, u) <= 3) { a.buffs.push({ s: 'as', v: 30, u: B.t + 80 }); a.buffs.push({ s: 'dr', v: 20, u: B.t + 80 }); ids.push(a.id); }
       B.ev.push({ k: 'buff', id: u.id, ids, s: 'as' });
       break; }
+    // ---- v0.13 新動物 ----
+    case 'deer': {
+      let low = null; for (const a of allies(B, u)) if (!low || a.hp * 1000 / a.maxhp < low.hp * 1000 / low.maxhp) low = a;
+      if (low) heal(B, low, sk(200));
+      const ids = []; for (const a of allies(B, u)) if (hasTrait(a, 'forest') && dist(a, u) <= 2) { heal(B, a, Math.floor(a.maxhp * 6 / 100)); ids.push(a.id); }
+      B.ev.push({ k: 'buff', id: u.id, ids: low ? ids.concat(low.id) : ids, s: 'heal' });
+      break; }
+    case 'zebra': {
+      const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
+      damage(B, u, t0, sk(170), 'phys', { skill: 1 }); t0.blind = Math.max(t0.blind, B.t + 40); B.ev.push({ k: 'cc', id: t0.id, s: '致盲' });
+      break; }
+    case 'hippo': {
+      const ids = []; for (const e of es) if (dist(e, u) <= 1) { e.tauntBy = u.id; e.tauntUntil = B.t + 40; e.target = u.id; ids.push(e.id); } B.ev.push({ k: 'taunt', id: u.id, ids });
+      if (tgt && tgt.alive) damage(B, u, tgt, sk(200), 'magic', { skill: 1 });
+      u.shield += Math.floor(u.maxhp * 22 / 100);
+      break; }
+    case 'parrot': {
+      const list = es.filter(e => e.alive && !e.neutral).sort((a, b) => dist(a, u) - dist(b, u) || a.id - b.id).slice(0, 3);
+      for (const e of list) { B.ev.push({ k: 'proj', id: u.id, tg: e.id, s: 'feather' }); damage(B, u, e, sk(130), 'phys', { skill: 1 }); e.buffs.push({ s: 'mrd', v: 20, u: B.t + 80 }); }
+      break; }
+    case 'giraffe': {
+      for (const e of es) if (e.alive && dist(e, u) <= 2) {
+        damage(B, u, e, sk(200), 'phys', { skill: 1 });
+        if (e.alive && e.invuln <= B.t) { const dc = Math.sign(e.c - u.c), dr = Math.sign(e.r - u.r), nc = e.c + dc, nr = e.r + dr; if (nc >= 0 && nc < CFG.COLS && nr >= 0 && nr < CFG.ROWS && passable(B, nc, nr, e.id)) teleport(B, e, nc, nr); }
+      }
+      B.ev.push({ k: 'shake', id: u.id });
+      break; }
+    case 'flamingo': {
+      const cc = clusterCenter(B, u); if (!cc) break;
+      B.zones.push({ kind: 'swirl', team: u.team, c: cc.c, r: cc.r, until: B.t + 60, per: sk(90), src: u.id }); B.ev.push({ k: 'zone', kind: 'swirl', c: cc.c, r: cc.r, id: u.id });
+      break; }
+    case 'shark': {
+      let low = null; for (const e of es) if (!e.neutral && (!low || e.hp * 1000 / e.maxhp < low.hp * 1000 / low.maxhp)) low = e;
+      if (!low) break;
+      if (dist(low, u) > 1) { const spot = freeNear(B, low.c, low.r, u); if (spot) teleport(B, u, spot[0], spot[1]); }
+      u.target = low.id;
+      const bonus = low.hp * 2 < low.maxhp ? 160 : 100;
+      damage(B, u, low, Math.floor(sk(260) * bonus / 100), 'phys', { skill: 1 });
+      if (!low.alive) u.mana += 50;
+      break; }
+    case 'panda': {
+      const fwd = u.team === 0 ? 1 : -1, hit = [];
+      for (const e of es) if (e.alive && dist(e, u) <= 2 && (e.r - u.r) * fwd >= -1) { damage(B, u, e, sk(240), 'magic', { skill: 1 }); stun(B, e, 20); hit.push(e.id); }
+      heal(B, u, Math.floor(u.maxhp * 18 / 100));
+      B.ev.push({ k: 'shake', id: u.id });
+      break; }
     case 'komodo': {
       const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
       damage(B, u, t0, sk(260), 'phys', { skill: 1 });
@@ -1765,6 +1856,12 @@ function step(B) {
   B.t++;
   const t = B.t;
   if (!B.night && t >= CFG.NIGHT_TICK) { B.night = true; B.ev.push({ k: 'night' }); }
+  if (B.eco && t % 120 === 0) for (const team of [0, 1]) if (B.eco[team] && B.eco[team].water) { // 水域生態圈：每 6 秒巨浪
+    const src = B.units.find(x => x.alive && x.team === team && hasTrait(x, 'water')) || B.units.find(x => x.alive && x.team === team); if (!src) continue;
+    B.ev.push({ k: 'ecowave', team, id: src.id });
+    for (const e of B.units) if (e.alive && e.team !== team && !e.neutral) damage(B, src, e, 120, 'magic', {});
+    for (const a of B.units) if (a.alive && a.team === team) heal(B, a, Math.floor(a.maxhp * 5 / 100));
+  }
   augTick(B);
   // 開場：蝙蝠飛向後排
   if (t === 1) for (const u of B.units) if (u.key === 'bat' && u.alive) {
@@ -1994,8 +2091,8 @@ function augTick(B) {
     const u = B.units[rv.id];
     const spot = passable(B, rv.c, rv.r, -2) ? [rv.c, rv.r] : freeNear(B, rv.c, rv.r, null);
     if (!spot) return false;
-    u.alive = true; u.hp = u.maxhp; u.c = spot[0]; u.r = spot[1]; u.mvFrom = null; u.stun = 0; u.mana = Math.min(u.manaMax - 1, 50); u.dots = [];
-    B.grid[idx(u.c, u.r)] = u.id; B.ev.push({ k: 'revive', id: u.id }); B.ev.push({ k: 'aug', id: u.id, a: 'necro' });
+    u.alive = true; u.hp = rv.eco ? Math.floor(u.maxhp / 2) : u.maxhp; u.c = spot[0]; u.r = spot[1]; u.mvFrom = null; u.stun = 0; u.mana = Math.min(u.manaMax - 1, 50); u.dots = [];
+    B.grid[idx(u.c, u.r)] = u.id; B.ev.push({ k: 'revive', id: u.id }); B.ev.push(rv.eco ? { k: 'txt', id: u.id, s: '萬木回春' } : { k: 'aug', id: u.id, a: 'necro' });
     return false;
   });
 }
@@ -3594,6 +3691,114 @@ BUILD.chick = R => {
 };
 
 // 建立一隻：回傳 rig
+// ---- v0.13 新動物 ----
+Object.assign(BUILD, {
+  deer(R) {
+    plush(R, { fur: '#c98a52', belly: '#f4e2c4', muzzle: '#f4e2c4', nose: '#3a2418', headR: 0.27, limb: '#a86e3e' });
+    const M = R.M;
+    for (let i = 0; i < 5; i++) R.body.add(mesh(GEO.sph, M('#fbf2e2'), [(i % 2 ? 1 : -1) * 0.1, 0.36 - i * 0.03, -0.12 - i * 0.02], 0.03)); // 背上白點
+    for (const s of [-1, 1]) { // 鹿角
+      const a = saveBase(grp(R.head, [s * 0.1, 0.4, -0.02], [0, 0, -s * 0.25]));
+      a.add(mesh(GEO.cyl, M('#8a5a32'), [0, 0.08, 0], [0.018, 0.16, 0.018]));
+      a.add(mesh(GEO.cyl, M('#8a5a32'), [s * 0.04, 0.12, 0], [0.014, 0.08, 0.014], [0, 0, -s * 0.8]));
+      a.add(mesh(GEO.sph, M('#9a6a3e'), [0, 0.17, 0], 0.022));
+    }
+    triEar(R, R.head, -0.2, 0.3, -0.02, '#b87a46', '#f4d2b4', 0.12, 1.1); triEar(R, R.head, 0.2, 0.3, -0.02, '#b87a46', '#f4d2b4', 0.12, 1.1);
+    const t = saveBase(grp(R.body, [0, 0.3, -0.24])); R.tail = t; t.add(mesh(GEO.sph, M('#fbf2e2'), [0, 0, -0.02], [0.05, 0.07, 0.04]));
+    R.headTop = 1.02;
+  },
+  zebra(R) {
+    plush(R, { fur: '#fafafa', belly: '#fafafa', muzzle: '#3a3638', nose: '#1e1b1c', headR: 0.27, limb: '#f4f2ee', bodyW: 0.27 });
+    const M = R.M;
+    for (const s of [-1, 1]) for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [s * 0.24, 0.27, -0.15 + i * 0.09], [0.035, 0.2 - Math.abs(i - 1.5) * 0.03, 0.035], [0, 0, s * 0.15])); // 身體條紋
+    for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.18 + i * 0.09, 0.225 - Math.abs(i - 1) * 0.01], [0.17 - Math.abs(i - 1) * 0.03, 0.022, 0.03])); // 胸前條紋
+    for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.47, -0.12 + i * 0.09], [0.12, 0.02, 0.025])); // 背上條紋
+    for (const s of [-1, 1]) for (let i = 0; i < 3; i++) R.head.add(mesh(GEO.sph, M('#2a2628'), [s * 0.24, 0.24 + i * 0.08, -0.02], [0.03, 0.03, 0.13], [0, 0, s * 0.3])); // 臉頰條紋
+    for (let i = 0; i < 6; i++) R.head.add(mesh(GEO.box, M('#2a2628'), [0, 0.46 - i * 0.02, -0.04 - i * 0.06], [0.04, 0.08, 0.05], [-0.3 - i * 0.15, 0, 0])); // 鬃毛
+    triEar(R, R.head, -0.16, 0.38, 0, '#f4f2ee', '#2a2628', 0.12, 0.4); triEar(R, R.head, 0.16, 0.38, 0, '#f4f2ee', '#2a2628', 0.12, 0.4);
+    const t = saveBase(grp(R.body, [0, 0.2, -0.24])); R.tail = t; t.add(mesh(GEO.cyl, M('#f4f2ee'), [0, -0.05, -0.03], [0.015, 0.12, 0.015], [-0.4, 0, 0])); t.add(mesh(GEO.sph, M('#2a2628'), [0, -0.12, -0.06], [0.035, 0.06, 0.035]));
+    R.headTop = 1.0;
+  },
+  hippo(R) {
+    plush(R, { fur: '#9a8aa8', belly: '#c8b4c8', headR: 0.32, bodyW: 0.31, bodyH: 0.29, limb: '#8a7a98', blush: true });
+    const M = R.M;
+    R.jaw = saveBase(grp(R.head, [0, 0.14, 0.14]));
+    R.jaw.add(mesh(GEO.sph, M('#b4a2c0'), [0, -0.02, 0.1], [0.24, 0.1, 0.17]));
+    R.jaw.add(mesh(GEO.sph, M('#e98a9a'), [0, 0.04, 0.12], [0.18, 0.04, 0.12]));
+    for (const s of [-1, 1]) R.jaw.add(mesh(GEO.cone, M('#fbf6ea'), [s * 0.1, 0.07, 0.2], [0.025, 0.06, 0.025]));
+    R.head.add(mesh(GEO.sph, M('#a898b4'), [0, 0.28, 0.24], [0.2, 0.12, 0.13]));
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, M('#5a4a68'), [s * 0.06, 0.32, 0.36], [0.02, 0.015, 0.01])); roundEar(R, R.head, s * 0.17, 0.48, -0.04, '#8a7a98', '#e8b0c0', 0.05); }
+    R.headTop = 1.05;
+  },
+  parrot(R) {
+    plush(R, { fur: '#3cb44a', belly: '#f2d24a', headR: 0.27, limb: '#3a3a3a', bodyW: 0.23, blush: false });
+    const M = R.M;
+    R.head.children[0].material = M('#e8423a');
+    R.head.add(mesh(GEO.sph, M('#f4f1ea'), [0, 0.2, 0.18], [0.16, 0.13, 0.1]));
+    R.beak = saveBase(grp(R.head, [0, 0.15, 0.25])); R.beak.add(mesh(GEO.sph, M('#3a3638'), [0, 0, 0.02], [0.07, 0.08, 0.07])); R.beak.add(mesh(GEO.cone, M('#3a3638'), [0, -0.05, 0.05], [0.04, 0.08, 0.03], [Math.PI * 0.8, 0, 0]));
+    for (let i = 0; i < 3; i++) R.head.add(mesh(GEO.cone, M(['#f2d24a', '#e8423a', '#3a8ad8'][i]), [0, 0.42, -0.06 - i * 0.06], [0.03, 0.12, 0.03], [-0.5 - i * 0.3, 0, 0]));
+    for (const a of [R.armL, R.armR]) { a.children[0].material = M('#3a8ad8'); a.children[0].scale.set(0.05, 0.16, 0.12); }
+    R.wingL = R.armL; R.wingR = R.armR;
+    const t = saveBase(grp(R.body, [0, 0.2, -0.2])); R.tail = t;
+    ['#3a8ad8', '#e8423a', '#f2d24a'].forEach((c, i) => t.add(mesh(GEO.sph, M(c), [(i - 1) * 0.05, -0.05 - i * 0.02, -0.1 - i * 0.03], [0.04, 0.03, 0.16], [0.5, (i - 1) * 0.3, 0])));
+    R.fly = 0.3; R.headTop = 0.98;
+  },
+  giraffe(R) {
+    plush(R, { fur: '#f0c45a', belly: '#f8e6b0', muzzle: '#f8e6b0', nose: '#6a4a2a', headR: 0.25, limb: '#e0b04a' });
+    const M = R.M;
+    // 長脖子：頭往上抬高
+    R.head.position.y += 0.35; saveBase(R.head);
+    R.neck = R.body.add(mesh(GEO.cap, M('#f0c45a'), [0, 0.66, 0.02], [0.17, 0.38, 0.17]));
+    for (let i = 0; i < 8; i++) { const a = i * 1.7; R.body.add(mesh(GEO.sph, M('#b06a2a'), [Math.cos(a) * 0.15, 0.25 + (i % 4) * 0.12, Math.sin(a) * 0.15 + 0.02], [0.06, 0.05, 0.03])); }
+    for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#b06a2a'), [(i % 2 ? 1 : -1) * 0.08, 0.55 + i * 0.09, 0.12], [0.04, 0.04, 0.02]));
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.cyl, M('#e0b04a'), [s * 0.08, 0.45, -0.02], [0.02, 0.12, 0.02])); R.head.add(mesh(GEO.sph, M('#8a5a2a'), [s * 0.08, 0.52, -0.02], 0.035)); }
+    triEar(R, R.head, -0.2, 0.32, -0.04, '#e0b04a', '#f8e6b0', 0.1, 1.2); triEar(R, R.head, 0.2, 0.32, -0.04, '#e0b04a', '#f8e6b0', 0.1, 1.2);
+    R.headTop = 1.4;
+  },
+  flamingo(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#f49ab4'), [0, 0.42, -0.02], [0.24, 0.2, 0.28])); R.body.add(R.torso);
+    for (const s of [-1, 1]) { const l = saveBase(grp(R.body, [s * 0.06, 0.3, 0])); l.add(mesh(GEO.cyl, M('#e8708e'), [0, -0.14, 0], [0.015, 0.3, 0.015])); l.add(mesh(GEO.sph, M('#e8708e'), [0, -0.28, 0.03], [0.04, 0.015, 0.06])); s < 0 ? (R.legL = l) : (R.legR = l); }
+    R.legR.rotation.x = -1.2; saveBase(R.legR); // 單腳站
+    R.body.add(mesh(GEO.cap, M('#f49ab4'), [0, 0.6, 0.12], [0.06, 0.3, 0.06], [0.3, 0, 0]));
+    R.head = saveBase(grp(R.body, [0, 0.78, 0.17]));
+    R.head.add(mesh(GEO.sph, M('#f7aac0'), [0, 0.06, 0], [0.13, 0.12, 0.13]));
+    R.beak = saveBase(grp(R.head, [0, 0.03, 0.12])); R.beak.add(mesh(GEO.cone, M('#2e2a2c'), [0, -0.04, 0.04], [0.03, 0.12, 0.03], [Math.PI * 0.7, 0, 0])); R.beak.add(mesh(GEO.sph, M('#fbe6ea'), [0, 0, 0], [0.04, 0.035, 0.05]));
+    addEyes(R, R.head, 0.09, 0.07, 0.1, 0.022);
+    for (const s of [-1, 1]) { const w = saveBase(grp(R.body, [s * 0.2, 0.46, -0.02])); w.add(mesh(GEO.sph, M('#e8708e'), [s * 0.03, -0.04, -0.04], [0.06, 0.13, 0.2])); s < 0 ? (R.wingL = w) : (R.wingR = w); }
+    R.armL = R.wingL; R.armR = R.wingR;
+    const t = saveBase(grp(R.body, [0, 0.44, -0.28])); R.tail = t; t.add(mesh(GEO.cone, M('#e8708e'), [0, 0, -0.04], [0.06, 0.12, 0.04], [-Math.PI / 2, 0, 0]));
+    R.headR = 0.13; R.headTop = 1.0;
+  },
+  shark(R) {
+    const M = R.M;
+    R.body = saveBase(grp(R.yaw));
+    R.torso = saveBase(mesh(GEO.sph, M('#6c8aa8'), [0, 0.3, 0], [0.26, 0.24, 0.38])); R.body.add(R.torso);
+    R.body.add(mesh(GEO.sph, M('#f2f2ee'), [0, 0.22, 0.06], [0.2, 0.15, 0.3]));
+    R.body.add(mesh(GEO.cone, M('#5a7894'), [0, 0.6, -0.05], [0.09, 0.22, 0.05], [-0.3, 0, 0])); // 背鰭
+    R.head = saveBase(grp(R.body, [0, 0.3, 0.26]));
+    R.head.add(mesh(GEO.sph, M('#6c8aa8'), [0, 0.04, 0.02], [0.2, 0.17, 0.16]));
+    R.jaw = saveBase(grp(R.head, [0, -0.05, 0.08])); R.jaw.add(mesh(GEO.sph, M('#f2f2ee'), [0, -0.02, 0.02], [0.15, 0.06, 0.1]));
+    for (let i = 0; i < 5; i++) R.jaw.add(mesh(GEO.cone, M('#ffffff'), [(i - 2) * 0.05, 0.03, 0.09], [0.015, 0.035, 0.015]));
+    addEyes(R, R.head, 0.1, 0.11, 0.12, 0.03, '#7ff0ff');
+    for (const s of [-1, 1]) { const f = saveBase(grp(R.body, [s * 0.22, 0.22, 0.05], [0, 0, s * 0.6])); f.add(mesh(GEO.sph, M('#5a7894'), [s * 0.08, 0, 0], [0.12, 0.03, 0.08])); s < 0 ? (R.armL = f) : (R.armR = f); }
+    for (const s of [-1, 1]) { const l = saveBase(grp(R.body, [s * 0.1, 0.1, -0.1])); l.add(mesh(GEO.sph, M('#5a7894'), [0, -0.04, 0], [0.05, 0.04, 0.07])); s < 0 ? (R.legL = l) : (R.legR = l); }
+    const t = saveBase(grp(R.body, [0, 0.32, -0.36])); R.tail = t; t.add(mesh(GEO.cone, M('#5a7894'), [0, 0.1, -0.05], [0.06, 0.22, 0.03], [-0.6, 0, 0])); t.add(mesh(GEO.cone, M('#5a7894'), [0, -0.06, -0.05], [0.05, 0.15, 0.03], [-2.4, 0, 0]));
+    R.headR = 0.2; R.headTop = 0.8;
+  },
+  panda(R) {
+    plush(R, { fur: '#f6f4ef', belly: '#f6f4ef', limb: '#2a2628', muzzle: '#f6f4ef', nose: '#1e1b1c', headR: 0.32, bodyW: 0.3, bodyH: 0.3 });
+    const M = R.M;
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#2a2628'), [s * 0.12, 0.27, 0.24], [0.08, 0.1, 0.05], [0, 0, s * 0.5]));
+    roundEar(R, R.head, -0.22, 0.46, -0.02, '#2a2628', '#3a3638', 0.08); roundEar(R, R.head, 0.22, 0.46, -0.02, '#2a2628', '#3a3638', 0.08);
+    R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.42, -0.02], [0.3, 0.08, 0.27]));
+    R.prop = saveBase(grp(R.armR, [0, -0.2, 0.05])); // 竹子
+    R.prop.add(mesh(GEO.cyl, M('#7ab84a'), [0, 0.12, 0], [0.022, 0.42, 0.022])); for (let i = 0; i < 3; i++) R.prop.add(mesh(GEO.cyl, M('#5a983a'), [0, i * 0.13, 0], [0.026, 0.015, 0.026]));
+    R.prop.add(mesh(GEO.sph, M('#9ad86a'), [0.05, 0.33, 0], [0.06, 0.02, 0.03], [0, 0, 0.6]));
+    R.headTop = 1.08;
+  },
+});
 function buildAnimal(key) {
   geos();
   const R = { key, M: Mats(), root: new THREE.Group(), fly: 0 };
@@ -3772,6 +3977,41 @@ Object.assign(ACT, {
   },
 });
 // 每幀姿勢：st = {t 秒, moving, sleep, stun, act:{kind,p}, dead:p, hit:p, night, face}
+// v0.13 新動物的動作
+Object.assign(ACT, {
+  deer: {
+    atk: { dur: 0.45, hit: 0.5, fx: 'leafShot', fn(R, p) { R.head.rotation.x += 0.45 * bell(p, 0.1, 0.6); R.armR.rotation.x -= 1.2 * bell(p, 0, 0.5); } },
+    skill: { dur: 1.1, hit: 0.5, fx: 'blessing', fn(R, p) { hopUp(R, ramp(p, 0.1, 0.6), 0.3); R.head.rotation.x -= 0.6 * bell(p, 0, 1); R.armL.rotation.z -= 1.5 * bell(p, 0.1, 0.9); R.armR.rotation.z += 1.5 * bell(p, 0.1, 0.9); } },
+  },
+  zebra: {
+    atk: { dur: 0.42, hit: 0.5, fx: 'bite', fn(R, p) { lunge(R, p, 0.35, 0.2); R.head.rotation.x += 0.3 * bell(p, 0.2, 0.6); } },
+    skill: { dur: 0.9, hit: 0.5, fx: 'backKick', fn(R, p) { const k = bell(p, 0.2, 0.8); R.body.rotation.x += 0.9 * k; R.legL.rotation.x -= 1.6 * k; R.legR.rotation.x -= 1.6 * k; R.body.position.y += 0.15 * k; } },
+  },
+  hippo: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'bite', fn(R, p) { R.jaw.rotation.x += 0.9 * bell(p, 0, 0.55); lunge(R, p, 0.25, 0.35); } },
+    skill: { dur: 1.2, hit: 0.55, fx: 'hippoGulp', fn(R, p) { const o = bell(p, 0, 0.6); R.jaw.rotation.x += 1.3 * o; R.head.rotation.x -= 0.5 * o; R.body.scale.y *= 1 + 0.12 * o; lunge(R, ramp(p, 0.45, 1), 0.35); } },
+  },
+  parrot: {
+    atk: { dur: 0.45, hit: 0.5, fx: 'feather', fn(R, p) { R.wingR.rotation.z += 1.4 * bell(p, 0, 0.5); R.head.rotation.x += 0.3 * bell(p, 0.3, 0.7); } },
+    skill: { dur: 1.0, hit: 0.5, fx: 'featherVolley', fn(R, p) { const f = Math.abs(Math.sin(p * 24)); R.wingL.rotation.z -= 1.3 * f; R.wingR.rotation.z += 1.3 * f; R.head.rotation.x -= 0.5 * bell(p, 0.3, 0.6); R.beak.scale.y = 1 + 0.6 * bell(p, 0.35, 0.6); } },
+  },
+  giraffe: {
+    atk: { dur: 0.55, hit: 0.55, fx: 'headbutt', fn(R, p) { R.head.rotation.x += 0.9 * bell(p, 0.1, 0.7); R.head.position.z += 0.25 * bell(p, 0.2, 0.7); } },
+    skill: { dur: 1.2, hit: 0.5, fx: 'neckSwing', fn(R, p) { const k = bell(p, 0, 1); R.body.rotation.y += Math.sin(ramp(p, 0.1, 0.8) * Math.PI * 2) * 1.4 * k; R.head.rotation.z += 0.8 * Math.sin(p * 12) * k; } },
+  },
+  flamingo: {
+    atk: { dur: 0.5, hit: 0.55, fx: 'waterShot', fn(R, p) { R.head.position.z += 0.15 * bell(p, 0.1, 0.7); R.head.rotation.x += 0.6 * bell(p, 0.1, 0.7); R.wingR.rotation.z += 0.8 * bell(p, 0, 0.6); } },
+    skill: { dur: 1.3, hit: 0.45, fx: 'swirlDance', fn(R, p) { R.body.rotation.y += ease.inOut(ramp(p, 0, 0.9)) * Math.PI * 4; const f = bell(p, 0, 1); R.wingL.rotation.z -= 1.4 * f; R.wingR.rotation.z += 1.4 * f; } },
+  },
+  shark: {
+    atk: { dur: 0.42, hit: 0.5, fx: 'bite', fn(R, p) { R.jaw.rotation.x += 0.8 * bell(p, 0, 0.5); lunge(R, p, 0.4, 0.25); } },
+    skill: { dur: 1.1, hit: 0.6, fx: 'sharkBite', fn(R, p) { R.jaw.rotation.x += 1.2 * bell(p, 0.35, 0.75); R.tail.rotation.y += 0.8 * Math.sin(p * 30) * bell(p, 0, 1); } },
+  },
+  panda: {
+    atk: { dur: 0.55, hit: 0.6, fx: 'slam', fn(R, p) { const up = bell(p, 0, 0.6); R.armR.rotation.x -= 2.6 * up; R.body.rotation.x += 0.3 * bell(p, 0.5, 0.85); } },
+    skill: { dur: 1.3, hit: 0.5, fx: 'pandaRoll', fn(R, p) { const k = bell(p, 0, 1); R.head.scale.setScalar(1 - 0.3 * Math.min(1, k * 2)); R.body.rotation.x += ease.inOut(ramp(p, 0.05, 0.85)) * Math.PI * 4; R.body.position.y += 0.25 * k; } },
+  },
+});
 function poseRig(R, st) {
   for (const g of R.groups) resetG(g);
   const t = st.t + R.phase;
@@ -4695,6 +4935,14 @@ const AIR_CFG = {
   peacock: { kind: 'float', h: 2.4, spin: 1, toss: 0, shake: 0 },
   komodo: { kind: 'leap', h: 2.2, toss: 1.0, shake: 0.16 },
   kingboar: { kind: 'jump', h: 2.4, toss: 1.6, shake: 0.36 },
+  deer: { kind: 'jump', h: 1.4, flip: 1, toss: 0, shake: 0 },
+  zebra: { kind: 'flip', h: 1.2, flip: 1, toss: 1.0, shake: 0.08 },
+  hippo: { kind: 'leap', h: 1.6, toss: 0.8, shake: 0.24 },
+  parrot: { kind: 'dive', h: 2.6, spin: 1, toss: 0, shake: 0.04 },
+  giraffe: { kind: 'jump', h: 1.0, spin: 1, toss: 1.2, shake: 0.14 },
+  flamingo: { kind: 'float', h: 1.8, spin: 2, toss: 0, shake: 0 },
+  shark: { kind: 'breach', h: 2.8, flip: 1, toss: 1.4, shake: 0.16 },
+  panda: { kind: 'leap', h: 2.0, flip: 2, toss: 1.0, shake: 0.26 },
 };
 const AIR_ON = { on: true };
 const DEMO_CAM = { x: 0, y: 8.6, z: 9.6 }; // 設成 false 可整個關掉立體技能動作
@@ -4817,6 +5065,14 @@ const ULT = {
   whale(c) { const dir = c.tp.clone().sub(c.sp).setY(0).normalize(), side = V3(-dir.z, 0, dir.x); for (let w = 0; w < 4; w++) for (let i = -4; i <= 4; i++) { const p0 = c.sp.clone().addScaledVector(side, i * 0.45).setY(0.2); sprite('drop', p0, { scale: 0.22, scale1: 0.12, life: 1.0, vel: dir.clone().multiplyScalar(4).add(V3(0, 1.2, 0)), g: -2.5, delay: 0.15 + w * 0.12 }); } },
   peacock(c) { radial(c.A, 10, (a, x, z, i) => sprite('ring', c.A.clone().add(V3(x * 1.4, 0.6, z * 1.4)), { color: i % 2 ? 0x3fbf8a : 0x4a8aff, scale: 0.2, scale1: 0.45, life: 0.8, add: true, opacity: 0.85, delay: 0.1 + i * 0.02 })); },
   komodo(c) { for (let i = 0; i < 10; i++) sprite('spark', c.tp.clone().add(V3((Math.random() - .5) * 1.2, 0.05, (Math.random() - .5) * 1.2)), { color: 0x8fd34a, scale: 0.14, scale1: 0.22, life: 1.0, vel: V3(0, 0.6, 0), g: 0, opacity: 0.8, delay: i * 0.05 }); const d = mesh(GEO.disc, MB(0x6aa82a, 0.5)); d.rotation.x = -Math.PI / 2; d.position.set(c.tp.x, 0.02, c.tp.z); d.scale.setScalar(1.4); meshFx(d, { life: 1.6, custom: (f, q) => { d.material.opacity = 0.5 * (1 - q); } }); },
+  deer(c) { for (let i = 0; i < 12; i++) sprite('leaf', c.sp.clone().add(V3((Math.random() - .5) * 1.6, 1.6, (Math.random() - .5) * 1.6)), { color: 0x9ad86a, scale: 0.14, scale1: 0.1, life: 1.1, vel: V3(0, -1.2, 0), g: 0, spin: 4, delay: i * 0.04 }); },
+  zebra(c) { for (let i = 0; i < 6; i++) sprite('star', c.tp.clone().add(V3(Math.cos(i) * 0.4, 0.7, Math.sin(i) * 0.4)), { scale: 0.14, scale1: 0.05, life: 0.8, vel: V3(Math.cos(i) * 0.8, 0.6, Math.sin(i) * 0.8) }); },
+  hippo(c) { burst(c.tp, 12, { tex: 'drop', scale: 0.12, speed: 2, up: 2, g: -6, life: 0.7 }); },
+  parrot(c) { for (let i = 0; i < 10; i++) sprite('spark', c.sp.clone().add(V3(0, 0.6, 0)), { color: [0xe8423a, 0xf2d24a, 0x3a8ad8][i % 3], scale: 0.1, scale1: 0.02, life: 0.6, vel: V3(Math.cos(i) * 2, 0.8, Math.sin(i) * 2), g: -2, add: true }); },
+  giraffe(c) { radial(c.A, 10, (a, x, z) => sprite('puff', c.A.clone().add(V3(x * 1.4, 0.15, z * 1.4)), { color: 0xf0c45a, scale: 0.35, scale1: 0.05, life: 0.5, vel: V3(x, 0, z) })); },
+  flamingo(c) { radial(c.sp, 8, (a, x, z, i) => sprite('ring', c.sp.clone().add(V3(0, 0.1, 0)), { color: 0xf49ab4, scale: 0.3, scale1: 1.8, life: 0.7, delay: i * 0.05, add: true, opacity: 0.6 })); },
+  shark(c) { groundRing(c.tp, 0x6c8aa8, 1.8, 0.6); sprite('ring', c.tp.clone().add(V3(0, 0.1, 0)), { color: 0xffffff, scale: 0.3, scale1: 2, life: 0.4, add: true }); },
+  panda(c) { for (let i = 0; i < 4; i++) groundRing(c.A, 0x7ab84a, 1.2 + i * 0.5, 0.6, i * 0.1); },
 };
 function playFx(name, sk, tk, ex) {
   const sv = S3.V[sk], tv = tk !== undefined ? S3.V[tk] : null;
@@ -4827,6 +5083,16 @@ function playFx(name, sk, tk, ex) {
   if (SKILL_FX && SKILL_FX.has(name) && ULT[sv.unitKey]) { try { ULT[sv.unitKey]({ A, sp, tp, tv, sv }); } catch (e) {} if (ULT_FLASH[sv.unitKey]) screenFlash(ULT_FLASH[sv.unitKey]); }
   switch (name) {
     case 'bump': case 'kick': slash('burst', tp, { scale: 0.35, color: 0xffd9a0 }); burst(tp, 5, { color: 0xf2e6cf, scale: 0.12, speed: 1.6 }); break;
+    case 'leafShot': projectile(hand, tp, 'leaf', 0.25, { scale: 0.2, arc: 0.3, spin: 8, color: 0x7ab84a, onEnd: () => burst(tp, 4, { tex: 'leaf', color: 0x9ad86a, scale: 0.1, speed: 1.2 }) }); break;
+    case 'waterShot': projectile(posOf(sk, 0.8), tp, 'drop', 0.22, { scale: 0.18, arc: 0.25, onEnd: () => burst(tp, 6, { tex: 'drop', scale: 0.08, speed: 1.4, up: 1.2, g: -5, life: 0.4 }) }); break;
+    case 'backKick': slash('burst', tp, { scale: 0.7, color: 0xffffff }); burst(tp, 8, { tex: 'star', scale: 0.12, speed: 2, up: 1, g: -2 }); S3.shake = Math.max(S3.shake, 0.06); break;
+    case 'blessing': groundRing(A, 0x9ad86a, 2.2, 0.7); burst(sp, 14, { tex: 'leaf', color: 0x9ad86a, scale: 0.14, speed: 1, up: 1.5, g: -0.5, life: 1.0, spin: 3 }); break;
+    case 'hippoGulp': slash('bite', tp, { scale: 0.9, color: 0xf6c0d0 }); groundRing(A, 0xc8b4c8, 1.4, 0.5); S3.shake = Math.max(S3.shake, 0.08); break;
+    case 'featherVolley': for (let i = 0; i < 6; i++) projectile(hand, tp.clone().add(V3((Math.random() - .5) * 1.6, 0, (Math.random() - .5) * 1.6)), 'feather', 0.3, { scale: 0.28, arc: 0.2, delay: i * 0.04 }); break;
+    case 'neckSwing': groundRing(A, 0xf0c45a, 2.6, 0.5); slash('cross', tp, { scale: 1.0, life: 0.3 }); S3.shake = Math.max(S3.shake, 0.12); break;
+    case 'swirlDance': { const z = ex && ex.zone ? ex.zone : tp; for (let i = 0; i < 3; i++) sprite('ring', z.clone().add(V3(0, 0.05 + i * 0.05, 0)), { color: 0x7fd0ff, scale: 0.4 + i * 0.3, scale1: 1.6, life: 0.8, delay: i * 0.15, rot: i, add: true, opacity: 0.7 }); burst(z, 18, { tex: 'drop', scale: 0.12, speed: 1.8, up: 2.5, g: -6, life: 0.9 }); break; }
+    case 'sharkBite': slash('bite', tp, { scale: 1.1, color: 0xffffff }); burst(tp, 14, { tex: 'drop', scale: 0.14, speed: 2.4, up: 2.5, g: -7, life: 0.8 }); S3.shake = Math.max(S3.shake, 0.12); break;
+    case 'pandaRoll': groundRing(A, 0x7ab84a, 2.4, 0.6); burst(A.clone().add(V3(0, 0.1, 0)), 14, { tex: 'leaf', color: 0x7ab84a, scale: 0.16, speed: 2.4, up: 1, g: -3, life: 0.7, spin: 5 }); S3.shake = Math.max(S3.shake, 0.18); break;
     case 'acorn': break; // 由 proj 事件處理
     case 'acornVolley': burst(hand, 6, { tex: 'leaf', scale: 0.12, speed: 1.4, color: 0xd9a050 }); break;
     case 'bite': slash('bite', tp, { scale: 0.55, life: 0.3, color: 0xffffff }); burst(tp, 4, { tex: 'spark', color: 0xff8a6a, scale: 0.12, add: true }); break;
@@ -4956,6 +5222,7 @@ const ICON_TRAIT = {
   sky: '<path d="M3 15c3-8 10-10 18-9-3 2-4 3-5 5 2 0 3 0 4 1-3 1-5 2-7 4 1 0 2 0 3 1-5 1-9 0-13-2z" fill="currentColor"/>',
   pack: '<ellipse cx="12" cy="16" rx="5" ry="4" fill="currentColor"/><circle cx="6" cy="10" r="2.2" fill="currentColor"/><circle cx="10" cy="6.5" r="2.2" fill="currentColor"/><circle cx="14" cy="6.5" r="2.2" fill="currentColor"/><circle cx="18" cy="10" r="2.2" fill="currentColor"/>',
   armor: '<path d="M12 2l8 3v6c0 5-4 9-8 11-4-2-8-6-8-11V5z" fill="currentColor"/><path d="M12 6v12" stroke="var(--ib)" stroke-width="1.6"/>',
+  king: '<path d="M3 18l2-10 4.5 4L12 5l2.5 7L19 8l2 10z" fill="currentColor"/><rect x="3" y="18.5" width="18" height="2.5" rx="1" fill="currentColor"/>',
   night: '<path d="M15 3a9 9 0 1 0 6 13A7 7 0 0 1 15 3z" fill="currentColor"/><circle cx="18" cy="6" r="1.2" fill="currentColor"/>',
 };
 const ICON_ITEM = {
@@ -5013,7 +5280,7 @@ function audInit() {
     const nb = C.createBuffer(1, C.sampleRate, C.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; AUD.noise = nb;
   } catch (e) { AUD.ctx = null; }
 }
-function audApply() { if (!AUD.ctx) return; AUD.master.gain.value = AUD.set.mute ? 0 : 1; AUD.sfxG.gain.value = AUD.set.sfx; AUD.musG.gain.value = AUD.set.mus * 0.6; }
+function audApply() { if (typeof bgmApplyVol === 'function') bgmApplyVol(); if (!AUD.ctx) return; AUD.master.gain.value = AUD.set.mute ? 0 : 1; AUD.sfxG.gain.value = AUD.set.sfx; AUD.musG.gain.value = AUD.set.mus * 0.6; }
 // ---- 基本音源 ----
 function tone(freq, dur, o) {
   const C = AUD.ctx; if (!C) return;
@@ -5085,13 +5352,46 @@ const SFX = {
   emote: () => { tone(1100, 0.06, { type: 'triangle', vol: 0.1 }); tone(1650, 0.1, { type: 'triangle', vol: 0.08, at: 0.05 }); },
   sting: () => { tone(2400, 0.05, { to: 3200, vol: 0.06 }); noise(0.04, { f: 5000, q: 2, vol: 0.05 }); },
 };
+
+// ===== Q 版音效（v0.12.17）：短、圓、有彈性。每個按鈕與動作各自一個，名字＝用途 =====
+const boing = (f, at, vol, up) => tone(f, 0.14, { type: 'sine', to: f * (up || 1.9), vol: vol || 0.16, at: at || 0, att: 0.004 });
+Object.assign(SFX, {
+  click: () => { tone(660, 0.06, { type: 'sine', to: 1250, vol: 0.13 }); }, // 一般按鈕：啵
+  panelOpen: () => { tone(420, 0.12, { type: 'triangle', to: 980, vol: 0.12 }); tone(1320, 0.08, { vol: 0.05, at: 0.08 }); },
+  panelClose: () => tone(900, 0.1, { type: 'triangle', to: 380, vol: 0.1 }),
+  pick: () => { tone(500, 0.09, { type: 'sine', to: 1100, vol: 0.12 }); noise(0.07, { f: 1800, fto: 3500, q: 1, vol: 0.05 }); }, // 拿起棋子：咻
+  place: () => { tone(220, 0.1, { to: 110, vol: 0.28 }); boing(330, 0.05, 0.1, 1.5); }, // 放下：咚＋小彈
+  buy: () => { tone(1568, 0.07, { type: 'triangle', vol: 0.18 }); tone(2093, 0.12, { type: 'triangle', vol: 0.15, at: 0.05 }); boing(440, 0.1, 0.12, 2); },
+  sell: () => { for (let i = 0; i < 4; i++) tone(1800 - i * 160 + Math.random() * 80, 0.06, { type: 'triangle', vol: 0.12, at: i * 0.045 }); noise(0.12, { ft: 'lowpass', f: 900, vol: 0.08, at: 0.16 }); },
+  reroll: () => { for (let i = 0; i < 6; i++) noise(0.04, { f: 2500 + i * 300, q: 2, vol: 0.09, at: i * 0.035 }); boing(520, 0.2, 0.1, 1.6); }, // 洗牌刷刷
+  level: () => [523, 659, 784, 1047].forEach((f, i) => boing(f, i * 0.07, 0.14, 1.12)),
+  star: () => { [523, 659, 784].forEach((f, i) => tone(f, 0.16, { type: 'square', vol: 0.07, lp: 2400, at: i * 0.08 })); tone(1047, 0.35, { type: 'square', vol: 0.08, lp: 2600, at: 0.24 }); SFX.sparkle(); }, // 2 星：小號短奏
+  star3: () => { [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, 0.2, { type: 'square', vol: 0.08, lp: 2600, at: i * 0.09 })); [1047, 1319, 1568].forEach(f => tone(f, 0.8, { type: 'triangle', vol: 0.08, at: 0.48 })); noise(0.8, { f: 7000, q: 0.4, vol: 0.06, at: 0.45 }); tone(65, 0.5, { to: 40, vol: 0.3, at: 0.45 }); },
+  ready: () => { tone(1760, 0.5, { vol: 0.1 }); tone(2637, 0.4, { vol: 0.05, at: 0.01 }); }, // 鈴鐺
+  horn: () => { tone(392, 0.18, { type: 'sawtooth', vol: 0.09, lp: 1800 }); tone(523, 0.45, { type: 'sawtooth', vol: 0.1, lp: 2000, at: 0.16 }); tone(196, 0.6, { vol: 0.12, at: 0.16 }); }, // 戰鬥開始：號角
+  win: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.15, { type: 'square', vol: 0.07, lp: 2600, at: i * 0.09 })); tone(1319, 0.6, { type: 'square', vol: 0.08, lp: 2800, at: 0.36 }); for (let i = 0; i < 8; i++) noise(0.05, { f: 1500, q: 1, vol: 0.06, at: 0.4 + i * 0.07 }); }, // 歡呼＋拍手
+  lose: () => [392, 370, 349, 262].forEach((f, i) => tone(f, i === 3 ? 0.6 : 0.22, { type: 'triangle', to: i === 3 ? 180 : f, vol: 0.15, at: i * 0.24 })), // 滑稽下降：哇哇哇～
+  death: () => { tone(600, 0.35, { type: 'triangle', to: 120, vol: 0.12 }); noise(0.25, { ft: 'lowpass', f: 1200, fto: 300, vol: 0.12 }); }, // 漏氣
+  capture: () => { boing(784, 0, 0.14, 1.3); tone(1175, 0.3, { type: 'triangle', vol: 0.12, at: 0.12 }); SFX.sparkle(); }, // 收編：叮咚
+  leak: () => { tone(988, 0.1, { type: 'square', vol: 0.08, lp: 3000 }); tone(988, 0.1, { type: 'square', vol: 0.08, lp: 3000, at: 0.16 }); }, // 漏怪：嗶嗶
+  chest: () => { tone(200, 0.08, { type: 'square', vol: 0.08, lp: 900 }); [988, 1319, 1568, 1976].forEach((f, i) => tone(f, 0.25, { vol: 0.08, at: 0.1 + i * 0.05 })); }, // 寶箱打開
+  emote: () => boing(700 + Math.random() * 300, 0, 0.12, 1.6),
+  // 羈絆亮起：每個羈絆一個音色
+  trait_forest: () => [523, 659, 784].forEach((f, i) => tone(f, 0.25, { type: 'triangle', vol: 0.12, at: i * 0.06 })), // 木琴
+  trait_water: () => [880, 1175, 1568].forEach((f, i) => tone(f * 0.5, 0.18, { to: f, vol: 0.1, at: i * 0.07 })), // 水滴
+  trait_savanna: () => { [0, 0.12, 0.2].forEach(a => tone(120, 0.12, { to: 70, vol: 0.3, at: a })); tone(392, 0.3, { type: 'triangle', vol: 0.08, at: 0.2 }); }, // 鼓
+  trait_sky: () => [1568, 2093, 2637, 3136].forEach((f, i) => tone(f, 0.5, { vol: 0.05, at: i * 0.05 })), // 風鈴
+  trait_pack: () => { for (let i = 0; i < 4; i++) noise(0.05, { f: 1400, q: 1.2, vol: 0.12, at: i * 0.08 }); }, // 拍手
+  trait_armor: () => { tone(330, 0.3, { type: 'square', vol: 0.06, lp: 1500 }); tone(1650, 0.35, { vol: 0.06 }); tone(2475, 0.3, { vol: 0.04 }); }, // 金屬
+  trait_night: () => [1319, 988, 1319, 1760].forEach((f, i) => tone(f, 0.3, { vol: 0.06, at: i * 0.09 })), // 鈴鐺
+});
 // 每個攻擊／技能特效配的音效（沒列到的用預設）
 const FX_SOUND = {
   bump: ['thud'], acorn: ['tok'], acornVolley: ['whoosh', 'tok'], bite: ['bite'], biteDrain: ['bite', 'sparkle'], bigBite: ['crunch', 'sparkle'], claw1: ['claw'], claw3: ['claw', 'whoosh'], claw3big: ['claw', 'thud'],
   tongue: ['bloop'], tongueGrab: ['bloop', 'whoosh'], howl: [], taunt: ['roar'], stinkBall: ['bloop'], gasSpray: ['hiss', 'bloop'], deathRoll: ['splashBig', 'crunch'], sting: ['sting'], swarm: ['sparkle', 'hiss'],
   slam: ['thud'], bodySlam: ['slam'], crossSlash: ['whoosh', 'claw'], inkBall: ['bloop'], inkCloud: ['bloop', 'splash'], feather: ['whoosh'], swoop: ['whoosh', 'claw'], trunkSlap: ['thud', 'whoosh'], stomp: ['boom'],
   roar: [], spikeBurst: ['crunch', 'sparkle'], flipper: ['splash'], slideHit: ['splashBig'], headbutt: ['thud'], rhinoCharge: ['slam', 'whoosh'], chamStrike: ['bloop', 'claw'], pounce: ['whoosh', 'claw'],
-  talonShot: ['whoosh'], grabLift: ['whoosh', 'claw'], zap: ['zap'], chainZap: ['zap', 'sparkle'], fistSlam: ['thud'], chestBeat: ['slam', 'roar'], spout: ['splash'], tidal: ['splashBig'], fanOpen: ['chime', 'whoosh'], venomBite: ['crunch', 'hiss'],
+  talonShot: ['whoosh'], grabLift: ['whoosh', 'claw'], zap: ['zap'], chainZap: ['zap', 'sparkle'], fistSlam: ['thud'], chestBeat: ['slam', 'roar'], spout: ['splash'], tidal: ['splashBig'], leafShot: ['tok'], waterShot: ['bloop'], backKick: ['thud', 'sparkle'], blessing: ['chime'], hippoGulp: ['crunch', 'splash'], featherVolley: ['whoosh', 'whoosh'], neckSwing: ['whoosh', 'thud'], swirlDance: ['splashBig', 'sparkle'], sharkBite: ['crunch', 'splashBig'], pandaRoll: ['slam', 'whoosh'], fanOpen: ['chime', 'whoosh'], venomBite: ['crunch', 'hiss'],
 };
 function fxSound(fx, gap) { const L = FX_SOUND[fx]; if (!L) return false; L.forEach((n, i) => i ? setTimeout(() => sfx(n, gap), 60 * i) : sfx(n, gap)); return true; }
 function sfx(name, minGap) {
@@ -5126,6 +5426,14 @@ const VOICE = {
   whale: () => { tone(300, 0.9, { to: 500, vol: 0.07, att: 0.2 }); tone(500, 0.6, { to: 260, vol: 0.06, at: 0.7 }); },
   peacock: () => { tone(900, 0.18, { type: 'triangle', to: 1400, vol: 0.07 }); tone(1400, 0.25, { type: 'triangle', to: 1000, vol: 0.06, at: 0.18 }); },
   komodo: () => { noise(0.4, { ft: 'highpass', f: 3000, vol: 0.06, att: 0.05 }); },
+  deer: () => { tone(1250, 0.12, { to: 1600, vol: 0.06 }); tone(1500, 0.15, { to: 1200, vol: 0.05, at: 0.16 }); },
+  zebra: () => { for (let i = 0; i < 3; i++) tone(700 - i * 60, 0.09, { type: 'square', vol: 0.04, lp: 1800, at: i * 0.1 }); },
+  hippo: () => { tone(110, 0.4, { type: 'sawtooth', to: 90, vol: 0.08, lp: 500 }); tone(140, 0.3, { to: 100, vol: 0.06, at: 0.3 }); },
+  parrot: () => { tone(1800, 0.08, { type: 'square', to: 2600, vol: 0.04, lp: 4000 }); tone(2400, 0.1, { type: 'square', to: 1700, vol: 0.04, lp: 4000, at: 0.12 }); },
+  giraffe: () => { tone(300, 0.3, { to: 380, vol: 0.06, att: 0.05 }); },
+  flamingo: () => { tone(800, 0.15, { type: 'triangle', to: 600, vol: 0.06 }); tone(700, 0.15, { type: 'triangle', to: 500, vol: 0.05, at: 0.18 }); },
+  shark: () => { noise(0.3, { f: 600, fto: 200, q: 0.6, vol: 0.08 }); tone(70, 0.3, { to: 50, vol: 0.08 }); },
+  panda: () => { tone(160, 0.25, { type: 'triangle', to: 120, vol: 0.08 }); tone(180, 0.2, { type: 'triangle', to: 130, vol: 0.07, at: 0.28 }); },
 };
 function voice(key) { if (!AUD.ctx || AUD.set.mute) return; try { (VOICE[key] || VOICE.squirrel)(); } catch (e) {} }
 // ---- 配樂：依場地生成的循環 ----
@@ -5137,6 +5445,7 @@ const SONGS = {
 const midi = n => 440 * Math.pow(2, (n - 69) / 12);
 function musicStart(arena) {
   if (!AUD.ctx) return;
+  if (typeof BGM !== 'undefined' && BGM.key && !BGM.bad[BGM.key]) return; // 已經在放音檔
   if (AUD.music && AUD.music.arena === arena) return;
   musicStop();
   const S = SONGS[arena] || SONGS.jungle, beat0 = 60 / S.bpm / 2; // 八分音符
@@ -5167,6 +5476,54 @@ function musicStart(arena) {
 const MOOD_CFG = { calm: { tempo: 1 }, tense: { tempo: 1.12 }, hype: { tempo: 1.15 } }; // 配樂依戰況：速度倍率
 function musicMood(m) { AUD.mood = m; }
 function musicStop() { if (AUD.music) { clearInterval(AUD.music.timer); AUD.music = null; } }
+
+// ===== 背景音樂（音檔，全部 CC0；用到才載入，載入失敗就回到上面的電腦合成配樂）=====
+// 可調：BGM_CFG.TRACKS 換曲目檔名、FADE 交叉淡入秒數、VOL 音檔音量（再乘上設定裡的音樂音量）
+const BGM_CFG = {
+  FADE: 1.0, VOL: 0.9,
+  TRACKS: {
+    lobby: 'music/lobby.mp3',     // Happy Clappy Loop — OwlishMedia
+    jungle: 'music/jungle.mp3',   // Joyful Jungle — MintoDog
+    desert: 'music/desert.mp3',   // Tropical Loop — wipics
+    city: 'music/city.mp3',       // 8bit Bossa — Joth
+    battle: 'music/battle.mp3',   // 5 Action Chiptunes — Juhani Junkala
+    boss: 'music/boss.mp3',       // 同上
+    td: 'music/td.mp3',           // Happy Adventure Loop — TinyWorlds
+    eco_forest: 'music/eco_forest.mp3',   // Joyful Jungle（Climax）— MintoDog
+    eco_savanna: 'music/eco_savanna.mp3', // 5 Action Chiptunes — Juhani Junkala
+    eco_water: 'music/eco_water.mp3',     // Underwater Theme — Cleyton Kauffman
+    eco_sky: 'music/eco_sky.mp3',         // Up in the Sky — Memoraphile
+  },
+};
+const BGM = { key: '', el: {}, bad: {}, on: null };
+function bgmVol() { return AUD.set.mute ? 0 : AUD.set.mus * BGM_CFG.VOL; }
+function bgmEl(key) {
+  if (BGM.el[key]) return BGM.el[key];
+  const src = BGM_CFG.TRACKS[key]; if (!src) return null;
+  const a = new Audio(); a.src = src; a.loop = true; a.preload = 'auto'; a.volume = 0;
+  a.addEventListener('error', () => { BGM.bad[key] = 1; if (BGM.key === key) { BGM.key = ''; bgmFallback(); } });
+  BGM.el[key] = a; return a;
+}
+let BGM_FB = null; // 音檔不能用時，遊戲中改用電腦合成配樂
+function bgmFallback() { if (BGM_FB) musicStart(BGM_FB); }
+// 切到指定曲目（同一首不重來）；key 為空字串＝安靜
+function bgmPlay(key, fallbackArena) {
+  BGM_FB = fallbackArena || null;
+  if (key && BGM.bad[key]) { if (BGM.key) bgmFade(BGM.el[BGM.key], 0, true); BGM.key = ''; bgmFallback(); return; }
+  if (key === BGM.key) { const a = BGM.el[key]; if (a && a.paused && AUD.ctx) a.play().catch(() => {}); return; }
+  const old = BGM.key ? BGM.el[BGM.key] : null; BGM.key = key;
+  if (old) bgmFade(old, 0, true);
+  if (!key) return;
+  const a = bgmEl(key); if (!a) { bgmFallback(); return; }
+  musicStop(); // 有音檔就不用電腦合成的
+  a.volume = 0; const p = a.play(); if (p && p.catch) p.catch(() => {});
+  bgmFade(a, bgmVol(), false);
+}
+function bgmFade(a, to, pause) {
+  if (!a) return; clearInterval(a._fade); const from = a.volume, t0 = performance.now(), dur = BGM_CFG.FADE * 1000;
+  a._fade = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / dur); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) { clearInterval(a._fade); if (pause && to === 0) a.pause(); } }, 50);
+}
+function bgmApplyVol() { const a = BGM.key && BGM.el[BGM.key]; if (a) { clearInterval(a._fade); a.volume = Math.min(1, bgmVol()); } }
 
 // ===== 介面與流程：HUD、商店、拖放、事件特效 =====
 const $ = id => document.getElementById(id);
@@ -5443,7 +5800,7 @@ function renderDock() {
   const need = CFG.XP_NEED[P.level], frac = need ? P.xp / need : 1;
   $('xpFill').style.width = (frac * 100).toFixed(1) + '%';
   $('xpTxt').textContent = need ? `XP ${P.xp} / ${need}` : 'XP 已滿級';
-  if (prevLevel && P.level > prevLevel) { const l = $('lvl'); l.classList.remove('up'); void l.offsetWidth; l.classList.add('up'); toast(`升到 Lv.${P.level}！人口 +1`); groundRing(V3(0, 0, 1.5), 0x6fc0ff, 4.5, 0.9); }
+  if (prevLevel && P.level > prevLevel) { const l = $('lvl'); l.classList.remove('up'); void l.offsetWidth; l.classList.add('up'); toast(`升到 Lv.${P.level}！人口 +1`); sfx('level'); groundRing(V3(0, 0, 1.5), 0x6fc0ff, 4.5, 0.9); }
   prevLevel = P.level;
   $('pop').innerHTML = `<b>Lv.${P.level}</b>（${boardCount(G, ME)}/${popCap(P)}）`;
   // 金幣
@@ -5506,9 +5863,10 @@ function renderTraits() {
   let h = ''; const ost = traitOwnState();
   for (const t of order) {
     const x = tc[t], T = TRAITS[t], next = T.tiers.find(n => n > x.count);
-    const tierCls = x.tier < 0 ? '' : 't' + Math.min(2, x.tier + (T.tiers.length === 2 && x.tier === 1 ? 1 : 0));
+    const tierCls = x.tier < 0 ? '' : (x.tier === T.tiers.length - 1 && (T.tiers.length >= 4 || t === 'king')) ? 't3' : 't' + Math.min(2, x.tier + (T.tiers.length === 2 && x.tier === 1 ? 1 : 0)); // t3＝彩色（生態圈／傳說）
     const flash = (prevTiers[t] === undefined ? -1 : prevTiers[t]) < x.tier && x.tier >= 0;
     h += `<button class="tr ${tierCls} ${flash ? 'flash' : ''}" data-trait="${t}"><span class="hex">${iconTrait(t)}</span><span><span class="nm">${T.name}${x.duo ? '<span class="duo">默契</span>' : ''}</span><span class="ct"><em>${x.count}</em><span class="full"> / ${T.tiers.map(n => n <= x.count ? `<em>${n}</em>` : n).join(' › ')}</span><span class="short">/${next || T.tiers[T.tiers.length - 1]}</span></span><span class="tms">${traitMembersHtml(t, '', ost)}</span></span></button>`;
+    if (flash && G.phase === 'prep' && prevTiers[t] !== undefined) sfx('trait_' + t, 300);
     prevTiers[t] = x.tier;
   }
   for (const t in prevTiers) if (!order.includes(t)) prevTiers[t] = -1;
@@ -5671,7 +6029,7 @@ function onMove(e) {
   if (!drag && G && !$('game').hidden && e.target && e.target.id === 'cv') { const p = s3PickAt(e.clientX, e.clientY); S3.hoverK = p && p.type === 'unit' ? p.k : null; }
   if (!drag || drag.none) return;
   if (!drag.on && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) {
-    drag.on = true; sel = null; renderSheet();
+    drag.on = true; sel = null; renderSheet(); sfx('pick');
     const v = S3.V[drag.k]; if (v) { v.dragging = true; v.lift = 0.45; }
     const sz = $('sellzone'); sz.hidden = !!drag.mate; sz.innerHTML = `出售 <b>+${sellValue(drag.f.u)} 金</b>${drag.f.u.items && drag.f.u.items.length ? `<span class="szit">退回 ${drag.f.u.items.map(x => iconItem(x)).join('')}</span>` : ''}`;
   }
@@ -5855,8 +6213,31 @@ function combatSync() {
   S3.nightTarget = B.night ? 1 : 0;
   // 站在灼燒地塊上的單位身上冒火
   if (Math.random() < 0.25) for (const u of B.units) if (u.alive && terrainAt(B, u.c, u.r) === 'burn') { const p = posOf(kOf(u), 0.2); if (p) sprite('flame', p.add(V3((Math.random() - .5) * 0.3, 0, 0.15)), { scale: 0.22, scale1: 0.05, life: 0.5, vel: V3(0, 0.9, 0), add: true }); }
+  // 紅鶴的水花漩渦
+  if (Math.random() < 0.4) for (const zn of B.zones) if (zn.kind === 'swirl' && zn.until > B.t) { const [x, z] = bWorld(zn.c, zn.r), a = Math.random() * 6.28; sprite('drop', V3(x + Math.cos(a) * 1.1, 0.2, z + Math.sin(a) * 1.1), { scale: 0.1, scale1: 0.04, life: 0.6, vel: V3(-Math.sin(a) * 2, 1.2, Math.cos(a) * 2), g: -4 }); }
+  // 生態圈：整個戰場換裝（環境粒子）＋該羈絆的角色身上發光
+  if (B.eco) ecoAmbient(B);
   // 臭氣持續冒煙
   if (Math.random() < 0.35) for (const zn of B.zones) if (zn.kind === 'gas' && zn.until > B.t) { const [x, z] = bWorld(zn.c, zn.r); sprite('cloud', V3(x + (Math.random() - .5) * 2.4, 0.15, z + (Math.random() - .5) * 2.4), { color: 0x9bc24a, scale: 0.4, scale1: 0.9, life: 1.1, opacity: 0.6, vel: V3(0, 0.25, 0) }); }
+}
+// 生態圈畫面（可調：ECO_LOOK 每種的顏色、粒子、出現頻率）
+const ECO_LOOK = {
+  forest: { name: '萬木回春', col: 0x8fd35a, css: 'rgba(143,211,90,.35)', tex: 'leaf', rate: 0.6, fall: true },
+  savanna: { name: '獸群狂奔', col: 0xffc15a, css: 'rgba(255,193,90,.35)', tex: 'puff', rate: 0.5, dust: true },
+  water: { name: '深海巨浪', col: 0x7fc8ff, css: 'rgba(127,200,255,.35)', tex: 'drop', rate: 0.6, rise: true },
+  sky: { name: '萬里晴空', col: 0xf2f6ff, css: 'rgba(242,246,255,.45)', tex: 'feather', rate: 0.45, fall: true },
+};
+function ecoAmbient(B) {
+  for (const team of [0, 1]) for (const t in (B.eco[team] || {})) {
+    const L = ECO_LOOK[t]; if (!L || Math.random() > L.rate) continue;
+    const x = (Math.random() - 0.5) * 9, z = (Math.random() - 0.5) * 9;
+    if (L.fall) sprite(L.tex, V3(x, 3.2, z), { color: L.col, scale: 0.16, scale1: 0.12, life: 2.2, vel: V3(0.3, -1.3, 0), g: 0, spin: 3, opacity: 0.9 });
+    else if (L.rise) sprite('drop', V3(x, 0.1, z), { scale: 0.08, scale1: 0.14, life: 1.6, vel: V3(0, 1.1, 0), g: 0, opacity: 0.7 });
+    else if (L.dust) sprite('puff', V3(x, 0.15, z), { color: L.col, scale: 0.4, scale1: 0.9, life: 1.2, vel: V3(1.4, 0.2, 0), g: 0, opacity: 0.35 });
+    // 角色光環
+    const us = B.units.filter(u => u.alive && u.team === team && hasTrait(u, t)); const u = us[Math.floor(Math.random() * us.length)];
+    if (u) { const p = posOf(kOf(u), 0.1); if (p) sprite('ring', p, { color: L.col, scale: 0.3, scale1: 0.9, life: 0.6, add: true, opacity: 0.8 }); }
+  }
 }
 function actDur(B, u, kind) { const A = (ACT[u.key] || {})[kind]; if (!A) return 0.4; if (kind !== 'atk') return A.dur; return Math.min(A.dur, effInterval(B, u) * 0.05 * 0.95); }
 function hitDelay(k, kind) { const v = S3.V[k]; if (!v || !v.act || v.act.kind !== kind) return 0; const A = (ACT[v.unitKey] || {})[kind]; return Math.max(0, v.act.t0 + v.act.dur * (A ? A.hit : 0.5) - nowS()); }
@@ -5928,6 +6309,8 @@ function handleBattleEvents(bt) {
         case 'revive': if (v) { v.deadT = null; v.R.root.visible = true; v.pop = nowS(); augFx('necro', k); } break;
         case 'aug': augEventFx(B, ev); break;
         case 'night': banner('入夜', '夜行動物暴擊提升'); break;
+        case 'eco': { const L = ECO_LOOK[ev.t]; if (!L) break; const mine = MYB && MYB.mine && ev.team === cv.vt; at(0.6, () => { banner(`生態圈：${L.name}`, (mine ? '我方' : '敵方') + TRAITS[ev.t].name + '羈絆湊滿了！'); screenFlash(L.css); sfx('trait_' + ev.t); }); break; }
+        case 'ecowave': { for (let rr = 0; rr < CFG.ROWS; rr += 2) { const [x, z] = bWorld(4, rr); at(rr * 0.04, () => { burst(V3(x, 0.2, z), 10, { tex: 'drop', scale: 0.14, speed: 3, up: 2.6, g: -7, life: 0.8 }); groundRing(V3(x, 0, z), 0x7fc8ff, 5, 0.6); }); } sfx('splashBig', 200); screenFlash('rgba(127,200,255,.25)'); break; }
         case 'dash': { if (!v) break; const tk = kOf(B.units[ev.tg]); v.faceK = tk; v.faceUntil = nowS() + 0.8; const from = v.pos.clone(); for (let i = 0; i < 6; i++) at(i * 0.05, () => { const vv = S3.V[k]; if (vv) sprite(ev.s === 'slide' ? 'drop' : 'puff', vv.pos.clone().add(V3(0, 0.12 + groundH(vv.pos.x, vv.pos.z), 0)), { color: ev.s === 'slide' ? 0xbfe6ff : 0xe8d8b8, scale: 0.28, scale1: 0.05, life: 0.5, opacity: 0.8 }); }); groundRing(from, 0xe8d8b8, 0.8, 0.35); break; }
         case 'grab': { const tk = kOf(B.units[ev.tg]); if (v) { v.faceK = tk; v.faceUntil = nowS() + 1.5; } at(0.45, () => { const p = posOf(tk, 0.6); if (p) burst(p, 6, { tex: 'feather', scale: 0.15, speed: 1.2, up: 1.5, g: -1, life: 0.9, spin: 4 }); }); break; }
         case 'chain': { const ids = ev.ids.map(id => kOf(B.units[id])); const d0 = hitDelay(k, 'skill'); for (let i = 0; i + 1 < ids.length; i++) at(d0 + i * 0.09, () => { const a = posOf(ids[i], i ? 0.5 : 1.0), b = posOf(ids[i + 1], 0.5); if (a && b) { lightning(a, b, 0xfff27a, 0.3); burst(b, 5, { tex: 'spark', color: 0xfff27a, scale: 0.12, add: true, speed: 2 }); } }); at(d0, () => { S3.shake = Math.max(S3.shake, 0.08); }); break; }
@@ -6071,7 +6454,7 @@ function onPhase() {
     banner(`${st}-${G.round - first + 1}　${isPve(G.round) ? '野生回合' : '對戰回合'}`, `${ARENAS[G.arena].name}・準備 ${CFG.PREP_SEC} 秒`);
     const inc = G.players[ME].lastIncome;
     if (inc && G.round > 1) at(0.8, () => showIncome(inc));
-  } else if (ph === 'combat') { startCombatView(); banner(isBoss(G.round) ? '魔王來襲！' : isPve(G.round) ? '野生動物出沒！' : '戰鬥開始！', isBoss(G.round) ? '野豬王出現了' : ''); }
+  } else if (ph === 'combat') { startCombatView(); sfx('horn'); banner(isBoss(G.round) ? '魔王來襲！' : isPve(G.round) ? '野生動物出沒！' : '戰鬥開始！', isBoss(G.round) ? '野豬王出現了' : ''); }
   else if (ph === 'result') {
     waitChip(0);
     if (!(MYB && MYB.mine && !REPLAY)) roundResultBanner(); // 觀戰或回放：照舊在結算時顯示；自己的戰場由 myBattleDoneCheck 在播完時顯示
@@ -6146,7 +6529,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.16'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.0'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -6158,7 +6541,7 @@ function boot() {
   $('shop').addEventListener('click', e => { const c = e.target.closest('[data-slot]'); if (!c) return; const rect = c.getBoundingClientRect(), src = c.querySelector('img').src; const r = doAct({ t: 'buy', slot: +c.dataset.slot }, true); if (r === 'ok') buyFx(rect, src); else { toast(ERR[r] || '不行'); const el = document.querySelector(`[data-slot="${c.dataset.slot}"]`); if (el) { el.classList.add('nope'); } } });
   $('items').addEventListener('pointerdown', onItemDown);
   $('traits').addEventListener('click', e => { const c = e.target.closest('[data-trait],[data-combo]'); if (!c) return; sel = c.dataset.trait ? { type: 'trait', k: c.dataset.trait } : { type: 'combo', id: c.dataset.combo }; renderSheet(); });
-  $('mate').addEventListener('click', e => { if (e.target.id === 'btnGiftGold') { if (doAct({ t: 'gift', gold: 1 }) === 'ok') toast('送了 1 金給隊友'); } if (e.target.id === 'btnReady') { actMe({ t: 'ready' }); renderDock(); } });
+  $('mate').addEventListener('click', e => { if (e.target.id === 'btnGiftGold') { if (doAct({ t: 'gift', gold: 1 }) === 'ok') toast('送了 1 金給隊友'); } if (e.target.id === 'btnReady') { actMe({ t: 'ready' }); renderDock(); if (G.players[ME].ready) sfx('ready'); } });
   $('btnLevel').onclick = () => doAct({ t: 'level' });
   $('augs').addEventListener('click', e => { const c = e.target.closest('[data-aug]'); if (c) { sel = { type: 'aug', id: c.dataset.aug }; renderSheet(); } });
   $('augModal').addEventListener('click', e => { const c = e.target.closest('[data-pick]'); if (c) { c.classList.add('chosen'); setTimeout(() => pickAug(c.dataset.pick), 220); return; } if (e.target.id === 'augHide') $('augModal').classList.add('min'); if (e.target.id === 'augShow') $('augModal').classList.remove('min'); });
@@ -6346,7 +6729,7 @@ function featuresLog(L) {
     case 'buy': if (mine) sfx('buy'); break;
     case 'sell': if (mine) sfx('sell'); break;
     case 'reroll': if (mine) { sfx('reroll'); questEvent('roll'); } break;
-    case 'merge': if (mine) { sfx('star'); if (L.star >= 3) { PROFILE.three++; saveProfile(); unlockSkin('snow'); questEvent('three'); setTimeout(() => banner(`進化！${EVOLVE[L.key] || ''}`, '生命攻擊 +20%、技能 +30%', 'win'), 600); } } break;
+    case 'merge': if (mine) { sfx(L.star >= 3 ? 'star3' : 'star'); if (L.star >= 3) { PROFILE.three++; saveProfile(); unlockSkin('snow'); questEvent('three'); setTimeout(() => banner(`進化！${EVOLVE[L.key] || ''}`, '生命攻擊 +20%、技能 +30%', 'win'), 600); } } break;
     case 'aug': if (mine) sfx('aug'); break;
     case 'craft': case 'equip': if (mine) sfx('coin'); break;
     case 'portal': { const p = PORTALS.find(x => x.id === L.id); banner(`傳送門：${p.name}`, p.desc); sfx('aug'); break; }
@@ -6354,7 +6737,7 @@ function featuresLog(L) {
     case 'captainChoice': if (L.team === myTeam()) toast(`隊長選擇了：${L.choice === 'gold' ? '每人 +4 金' : '每人 1 件成品裝備'}`, 2000); break;
     case 'draft': sfx('draft'); break;
     case 'drafted': if (mine) { sfx('buy'); toast(`選到 ${ANIMALS[L.key].name}＋${itemDef(L.item).name}`); } break;
-    case 'loot': if (mine) { const d = L.d; lootToast.push(d.type === 'gold' ? `${d.n} 金` : d.type === 'unit' ? ANIMALS[d.k].name : itemDef(d.k).name); clearTimeout(lootToast.h); lootToast.h = setTimeout(() => { if (lootToast.length) toast('戰利品：' + lootToast.join('、'), 2400); lootToast.length = 0; }, 400); sfx('coin'); } break;
+    case 'loot': if (mine) { sfx('chest', 400); const d = L.d; lootToast.push(d.type === 'gold' ? `${d.n} 金` : d.type === 'unit' ? ANIMALS[d.k].name : itemDef(d.k).name); clearTimeout(lootToast.h); lootToast.h = setTimeout(() => { if (lootToast.length) toast('戰利品：' + lootToast.join('、'), 2400); lootToast.length = 0; }, 400); sfx('coin'); } break;
     case 'consume': if (mine) { sfx('star'); toast(`使用了${CONSUMABLES[L.item].name}`); } break;
     case 'bank': if (mine) sfx('coin'); break;
     case 'captain': toast(`隊長換成 ${G.players[L.to].name}`); break;
@@ -6517,6 +6900,31 @@ function skillDemo(key) {
   $('stage').insertAdjacentHTML('beforeend', `<div class="replaybar" id="replaybar">${ANIMALS[key].name}・${ANIMALS[key].skill}<button class="btn" id="rpSlow">慢動作</button><button class="btn" id="rpNorm">1×</button><button class="btn primary" id="rpEnd">回圖鑑</button></div>`);
   $('rpSlow').onclick = () => { G.speed = 0.4; }; $('rpNorm').onclick = () => { G.speed = 1; }; $('rpEnd').onclick = () => endReplay();
 }
+// 全部按鈕按下都有「啵」；面板打開／關閉各有音效
+document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('button, .btn, [data-slot]')) { audInit(); sfx('click', 70); } }, true);
+{ const ov = document.getElementById('overlay'); if (ov && window.MutationObserver) { let was = ov.hidden; new MutationObserver(() => { if (ov.hidden !== was) { was = ov.hidden; sfx(was ? 'panelClose' : 'panelOpen', 120); } }).observe(ov, { attributes: true, attributeFilter: ['hidden'] }); } }
+// 背景音樂自動選曲：大廳＝lobby；塔防＝td；魔王回合戰鬥＝boss；我方環境羈絆湊到最高階＝生態圈專屬曲；戰鬥＝battle；準備＝場地曲
+const ECO_TRAITS = ['forest', 'savanna', 'water', 'sky'];
+function ecoActive() { // 回傳湊到最高階的環境羈絆（只看自己這邊）
+  if (!G) return null; let tc = null;
+  if (cv && cv.B && MYB && MYB.mine) tc = cv.B['traits' + cv.vt];
+  if (!tc) try { tc = traitCounts(battleUnitsForTeam(G, myTeam(), 0), 0); } catch (e) {}
+  if (!tc) return null;
+  for (const t of ECO_TRAITS) { const x = tc[t], T = TRAITS[t]; if (x && T && x.tier >= T.tiers.length - 1) return t; }
+  return null;
+}
+function bgmAuto() {
+  if (!AUD.ctx) return;
+  const inGame = G && !$('game').hidden;
+  if (!inGame) { bgmPlay('lobby'); return; }
+  const eco = ecoActive();
+  let key = G.arena;
+  if (G.td) key = 'td';
+  else if (eco) key = 'eco_' + eco;
+  else if (G.phase === 'combat' || G.phase === 'result') key = isBoss(G.round) ? 'boss' : 'battle';
+  bgmPlay(key, G.arena);
+}
+setInterval(() => { try { bgmAuto(); } catch (e) {} }, 500);
 // ---- 回放 ----
 function startReplay() {
   const bt = G.battles.find(b => b.teams.includes(myTeam())); if (!bt || !bt.input) return;
@@ -8467,7 +8875,7 @@ function tdOnPhase(ph) {
     banner(`${L.id}　第 ${D.wave + 1}/${L.waves.length} 波`, m ? (m.leaks ? `漏了 ${m.leaks} 隻・${m.moved < 0 ? '前線後退' + (m.moved < -1 ? ' 2 排' : '') : '前線守住'}` : '完美防守・前線往前推！') + `　+${m.gold} 金` : L.desc);
     if (m && m.moved > 0) sfx('chime'); if (m && m.moved < 0) sfx('sting');
   } else if (ph === 'combat') {
-    startCombatView();
+    startCombatView(); sfx('horn');
     banner(D.tide ? '大潮來襲！' : `第 ${D.wave + 1} 波來襲`, D.tide ? '敵人加倍・收編機率加倍' : '守住底線！');
   }
   tdPanel(); tdFrontMesh(D.front);
@@ -8477,10 +8885,10 @@ function tdOnPhase(ph) {
 function tdEvent(B, ev) {
   if (!G || !G.td) return;
   const D = G.td, P = G.players[ME];
-  if (ev.k === 'tdleak') { sfx('sting', 120); screenFlash('rgba(255,60,40,.35)'); tdPanel(); }
+  if (ev.k === 'tdleak') { sfx('leak', 120); screenFlash('rgba(255,60,40,.35)'); tdPanel(); }
   else if (ev.k === 'tdcap') {
     const sl = P.bench.indexOf(null), A = ANIMALS[ev.key];
-    if (sl >= 0) { P.bench[sl] = newUnit(G, ev.key, 1, ME); D.captured++; checkMerge(G, ME); toast(`收編了 ${A.name}！`, 1500); sfx('coin'); }
+    if (sl >= 0) { P.bench[sl] = newUnit(G, ev.key, 1, ME); D.captured++; checkMerge(G, ME); toast(`收編了 ${A.name}！`, 1500); sfx('capture'); }
     else { P.gold += 1; toast(`備戰席滿了，${A.name} 換成 1 金`, 1500); }
     const v = S3.V['b' + ev.id]; if (v) { const p = v.pos.clone().add(V3(0, 0.6, 0)); sprite('ring', p, { color: 0xffe27a, scale: 0.3, scale1: 1.4, life: 0.6, add: true }); burst(p, 10, { tex: 'spark', color: 0xffd34d, scale: 0.12, add: true, speed: 2 }); }
     renderDock(); tdPanel();
@@ -8497,7 +8905,7 @@ function tdPanel() {
     <div class="tdf"><span>前線</span>${Array.from({ length: TD_CFG.MAX_FRONT }, (_, i) => `<i class="${i < D.front ? 'on' : ''}"></i>`).join('')}<small>${G.phase === 'combat' ? `剩 ${left} 隻・漏 ${D.leaks}` : '守住不漏怪就往前推'}</small></div>
     <div class="tdn"><span>${G.phase === 'combat' ? '這一波' : '下一波'}</span>${keys.map(k => `<img src="${PORT[k] || ''}" alt="" title="${(ANIMALS[k] || EXTRA[k] || {}).name || k}">`).join('')}<small>收編 ${D.captured}</small></div>
     ${showGo ? '<button class="btn primary tdgo" id="tdGo">開始這一波 ▶<small id="tdGoT"></small></button>' : ''}`;
-  if (el._h !== html) { el._h = html; el.innerHTML = html; const go = $('tdGo'); if (go) go.onclick = () => { G.players[ME].ready = true; sfx('click'); }; }
+  if (el._h !== html) { el._h = html; el.innerHTML = html; const go = $('tdGo'); if (go) go.onclick = () => { G.players[ME].ready = true; sfx('ready'); }; }
   const gt = $('tdGoT'); if (gt) { const sec = Math.max(0, G.timer) / 1000; gt.textContent = `${Math.ceil(sec)} 秒・提早開打 +${Math.min(TD_CFG.EARLY_GOLD_MAX, Math.floor(sec / TD_CFG.EARLY_GOLD_SEC))} 金`; }
 }
 // 前線外（還不能擺）的格子蓋一層紅色

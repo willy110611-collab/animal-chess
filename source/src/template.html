@@ -247,6 +247,8 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .tr .hex { width: 26px; height: 26px; display: grid; place-items: center; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); background: #5a4a42; color: #c9b8a8; --ib: #5a4a42; }
 .tr .hex svg { width: 16px; height: 16px; }
 .tr.t0 .hex { background: var(--bronze); color: #fff2e0; --ib: var(--bronze); } .tr.t1 .hex { background: var(--silver); color: #2a2a3a; --ib: var(--silver); } .tr.t2 .hex { background: var(--goldt); color: #5a3a10; --ib: var(--goldt); }
+.tr.t3 .hex { background: conic-gradient(from 0deg, #ff7ab8, #ffd34d, #7fe08a, #6fc8ff, #b48cff, #ff7ab8); color: #fff; --ib: #6a3aa0; animation: prism 3s linear infinite; box-shadow: 0 0 10px rgba(255,255,255,.6); } .tr.t3 { box-shadow: 0 0 0 1.5px rgba(255,255,255,.7), 0 0 12px rgba(180,140,255,.6); }
+@keyframes prism { to { filter: hue-rotate(360deg); } }
 .tr .nm { font-weight: 900; display: block; }
 .tr .ct { opacity: .85; font-variant-numeric: tabular-nums; }
 .tr .ct em { font-style: normal; color: var(--gold-2); }
