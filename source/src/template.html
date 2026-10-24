@@ -180,6 +180,37 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team .who { display: flex; gap: 4px; flex-wrap: wrap; font-weight: 500; opacity: .9; }
 .team .who span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c); margin-right: 3px; }
 .team.hit { animation: shake .4s; }
+/* 隊伍血量：圓形頭像＋外圈血量環。可調：.tav 大小、--rc 顏色 */
+.avhint { font-size: 12px; opacity: .75; margin: 0 0 8px; }
+.avgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.avpick { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border-radius: 10px; font-size: 12px; font-weight: 800; }
+.avpick .tav { width: 54px; height: 54px; --tc: #3d7fc4; }
+.avpick.on { background: rgba(242,193,78,.25); outline: 2px solid var(--gold-2); }
+@property --p { syntax: '<percentage>'; inherits: true; initial-value: 100%; }
+.team.av { display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 6px; justify-self: start; }
+.team.av.r { flex-direction: row-reverse; justify-self: end; padding: 5px 6px 5px 10px; text-align: right; }
+.tav { --p: 100%; --rc: #7fd36a; position: relative; flex: none; width: 48px; height: 48px; border-radius: 50%; padding: 4px; box-sizing: border-box; background: conic-gradient(var(--rc) 0 var(--p), rgba(255,255,255,.13) 0); box-shadow: 0 0 0 2px rgba(30,15,10,.85); transition: --p .7s cubic-bezier(.2,.9,.3,1); display: block; }
+.tav img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--tc, #3d7fc4) 55%, #fff), var(--tc, #3d7fc4)); display: block; }
+.tav .tn { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); font-family: var(--f-display); font-size: 14px; line-height: 15px; padding: 0 6px; border-radius: 999px; background: #2b1c16; color: #fff; font-variant-numeric: tabular-nums; box-shadow: 0 0 0 1.5px rgba(255,255,255,.18); }
+.team.r .tav { --rc: #ff7a5a; }
+.team.av .tinfo { display: grid; gap: 2px; min-width: 0; }
+.team.av .tl { font-size: 12px; font-weight: 900; }
+.team.av.hit .tav { animation: shake .4s; }
+.team.av.onfire::after, .team.av.cold::after { right: -4px; top: -7px; bottom: auto; } .team.av.r.onfire::after, .team.av.r.cold::after { right: auto; left: -4px; }
+.team.stand .scells { display: grid; grid-template-columns: repeat(4, minmax(0, 34px)); gap: 3px 3px; padding: 2px 1px 1px; justify-content: space-between; }
+.team.stand .scell { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 1px; border-radius: 8px; padding: 2px 0 1px; min-width: 0; }
+.team.stand .scell .tav { width: min(30px, 100%); height: auto; aspect-ratio: 1; padding: 2.5px; --rc: #e8d6b4; box-shadow: 0 0 0 1.5px rgba(30,15,10,.85); }
+.team.stand .scell.me .tav { --rc: #7fd36a; box-shadow: 0 0 0 1.5px #fff; }
+.team.stand .scell.opp .tav { --rc: #ff7a5a; }
+.team.stand .scell b { font-family: var(--f-display); font-size: 11px; line-height: 12px; font-variant-numeric: tabular-nums; }
+.team.stand .scell.me b { color: #9be07a; } .team.stand .scell.opp b { color: #ffb08a; }
+.team.stand .scell.out { opacity: .38; } .team.stand .scell.out .tav { filter: grayscale(1); }
+.team.stand .scell.cand .tav { box-shadow: 0 0 0 1.5px #ffd34d; }
+.team.stand .scell.look { background: rgba(242,193,78,.24); outline: 1px solid var(--gold-2); }
+.team.stand .sbd { position: absolute; right: -5px; top: -4px; display: inline-flex; align-items: center; gap: 1px; font-style: normal; font-size: 9px; font-weight: 900; line-height: 12px; min-width: 12px; padding: 0 3px; border-radius: 999px; color: #fff; justify-content: center; }
+.team.stand .sbd.win { background: #ff7a1a; } .team.stand .sbd.lose { background: #5a7fb0; } .team.stand .sbd.q { background: #c9a227; color: #2b1c16; }
+.team.stand .sbd.vs { background: #2b1c16; padding: 1px; } .team.stand .sbd.vs svg { width: 12px; height: 12px; display: block; }
+
 @keyframes shake { 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
 .clock { background: rgba(43,28,22,.85); color: var(--paper); border-radius: 14px; padding: 4px 10px 6px; text-align: center; min-width: 92px; }
 .clock .stg { font-size: 11px; font-weight: 700; display: flex; gap: 3px; justify-content: center; align-items: center; }
@@ -282,13 +313,14 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .shop { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; perspective: 600px; max-width: 540px; margin: 0 auto; }
 .card { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; background: var(--cc, #9a8a7a); padding: 3px; box-shadow: 0 4px 0 rgba(0,0,0,.4); transform-style: preserve-3d; transition: transform .15s; overflow: hidden; }
 .card .in { position: absolute; inset: 3px; border-radius: 8px; background: radial-gradient(90% 70% at 50% 35%, #fff2da, #e9cfa6); overflow: hidden; }
-.card img { position: absolute; left: 50%; top: -10%; width: 104%; transform: translateX(-50%); pointer-events: none; }
+.card img { position: absolute; left: 3px; right: 3px; top: 3px; width: calc(100% - 6px); height: calc(100% - 22px); object-fit: contain; object-position: 50% 40%; pointer-events: none; } /* 整隻放進卡片：可調 height 與 object-position */
 .card .nm { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(43,28,22,.86); color: var(--paper); font-size: 12px; font-weight: 900; padding: 2px 4px 3px; display: flex; justify-content: space-between; align-items: center; }
 .card .cost { display: flex; align-items: center; gap: 1px; color: var(--gold-2); font-family: var(--f-display); }
 .card .cost svg { width: 11px; height: 11px; }
-.card .tt { position: absolute; left: 2px; bottom: 21px; display: grid; gap: 1px; } /* 羈絆放在卡片下方，不擋臉 */
+.card .tt { position: absolute; left: 2px; top: 3px; display: grid; gap: 1px; opacity: .92; } /* 羈絆放左上角 */
 .card .tt span { display: flex; align-items: center; gap: 2px; height: 14px; padding: 0 4px 0 2px; background: rgba(43,28,22,.62); color: var(--paper); border-radius: 999px; --ib: #2b1c16; width: max-content; }
-.card .tt b { font-size: 9px; font-weight: 900; line-height: 1; letter-spacing: .02em; }
+.card .tt b { font-size: 9px; font-weight: 900; line-height: 1; letter-spacing: .02em; display: none; } /* 手機卡牌只放羈絆圖示，名稱在電腦版顯示 */
+.card .tt span { padding: 0 2px; }
 .card .tt svg { width: 10px; height: 10px; }
 .card.c1 { --cc: var(--c1); } .card.c2 { --cc: var(--c2); } .card.c3 { --cc: var(--c3); } .card.c4 { --cc: linear-gradient(135deg, #8a4fc4, #c48af2, #8a4fc4); }
 .card.c4 .in { background: radial-gradient(90% 70% at 50% 35%, #fff2fb, #e6cff0); }
@@ -423,7 +455,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 #pingLabels { position: absolute; inset: 0; pointer-events: none; }
 .plabel { position: absolute; transform: translate(-50%, -100%); background: var(--c); color: #fff; font-size: 11px; font-weight: 900; padding: 2px 7px; border-radius: 999px; white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.3); }
 .num.prey { color: #ff8a5a; font-size: 12px; -webkit-text-stroke: 3px #3a1a10; }
-.hb.neutral .hb-hp { background: linear-gradient(#ffe08a, #d99a2b); }
+
 .item.emb { box-shadow: inset 0 0 0 2px #f2c14e; background: #6a4a2a; } .item.cons { box-shadow: inset 0 0 0 2px #8fd3ff; background: #3a4a5a; }
 .bank { display: flex; align-items: center; gap: 6px; font-size: 12px; flex-wrap: wrap; }
 .bank .cap { background: #5a443a; border-radius: 999px; padding: 2px 8px; } .bank .bk { flex: 1; min-width: 0; } .bank .bk b { font-family: var(--f-display); font-size: 15px; color: var(--gold-2); } .bank .btn { padding: 4px 9px; font-size: 12px; }
@@ -539,10 +571,13 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   .tr .nm { display: none; }
   .tr .ct { font-size: 11px; color: #fff; opacity: 1; }
   .tr .ct em ~ em, .tr .ct { font-weight: 900; }
-  #traits { top: 64px; gap: 6px; }
+  #traits { top: 68px; gap: 6px; }
   .team .who { display: none; }
   .team b { font-size: 16px; }
-  .helpbtn { top: 64px; }
+  .helpbtn { top: 68px; }
+  .tav { width: 40px; height: 40px; padding: 3.5px; } .tav .tn { font-size: 13px; line-height: 14px; bottom: -6px; }
+  .team.av { padding: 3px 9px 3px 4px; } .team.av.r { padding: 3px 4px 3px 9px; }
+  .team.stand { padding: 4px 4px 5px; }
 }
 
 /* ===== 開場：載入＋登入（不顯示遊戲畫面） ===== */
@@ -582,6 +617,34 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 @keyframes spLeaf { from { transform: translate(0, -40px) rotate(0); } to { transform: translate(-60px, 860px) rotate(540deg); } }
 @media (prefers-reduced-motion: reduce) { #splash * { animation: none !important; } }
 #game { padding-top: env(safe-area-inset-top, 0px); } /* iPhone 動態島／瀏海：遊戲畫面整個往下讓開 */
+
+/* ===== 電腦版版面（寬螢幕橫向）：戰場滿版，下方操作列分三欄：左＝等級金幣與按鈕、中＝商店、右＝隊友與金庫 ===== */
+@media (min-width: 1100px) and (min-aspect-ratio: 5/4) {
+  #app { max-width: none; }
+  #stage .hud { grid-template-columns: minmax(0, 400px) auto minmax(0, 340px); justify-content: space-between; }
+  #stage .hud .team { width: 100%; } #stage .hud .team.av, #stage .hud .team.stand:not(.wide) { width: auto; justify-self: end; } #stage .hud .team.av:not(.r) { justify-self: start; }
+  #dock { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(560px, 820px) minmax(300px, 1fr); grid-template-areas: "augs shop mate" "econ shop bank" "items shop bank"; column-gap: 18px; row-gap: 6px; padding: 10px 22px 12px; align-items: start; align-content: start; }
+  #dock .econ { grid-area: econ; flex-wrap: wrap; gap: 8px; }
+  #dock .econ .lvl { flex: 1 1 100%; }
+  #dock .econ .gold { margin-left: 0; }
+  #dock .econ .ebtn { min-width: 78px; padding: 7px 10px; font-size: 14px; }
+  #dock .econ .ebtn.lock { min-width: 48px; }
+  #dock .augs { grid-area: augs; flex-wrap: wrap; overflow: visible; }
+  #dock .items { grid-area: items; flex-wrap: wrap; overflow: visible; }
+  #dock .shopwrap { grid-area: shop; }
+  #dock .shop { max-width: none; gap: 10px; }
+  #dock .card { aspect-ratio: auto; height: clamp(130px, 15vh, 170px); }
+  .card .tt b { display: block; } .card .tt span { padding: 0 4px 0 2px; }
+  #dock .mate { grid-area: mate; flex-wrap: wrap; justify-content: flex-end; font-size: 13px; }
+  #dock .bank { grid-area: bank; justify-content: flex-end; }
+  #traits { top: 100px; max-height: calc(100% - 200px); }
+  .tr { font-size: 12px; } .tr .hex { width: 30px; height: 30px; } .tr .hex svg { width: 18px; height: 18px; } .tm { width: 20px; height: 20px; }
+  .meter { left: auto; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 60px; width: 220px; max-height: 52%; }
+  .team.stand.wide { min-width: 240px; } .team.stand .scells { justify-content: start; } .team.stand .srow { font-size: 12px; line-height: 16px; }
+  .tav { width: 58px; height: 58px; padding: 5px; } .tav .tn { font-size: 16px; line-height: 17px; }
+  .team.stand .scells { grid-template-columns: repeat(4, 44px); gap: 5px 6px; } .team.stand .scell .tav { width: 40px; padding: 3.5px; } .team.stand .scell b { font-size: 13px; line-height: 14px; }
+  .sheet > div { width: min(640px, 60vw); }
+}
 </style>
 
 <div id="splash">

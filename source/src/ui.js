@@ -29,10 +29,17 @@ const goldSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy=
 
 // ---- 3D 小頭像（商店卡、圖鑑、資訊卡）----
 // 頭像：第一次開啟時用 3D 模型畫出來（分批，不卡住畫面），畫好後存在本機，之後開遊戲直接讀
-const PORT_VER = 'p1-' + Object.keys(ANIMALS).length; // 模型外觀有改時把 p1 改成 p2，舊快取就會重畫
+const PORT_VER = 'p4-' + Object.keys(ANIMALS).length; // 模型外觀有改時把 p1 改成 p2，舊快取就會重畫
+// 立繪取景：PAD＝卡牌全身留邊（越大角色越小），HEAD_PAD＝圓形頭像留邊
+const PORT_CFG = { PAD: 1.12, HEAD_PAD: 1.3 };
+// 隊伍頭像（血量圓圈）可選的角色：設定 → 頭像。第一個是預設；電腦／其他隊伍依序輪流用
+const AV_CFG = { LIST: ['chick', 'fox', 'redpanda', 'penguin', 'koala', 'owl', 'lion', 'frog', 'bee', 'hedgehog', 'cheetah', 'elephant'] };
+const myAvatar = () => (typeof PROFILE !== 'undefined' && AV_CFG.LIST.includes(PROFILE.avatar)) ? PROFILE.avatar : AV_CFG.LIST[0];
+const teamAvatar = ti => { if (ti === myTeam()) return myAvatar(); const L = AV_CFG.LIST.filter(k => k !== myAvatar()); return L[ti % L.length]; };
+const avSrc = k => PORT['h:' + k] || PORT[k] || '';
 function makePortraits(first, done) {
   try { const c = JSON.parse(localStorage.getItem('zoo_port') || 'null'); if (c && c.v === PORT_VER) { Object.assign(PORT, c.p); document.querySelectorAll('img[data-pk]').forEach(im => { if (PORT[im.dataset.pk]) im.src = PORT[im.dataset.pk]; }); done && done(); return; } } catch (e) {}
-  const all = Object.keys(ANIMALS).concat(['hare', 'boar']);
+  const all = Object.keys(ANIMALS).concat(['hare', 'boar', 'kingboar', 'minibee', 'chick']);
   const order = first.concat(all.filter(k => !first.includes(k)));
   const c = document.createElement('canvas'); c.width = c.height = 220;
   const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -42,9 +49,19 @@ function makePortraits(first, done) {
   const one = k => {
     const R = buildAnimal(k); R.phase = 0; poseRig(R, { t: 0.4 });
     R.yaw.rotation.y = -0.4; sc.add(R.root);
-    const h = Math.max(0.9, R.headTop || 1);
-    cam.position.set(0, h * 0.6 + 0.2, 2.75 * h); cam.lookAt(0, h * 0.47, 0);
-    r.render(sc, cam); PORT[k] = c.toDataURL('image/png'); sc.remove(R.root);
+    // 用整隻模型的外框來取景（只算看得到的部分，會飛的動物也完整入鏡），四周留一點邊
+    R.root.updateMatrixWorld(true);
+    const vbox = o => { const b = new THREE.Box3(); o.traverseVisible(m => { if (m.isMesh) { m.geometry.computeBoundingBox && !m.geometry.boundingBox && m.geometry.computeBoundingBox(); b.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld)); } }); return b; };
+    const shoot = (box, pad, lift) => { const ctr = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+      const half = Math.max(sz.y, sz.x * 0.95) / 2 * pad, dist = half / Math.tan(cam.fov * Math.PI / 360) + sz.z / 2;
+      cam.position.set(ctr.x, ctr.y + dist * lift, ctr.z + dist); cam.lookAt(ctr.x, ctr.y, ctr.z); r.render(sc, cam); return c.toDataURL('image/png'); };
+    const full = vbox(R.root);
+    PORT[k] = shoot(full, PORT_CFG.PAD, 0.18);
+    // 隊伍頭像（血量圓圈用）：只框頭
+    if (AV_CFG.LIST.includes(k)) { let hb = R.head ? vbox(R.head) : null;
+    if (!hb || hb.isEmpty()) { hb = full.clone(); hb.min.y = full.max.y - (full.max.y - full.min.y) * 0.45; }
+    PORT['h:' + k] = shoot(hb, PORT_CFG.HEAD_PAD, 0.05); }
+    sc.remove(R.root);
     document.querySelectorAll(`img[data-pk="${k}"]`).forEach(im => { im.src = PORT[k]; });
     LD.set(50 + 40 * i / order.length);
   };
@@ -353,10 +370,15 @@ function showIncome(inc) {
 }
 function hud() {
   const t = myTeam();
+  // 隊伍血量：圓形頭像＋外圈血量環（像幻想三國志），數字在頭像下方；只更新數值，環會平滑減少
   const team = (ti, el) => {
     const T = G.teams[ti], hp = Math.max(0, T.hp);
-    const ps = G.players.filter(p => p.team === ti).map(p => `<span style="--c:${ownerColor(p.id)}">${p.name} Lv${p.level}</span>`).join('');
-    el.innerHTML = `<div class="row"><span>${teamLabel(ti)}</span><b>${hp}</b></div><div class="hp"><i style="width:${hp}%"></i></div><div class="who">${ps}</div>`;
+    const ps = G.players.filter(p => p.team === ti).map(p => `<span style="--c:${ownerColor(p.id)}">${esc(p.name)} Lv${p.level}</span>`).join('');
+    if (el._ti !== ti || !el.querySelector('.tav')) { el._ti = ti; el.classList.add('av');
+      el.innerHTML = `<span class="tav"><img alt=""><b class="tn"></b></span><span class="tinfo"><span class="tl"></span><span class="who"></span></span>`; }
+    const av = el.querySelector('.tav'); av.style.setProperty('--p', Math.round(hp / CFG.TEAM_HP * 100) + '%'); av.style.setProperty('--tc', teamColor(ti));
+    const im = av.querySelector('img'), src = avSrc(teamAvatar(ti)); if (im.getAttribute('src') !== src) im.src = src;
+    av.querySelector('.tn').textContent = hp; el.querySelector('.tl').textContent = teamLabel(ti); el.querySelector('.who').innerHTML = ps;
     const sk = T.streak || 0; el.classList.toggle('onfire', sk >= 2); el.classList.toggle('cold', sk <= -2); el.dataset.streak = sk >= 2 ? sk + ' 連勝' : sk <= -2 ? (-sk) + ' 連敗' : '';
   };
   // 多隊模式：右上角排名表（單行、名字太長用…），點一列去看那隊的棋盤；戰鬥中改成「誰打誰」配對＋雙刀圖示
@@ -369,14 +391,20 @@ function hud() {
     const maxHp = CFG.TEAM_HP, fighting = i => fight && G.battles.some(b => b.teams.includes(t) && b.teams.includes(i) && i !== t);
     const cand = G.phase === 'prep' && G.nextCand ? (G.nextCand[t] || []) : [];
     const head = `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">可能對手</button>' : ''}<button class="stx" aria-label="放大排名">${el.classList.contains('wide') ? '縮小' : '放大'}</button></div>`;
+    if (!el.classList.contains('wide')) { // 精簡：每隊一顆圓形頭像，外圈是血量，下方數字；角標＝連勝／連敗、對手、可能對手
+      el.innerHTML = head + '<div class="scells">' + rows.map(({ T, i }) => { const sk = T.streak || 0, hp = Math.max(0, T.hp), isOpp = fighting(i) || (!fight && i === opp && !cand.length);
+        const bd = T.out ? '' : isOpp ? `<i class="sbd vs">${clashSvg('sm')}</i>` : cand.includes(i) ? '<i class="sbd q">?</i>' : sk >= 2 ? `<i class="sbd win">${flameSvg}${sk}</i>` : sk <= -2 ? `<i class="sbd lose">${-sk}</i>` : '';
+        return `<button class="scell ${cand.includes(i) ? 'cand' : ''} ${i === t ? 'me' : ''} ${isOpp ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}"><span class="tav sm" style="--p:${Math.round(hp / maxHp * 100)}%;--tc:${teamColor(i)}"><img src="${avSrc(teamAvatar(i))}" alt="">${bd}</span><b>${T.out ? '#' + T.place : hp}</b></button>`; }).join('') + '</div>';
+      return;
+    }
     el.innerHTML = head + rows.map(({ T, i }, n) => { const sk = T.streak || 0, hp = Math.max(0, T.hp);
       const stk = T.out ? '' : sk >= 2 ? `<span class="sstk win">${flameSvg}${sk}</span>` : sk <= -2 ? `<span class="sstk lose">${-sk}</span>` : '';
       return `<button class="srow ${cand.includes(i) ? 'cand' : ''} ${i === t ? 'me' : ''} ${fighting(i) || (!fight && i === opp) ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}${i === t ? '' : (G.phase === 'prep' ? '（點一下看他們的棋盤）' : '（點一下看他們的戰場）')}">
         <em>${T.out ? '#' + T.place : n + 1}</em><i class="dot" style="--c:${teamColor(i)}"></i><span class="sm">${nm(i)}<span class="shp"><i style="width:${Math.round(hp / maxHp * 100)}%"></i></span></span>${stk}${fighting(i) || (!fight && i === opp && !cand.length) ? `<span class="svs">${clashSvg('sm')}</span>` : cand.includes(i) ? '<span class="scand" title="下一場可能的對手">?</span>' : ''}<b>${hp}</b></button>`; }).join('');
   };
-  const hk = JSON.stringify(G.phase === 'prep' && G.nextCand ? G.nextCand[t] : 0) + G.teams.map(T => T.hp + (T.out ? 'x' : '') + 's' + (T.streak || 0)).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join() + '|' + (fight ? 'f' + G.round : 'p') + '|' + sc;
+  const hk = JSON.stringify(G.phase === 'prep' && G.nextCand ? G.nextCand[t] : 0) + G.teams.map(T => T.hp + (T.out ? 'x' : '') + 's' + (T.streak || 0)).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join() + '|' + (fight ? 'f' + G.round : 'p') + '|' + sc + (PORT.chick ? 'a' : '') + myAvatar();
   $('stage').classList.toggle('multi', G.teams.length > 2);
-  if (hud.k !== hk) { hud.k = hk; team(t, $('teamA')); if (G.teams.length === 2) { $('teamB').classList.remove('stand'); team(1 - t, $('teamB')); } else { $('teamB').classList.add('stand'); standings($('teamB')); } }
+  if (hud.k !== hk) { hud.k = hk; team(t, $('teamA')); if (G.teams.length === 2) { $('teamB').classList.remove('stand'); team(1 - t, $('teamB')); } else { $('teamB').classList.add('stand'); $('teamB').classList.remove('av'); $('teamB')._ti = -1; standings($('teamB')); } }
   $('clock').classList.toggle('fight', G.phase === 'combat');
   if (!$('clashBox').firstChild) $('clashBox').innerHTML = clashSvg();
   if (G.teams.length > 2) { const h = $('teamB').offsetHeight + 8; if (hud.sth !== h) { hud.sth = h; $('stage').style.setProperty('--sth', h + 'px'); } }
@@ -942,7 +970,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.12'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.13'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });

@@ -580,6 +580,13 @@ function openModes() {
     else if (m === 'room') openOnline();
   });
 }
+// 選隊伍頭像（存在 PROFILE.avatar，沒有就是第一個）
+function openAvatar() {
+  const cur = myAvatar();
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>頭像</h2><p class="avhint">比賽時左上角的隊伍血量會用這個頭像</p><div class="avgrid">${AV_CFG.LIST.map(k => `<button class="avpick ${k === cur ? 'on' : ''}" data-av="${k}"><span class="tav"><img src="${avSrc(k)}" alt=""></span><small>${(ANIMALS[k] || { name: '小雞' }).name}</small></button>`).join('')}</div>`;
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('panel').querySelectorAll('[data-av]').forEach(b => b.onclick = () => { PROFILE.avatar = b.dataset.av; saveProfile(); sfx('click'); openAvatar(); if (typeof hud === 'function' && G) { hud.k = ''; $('teamA')._ti = -1; } });
+}
 function openSettings() {
   const on = typeof srvOn === 'function' && srvOn(), me = typeof ACC !== 'undefined' ? ACC.me : null;
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>設定</h2><div class="setlist">
@@ -587,6 +594,7 @@ function openSettings() {
       <button class="btn" data-set="acc">帳號與暱稱</button><button class="btn" data-set="logout">登出（換其他帳號）</button>`
       : `<button class="btn primary" data-set="login">登入／註冊</button>`) : `<button class="btn primary" data-set="login">登入／註冊</button>`}
     <button class="btn" data-set="rules">自訂規則（練習用）</button>
+    <button class="btn" data-set="avatar">頭像</button>
     <button class="btn" data-set="collect">收藏與造型</button>
     <button class="btn" data-set="dex">圖鑑與規則</button>
     ${INSTALL_SHOW ? '<button class="btn" data-set="install">加到主畫面（像 App 一樣開）</button>' : ''}
@@ -594,7 +602,7 @@ function openSettings() {
   $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
   $('panel').querySelectorAll('[data-set]').forEach(b => b.onclick = async () => {
     const k = b.dataset.set;
-    if (k === 'acc') openAccount(); else if (k === 'rules') openRules(); else if (k === 'collect') openCollection(); else if (k === 'dex') { $('overlay').hidden = true; showDex(); }
+    if (k === 'acc') openAccount(); else if (k === 'avatar') openAvatar(); else if (k === 'rules') openRules(); else if (k === 'collect') openCollection(); else if (k === 'dex') { $('overlay').hidden = true; showDex(); }
     else if (k === 'install') INSTALL_FN && INSTALL_FN();
     else if (k === 'login') { $('overlay').hidden = true; splashShowLogin(); }
     else if (k === 'logout') { await accApi('/api/logout', {}); ACC.token = ''; ACC.me = null; accSave(); $('overlay').hidden = true; splashShowLogin(); }
