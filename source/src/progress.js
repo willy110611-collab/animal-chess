@@ -103,7 +103,7 @@ const TUTMATCH = {
     { r: 1, txt: '歡迎！先在下方商店點兩次「野狼」把牠們買下來。三隻一樣的動物會自動合成 2 星！', done: () => ownUnits(G, ME).some(o => o.u.key === 'wolf' && o.u.star >= 2) },
     { r: 1, txt: '升星了！把 2 星野狼從備戰席拖到棋盤上（靠近你的那幾排）。', done: () => ownUnits(G, ME).some(o => o.u.key === 'wolf' && o.zone === 'board') },
     { r: 1, txt: '很好。按右下「準備好了」開打，戰鬥是自動的，看牠表現！', done: () => G.phase !== 'prep' },
-    { r: 2, txt: '左側是「羈絆」。野狼、青蛙、松鼠都是「群居」，湊到 2 種群居動物就會啟動。買一隻青蛙或松鼠放上場試試。', done: () => { const ks = new Set(Object.values(G.board).filter(u => u.owner === ME).map(u => u.key)); return ['wolf', 'frog', 'squirrel', 'bee'].filter(k => ks.has(k) && ANIMALS[k].traits.includes('pack')).length >= 2; } },
+    { r: 2, txt: '左側是「羈絆」。松鼠、刺蝟都是「森林」，場上有 2 種森林動物就會啟動（森林動物每秒回血）。把牠們買下來放上場；人口不夠就按「購買經驗」升級，或先把野狼換下來。', done: () => { const ks = new Set(Object.values(G.board).filter(u => u.owner === ME).map(u => u.key)); return Object.keys(ANIMALS).filter(k => ks.has(k) && ANIMALS[k].traits.includes('forest')).length >= 2; } }, // v0.13：群居改成 3 隻才啟動，教學改用森林
     { r: 2, txt: '羈絆亮起來了！按「準備好了」開打。', done: () => G.phase !== 'prep' },
     { r: 3, txt: '打野怪掉了兩個材料（在商店上方）。把材料拖到野狼身上，兩個材料會合成一件裝備！', done: () => ownUnits(G, ME).some(o => o.u.items.some(i => ITEMS[i])) },
     { r: 3, txt: '合成成功！血條下面的小圖示就是裝備。按「準備好了」打完最後一場。', done: () => G.phase !== 'prep' },

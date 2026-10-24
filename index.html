@@ -164,7 +164,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .clock { position: relative; }
 .clock.fight .clashbox { display: block; position: absolute; left: 3px; top: 19px; width: 28px; height: 22px; pointer-events: none; }
 .clock.fight .clashbox .clash { width: 28px; height: 22px; }
-#stage.multi .wchip { left: max(8px, env(safe-area-inset-left, 0px)); transform: none; max-width: calc(50% - 60px); }
+/* v0.13.3：排名改成右邊一列後，天氣條在多隊模式也置中 */
 @media (prefers-reduced-motion: reduce) { .clash .swL, .clash .swR, .clash .spark { animation: none; } .clash .spark { opacity: 1; } }
 /* 看別人棋盤的提示列 */
 #scoutBar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 6px; background: rgba(43,28,22,.88); color: var(--paper); border-radius: 999px; padding: 4px 6px; font-size: 12px; white-space: nowrap; max-width: calc(100% - 24px); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
@@ -943,7 +943,7 @@ const ANIMALS = {
     hp: 740, atk: 70, ai: 16, rng: 1, arm: 25, mr: 20, mana: 70, sm: 0, mv: 6,
     skill: '嗜血突襲', desc: '鑽進地下衝到血最少的敵人腳下 260 物理傷害；目標生命低於 50% 時傷害 +60%，擊殺回滿 50 能量。' },
   panda: { name: '熊貓', cost: 4, traits: ['forest', 'armor'], role: '坦',
-    hp: 1300, atk: 74, ai: 24, rng: 1, arm: 45, mr: 45, mana: 100, sm: 40, mv: 10,
+    hp: 1220, atk: 74, ai: 24, rng: 1, arm: 45, mr: 45, mana: 100, sm: 40, mv: 10,
     skill: '竹林滾滾', desc: '抱成一團滾過前方，沿路 2 格內的敵人 240 魔法傷害並暈 1 秒，自己回復 18% 生命。' },
 };
 
@@ -963,7 +963,7 @@ const TRAITS = {
   sky:     { name: '天空', tiers: [2, 3, 4, 6], desc: ['天空單位閃避 20%', '閃避 30%', '閃避 40%', '生態圈「萬里晴空」：天空單位閃避 50%，全隊閃避 +20%、攻擊 +15%'], val: [20, 30, 40, 50], eco: 6 },
   pack:    { name: '群居', tiers: [3, 6, 9], desc: ['每個相鄰群居友軍 +8% 傷害', '+14%', '+22%，而且全隊都算群居（互相加成）'], val: [8, 14, 22] },
   armor:   { name: '甲冑', tiers: [2, 4, 6], desc: ['甲冑單位護甲魔抗 +30，全隊 +10', '甲冑 +60，全隊 +15', '甲冑 +100，全隊 +30'], val: [30, 60, 100] },
-  night:   { name: '夜行', tiers: [2, 4, 6, 8], desc: ['第 10 秒入夜，夜行單位暴擊 +25%', '暴擊 +45%', '暴擊 +70%', '永夜：開場就入夜，暴擊 +100%'], val: [25, 45, 70, 100] },
+  night:   { name: '夜行', tiers: [2, 4, 6, 8], desc: ['第 10 秒入夜，夜行單位暴擊 +30%', '暴擊 +55%', '暴擊 +80%', '永夜：開場就入夜，暴擊 +110%'], val: [30, 55, 80, 110] }, // v0.13.3 模擬偏弱，小幅加強
   king:    { name: '百獸之王', tiers: [2, 3, 4], desc: ['（只有 5 費動物）全隊生命與攻擊 +8%', '+16%', '傳說：+30%，百獸之王的技能能量需求 −30%'], val: [8, 16, 30] },
 };
 let SYNERGY_BONUS = 20; // 默契加成：兩位隊友都有出該羈絆時效果 +20%
@@ -6542,7 +6542,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.2'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.3'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -8637,7 +8637,7 @@ const TUTMATCH = {
     { r: 1, txt: '歡迎！先在下方商店點兩次「野狼」把牠們買下來。三隻一樣的動物會自動合成 2 星！', done: () => ownUnits(G, ME).some(o => o.u.key === 'wolf' && o.u.star >= 2) },
     { r: 1, txt: '升星了！把 2 星野狼從備戰席拖到棋盤上（靠近你的那幾排）。', done: () => ownUnits(G, ME).some(o => o.u.key === 'wolf' && o.zone === 'board') },
     { r: 1, txt: '很好。按右下「準備好了」開打，戰鬥是自動的，看牠表現！', done: () => G.phase !== 'prep' },
-    { r: 2, txt: '左側是「羈絆」。野狼、青蛙、松鼠都是「群居」，湊到 2 種群居動物就會啟動。買一隻青蛙或松鼠放上場試試。', done: () => { const ks = new Set(Object.values(G.board).filter(u => u.owner === ME).map(u => u.key)); return ['wolf', 'frog', 'squirrel', 'bee'].filter(k => ks.has(k) && ANIMALS[k].traits.includes('pack')).length >= 2; } },
+    { r: 2, txt: '左側是「羈絆」。松鼠、刺蝟都是「森林」，場上有 2 種森林動物就會啟動（森林動物每秒回血）。把牠們買下來放上場；人口不夠就按「購買經驗」升級，或先把野狼換下來。', done: () => { const ks = new Set(Object.values(G.board).filter(u => u.owner === ME).map(u => u.key)); return Object.keys(ANIMALS).filter(k => ks.has(k) && ANIMALS[k].traits.includes('forest')).length >= 2; } }, // v0.13：群居改成 3 隻才啟動，教學改用森林
     { r: 2, txt: '羈絆亮起來了！按「準備好了」開打。', done: () => G.phase !== 'prep' },
     { r: 3, txt: '打野怪掉了兩個材料（在商店上方）。把材料拖到野狼身上，兩個材料會合成一件裝備！', done: () => ownUnits(G, ME).some(o => o.u.items.some(i => ITEMS[i])) },
     { r: 3, txt: '合成成功！血條下面的小圖示就是裝備。按「準備好了」打完最後一場。', done: () => G.phase !== 'prep' },
