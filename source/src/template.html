@@ -181,6 +181,8 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team .who span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c); margin-right: 3px; }
 .team.hit { animation: shake .4s; }
 /* 隊伍血量：圓形頭像＋外圈血量環。可調：.tav 大小、--rc 顏色 */
+.dexf { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; } .dexf button { all: unset; cursor: pointer; font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(0,0,0,.07); } .dexf button.on { background: var(--gold-2, #f2b01e); color: #3a2418; }
+.dex .row[hidden] { display: none; }
 .overcomp { margin: 6px 0 10px; } .overcomp small { display: block; font-size: 12px; opacity: .7; margin-bottom: 4px; } .overcomp > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; } .overcomp span { position: relative; width: 44px; } .over .overcomp img { width: 44px !important; height: 44px !important; object-fit: contain; margin: 0 !important; display: block; } .overcomp i { position: absolute; left: 0; right: 0; bottom: -4px; font-style: normal; font-size: 9px; color: #f2b01e; text-shadow: 0 1px 0 #3a2418; }
 .overbtns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .bgmrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.05); font-size: 13px; font-weight: 800; }

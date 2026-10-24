@@ -994,7 +994,7 @@ function showDex(tab) {
   tab = tab || 'animals';
   const tabs = [['animals', '動物'], ['traits', '羈絆'], ['combos', '合體技'], ['items', '裝備'], ['augs', '海克斯'], ['arena', '場地'], ['rules', '規則']];
   let body = '';
-  if (tab === 'animals') body = Object.keys(ANIMALS).map(k => { const A = ANIMALS[k]; return `<div class="row">${pimg(k)}<div><b>${A.name}</b>　<span style="color:${COST_COL[A.cost]};font-weight:900">${A.cost} 費</span>・${A.role}・${A.traits.map(TNAME).join('・')}<br>生命 ${A.hp}・攻擊 ${A.atk}・射程 ${A.rng}<br><b>${A.skill}</b>：${A.desc}<br><button class="btn sm demo" data-demo="${k}">▶ 技能展示</button></div></div>`; }).join('');
+  if (tab === 'animals') body = `<div class="dexf">${['all', 1, 2, 3, 4, 5].map(c => `<button data-df="c${c}" class="${c === 'all' ? 'on' : ''}">${c === 'all' ? '全部' : c + ' 費'}</button>`).join('')}${Object.keys(TRAITS).map(t => `<button data-df="t${t}">${TRAITS[t].name}</button>`).join('')}</div>` + Object.keys(ANIMALS).map(k => { const A = ANIMALS[k]; return `<div class="row" data-dc="c${A.cost}" data-dt="${A.traits.map(t => 't' + t).join(' ')}">${pimg(k)}<div><b>${A.name}</b>　<span style="color:${COST_COL[A.cost]};font-weight:900">${A.cost} 費</span>・${A.role}・${A.traits.map(TNAME).join('・')}<br>生命 ${A.hp}・攻擊 ${A.atk}・射程 ${A.rng}<br><b>${A.skill}</b>：${A.desc}<br><button class="btn sm demo" data-demo="${k}">▶ 技能展示</button></div></div>`; }).join('');
   if (tab === 'traits') body = Object.keys(TRAITS).map(t => { const T = TRAITS[t]; return `<div class="plain">${iconTrait(t)}<div><b>${T.name}</b>（${Object.keys(ANIMALS).filter(k => ANIMALS[k].traits.includes(t)).map(k => ANIMALS[k].name).join('、')}）<br>${T.tiers.map((n, i) => `(${n}) ${T.desc[i]}`).join('<br>')}</div></div>`; }).join('') + `<div class="plain"><div>羈絆以「不同種類」計算，兩位隊友的棋子合併計。兩人都有出同一羈絆時效果 +${SYNERGY_BONUS}%（默契）。</div></div>`;
   if (tab === 'combos') body = COMBOS.map(c => `<div class="row">${pimg(c.a)}<div><b>${c.name}</b>　${ANIMALS[c.a].name}＋${ANIMALS[c.b].name}<br>${c.desc}</div></div>`).join('') + '<div class="plain"><div>兩隻需分屬兩位隊友、開場相鄰。兩隻都放過一次技能後自動發動一次。</div></div>';
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
@@ -1006,6 +1006,8 @@ function showDex(tab) {
   $('dexX').onclick = () => { $('overlay').hidden = true; };
   $('panel').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => showDex(b.dataset.tab));
   $('panel').querySelectorAll('[data-demo]').forEach(b => b.onclick = () => skillDemo(b.dataset.demo));
+  // 圖鑑篩選：依費用或羈絆
+  $('panel').querySelectorAll('[data-df]').forEach(b => b.onclick = () => { const f = b.dataset.df; $('panel').querySelectorAll('[data-df]').forEach(x => x.classList.toggle('on', x === b)); $('panel').querySelectorAll('.dex .row[data-dc]').forEach(r => { r.hidden = !(f === 'call' || r.dataset.dc === f || (r.dataset.dt || '').split(' ').includes(f)); }); });
 }
 
 // ---- 啟動 ----
@@ -1013,7 +1015,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.8'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.9'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
