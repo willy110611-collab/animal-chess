@@ -196,6 +196,7 @@ function idleVoice() {
 }
 // 回大廳（pick：直接打開選模式）
 function leaveToLobby(pick) {
+  sel = null; const shx = $('sheet'); if (shx) shx.hidden = true; // v0.13.11：遊戲裡打開的資訊卡不要留到大廳
   $('game').classList.remove('td'); if (typeof tdFrontMesh === 'function') tdFrontMesh(null);
   if (NET.role) netLeave();
   else { G = null; for (const k in S3.V) s3Remove(k); $('game').hidden = true; $('lobby').hidden = false; }
@@ -1015,7 +1016,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.10'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.11'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
