@@ -1711,7 +1711,7 @@ function settleBattle(G, bt) {
     const team = bt.teams[0]; res.win[team] = B.winner === 0;
     for (const P of G.players) if (P.team === team) {
       const times = G.portal === 'harvest' ? 2 : 1;
-      for (let k = 0; k < times; k++) for (const d of rollLoot(G, R)) giveLoot(G, P, d);
+      for (let k = 0; k < times; k++) for (const d of rollLoot(G, R, res.win[team])) giveLoot(G, P, d);
     }
   } else {
     const w = B.winner;
@@ -1727,7 +1727,7 @@ function settleBattle(G, bt) {
     });
   }
   // 增幅：戰後經濟
-  for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? 2 : 1 }); if (l.key === 'chest') giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
+  for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? NEUTRAL_CFG.CHEST_GOLD : NEUTRAL_CFG.CRATE_GOLD }); if (l.key === 'chest' && G.rng(100) < NEUTRAL_CFG.CHEST_MAT_PCT) giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
   for (const P of G.players) {
     if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
     if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
@@ -2141,17 +2141,17 @@ function aiDraftTurns(G) {
     draftPick(G, pid, best);
   }
 }
-function rollLoot(G, R) {
-  if (R <= 3) return [{ type: 'mat', k: Object.keys(MATS)[G.rng(6)] }].concat(R === 3 ? [{ type: 'gold', n: 2 }] : []);
-  const out = [], st = stageOf(R);
-  for (let i = 0; i < 2; i++) {
-    const r = G.rng(100);
-    if (r < 25) out.push({ type: 'gold', n: 3 + G.rng(3) });
-    else if (r < 55) out.push({ type: 'mat', k: Object.keys(MATS)[G.rng(6)] });
-    else if (r < 75) { const ks = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost <= Math.min(5, st) && G.pool[k] > 0); if (ks.length) out.push({ type: 'unit', k: ks[G.rng(ks.length)] }); else out.push({ type: 'gold', n: 3 }); }
-    else if (r < 90 || R < 13) { const cs = Object.keys(CONSUMABLES); out.push({ type: 'item', k: cs[G.rng(cs.length)] }); }
-    else { const es = Object.keys(EMBLEMS); out.push({ type: 'item', k: es[G.rng(es.length)] }); }
-  }
+// 野怪掉落（v0.12.8 調低，接近聯盟戰棋）：第 1 階段每關 1 個材料；之後的野怪關打贏才有 1 份掉落、打輸只有安慰金幣
+const LOOT_CFG = { EARLY_GOLD: 1, MAT: 40, GOLD: 30, UNIT: 18, GOLD_MIN: 2, GOLD_MAX: 3, LOSE_GOLD: 1 }; // 機率（%，剩下的是消耗品／紋章）與金幣數
+function rollLoot(G, R, win) {
+  if (R <= 3) return [{ type: 'mat', k: Object.keys(MATS)[G.rng(6)] }].concat(R === 3 && LOOT_CFG.EARLY_GOLD ? [{ type: 'gold', n: LOOT_CFG.EARLY_GOLD }] : []);
+  if (win === false) return LOOT_CFG.LOSE_GOLD ? [{ type: 'gold', n: LOOT_CFG.LOSE_GOLD }] : [];
+  const out = [], st = stageOf(R), C = LOOT_CFG, r = G.rng(100);
+  if (r < C.MAT) out.push({ type: 'mat', k: Object.keys(MATS)[G.rng(6)] });
+  else if (r < C.MAT + C.GOLD) out.push({ type: 'gold', n: C.GOLD_MIN + G.rng(C.GOLD_MAX - C.GOLD_MIN + 1) });
+  else if (r < C.MAT + C.GOLD + C.UNIT) { const ks = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost <= Math.min(5, st) && G.pool[k] > 0); if (ks.length) out.push({ type: 'unit', k: ks[G.rng(ks.length)] }); else out.push({ type: 'gold', n: C.GOLD_MIN }); }
+  else if (R < 13 || G.rng(100) < 60) { const cs = Object.keys(CONSUMABLES); out.push({ type: 'item', k: cs[G.rng(cs.length)] }); }
+  else { const es = Object.keys(EMBLEMS); out.push({ type: 'item', k: es[G.rng(es.length)] }); }
   return out;
 }
 function giveLoot(G, P, d) {
@@ -2180,6 +2180,8 @@ function useConsumable(G, P, idx, tgt) {
   if (it === 'dupe') checkMerge(G, P.id);
   return 'ok';
 }
+// 戰鬥中的中立寶箱／木箱（v0.12.8 調低：不是每場都有，掉落也變少）
+const NEUTRAL_CFG = { CHEST_PCT: 50, CRATE_PCT: 50, CHEST_GOLD: 1, CHEST_MAT_PCT: 50, CRATE_GOLD: 1 };
 function rollNeutrals(G, units) {
   if (!G.rules.neutrals) return [];
   const st = stageOf(G.round), out = [], occ = {};
@@ -2188,9 +2190,9 @@ function rollNeutrals(G, units) {
   // 中線寶箱：放在雙方前排之一（隨機），兩隊都有機會打到
   const cols = [3, 2, 4, 1, 5, 0, 6];
   const row = G.rng(2) ? CFG.ROWS_HALF - 1 : CFG.ROWS_HALF;
-  for (const c of cols) if (free(c, row)) { out.push({ key: 'chest', c, r: row, hp: 350 + st * 120 }); break; }
+  if (G.rng(100) < NEUTRAL_CFG.CHEST_PCT) for (const c of cols) if (free(c, row)) { out.push({ key: 'chest', c, r: row, hp: 350 + st * 120 }); break; }
   // 木箱：雙方對稱各一個
-  for (let tries = 0; tries < 20; tries++) {
+  if (G.rng(100) < NEUTRAL_CFG.CRATE_PCT) for (let tries = 0; tries < 20; tries++) {
     const c = G.rng(CFG.COLS), r = 1 + G.rng(2), [c2, r2] = toGlobal(1, c, r);
     if (free(c, r) && free(c2, r2)) { out.push({ key: 'crate', c, r, hp: 200 + st * 60 }, { key: 'crate', c: c2, r: r2, hp: 200 + st * 60 }); break; }
   }
@@ -2203,7 +2205,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'http://localhost:8123', 'http://127.0.0.1:8123'],
-  VERSION: '0.12.7',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.12.8',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）

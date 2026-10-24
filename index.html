@@ -44,8 +44,11 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .dex ol { margin: 0 0 8px; padding-left: 22px; line-height: 1.9; }
 
 /* ---------- 戰場 ---------- */
-#game { flex: 1; display: flex; flex-direction: column; }
-#stage { position: relative; width: 100%; height: min(64vh, 132vw, 660px); min-height: 360px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; transition: background .8s; }
+#game { flex: 1; display: flex; flex-direction: column; box-sizing: border-box; height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; } /* 遊戲畫面固定一頁，不能上下捲動 */
+#app:has(#game:not([hidden])) { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+body:has(#game:not([hidden])) { overflow: hidden; }
+#game #dock { flex: none; }
+#stage { position: relative; width: 100%; flex: 1 1 auto; height: auto; min-height: 220px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; transition: background .8s; }
 #stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .skydeco { position: absolute; inset: 0; pointer-events: none; }
 #stage[data-arena="desert"] .sun { position: absolute; width: 90px; height: 90px; right: 14%; top: 13%; border-radius: 50%; background: radial-gradient(circle, #fff6d8 0 40%, #ffd98a 60%, rgba(255,200,120,0) 72%); opacity: calc(1 - var(--night, 0)); }
@@ -54,6 +57,7 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .nightsky { position: absolute; inset: 0; opacity: var(--night, 0); background: radial-gradient(1.5px 1.5px at 12% 12%, #fff 98%, transparent), radial-gradient(1.5px 1.5px at 28% 22%, #fff 98%, transparent), radial-gradient(2px 2px at 46% 8%, #fff 98%, transparent), radial-gradient(1.5px 1.5px at 64% 18%, #fff 98%, transparent), radial-gradient(2px 2px at 82% 10%, #fff 98%, transparent), radial-gradient(1.5px 1.5px at 90% 26%, #fff 98%, transparent), linear-gradient(#1d2a4a, rgba(29,42,74,.55) 40%, rgba(29,42,74,.25)); }
 .nightsky::after { content: ""; position: absolute; width: 44px; height: 44px; right: 16%; top: 9%; border-radius: 50%; box-shadow: -10px 6px 0 0 #fff4c8; }
 #ov { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+#stage .hud { z-index: 7; } /* 上方血條／倒數永遠在棋子血條上面，不會被蓋住 */
 #stage.ot::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px 10px rgba(220,40,20,.55); animation: otp .8s ease-in-out infinite alternate; }
 @keyframes otp { from { opacity: .4; } to { opacity: 1; } }
 
@@ -250,14 +254,14 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .shop { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; perspective: 600px; max-width: 540px; margin: 0 auto; }
 .card { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; background: var(--cc, #9a8a7a); padding: 3px; box-shadow: 0 4px 0 rgba(0,0,0,.4); transform-style: preserve-3d; transition: transform .15s; overflow: hidden; }
 .card .in { position: absolute; inset: 3px; border-radius: 8px; background: radial-gradient(90% 70% at 50% 35%, #fff2da, #e9cfa6); overflow: hidden; }
-.card img { position: absolute; left: 50%; top: -2%; width: 112%; transform: translateX(-50%); pointer-events: none; }
+.card img { position: absolute; left: 50%; top: -10%; width: 104%; transform: translateX(-50%); pointer-events: none; }
 .card .nm { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(43,28,22,.86); color: var(--paper); font-size: 12px; font-weight: 900; padding: 2px 4px 3px; display: flex; justify-content: space-between; align-items: center; }
 .card .cost { display: flex; align-items: center; gap: 1px; color: var(--gold-2); font-family: var(--f-display); }
 .card .cost svg { width: 11px; height: 11px; }
-.card .tt { position: absolute; left: 3px; top: 3px; display: grid; gap: 2px; }
-.card .tt span { display: flex; align-items: center; gap: 2px; height: 17px; padding: 0 5px 0 3px; background: rgba(43,28,22,.8); color: var(--paper); border-radius: 999px; --ib: #2b1c16; width: max-content; }
-.card .tt b { font-size: 10px; font-weight: 900; line-height: 1; letter-spacing: .02em; }
-.card .tt svg { width: 11px; height: 11px; }
+.card .tt { position: absolute; left: 2px; bottom: 21px; display: grid; gap: 1px; } /* 羈絆放在卡片下方，不擋臉 */
+.card .tt span { display: flex; align-items: center; gap: 2px; height: 14px; padding: 0 4px 0 2px; background: rgba(43,28,22,.62); color: var(--paper); border-radius: 999px; --ib: #2b1c16; width: max-content; }
+.card .tt b { font-size: 9px; font-weight: 900; line-height: 1; letter-spacing: .02em; }
+.card .tt svg { width: 10px; height: 10px; }
 .card.c1 { --cc: var(--c1); } .card.c2 { --cc: var(--c2); } .card.c3 { --cc: var(--c3); } .card.c4 { --cc: linear-gradient(135deg, #8a4fc4, #c48af2, #8a4fc4); }
 .card.c4 .in { background: radial-gradient(90% 70% at 50% 35%, #fff2fb, #e6cff0); }
 .card.c3 .in { background: radial-gradient(90% 70% at 50% 35%, #f2f8ff, #cfe0ef); }
@@ -490,7 +494,7 @@ button:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
 .lplist { display: grid; gap: 4px; } .lprow { display: grid; grid-template-columns: 24px 1fr auto 44px; gap: 6px; align-items: center; background: #fbf3e2; border-radius: 8px; padding: 5px 8px; font-size: 13px; } .lprow.me { box-shadow: inset 0 0 0 2px var(--rust); } .lprow em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; }
 .lphist { display: flex; flex-wrap: wrap; gap: 4px; } .lphist span { display: grid; justify-items: center; min-width: 46px; background: #fbf3e2; border-radius: 8px; padding: 3px 4px; font-weight: 900; font-size: 13px; } .lphist span.up i { color: #3f8a30; } .lphist span.dn i { color: #b8432e; } .lphist i { font-style: normal; font-size: 11px; } .lphist small { font-size: 9px; color: var(--ink-soft); }
 @media (prefers-reduced-motion: reduce) { .card.flip, #banner.show, .num { animation-duration: .01s; } }
-@media (min-width: 700px) { #stage { height: min(68vh, 640px); } }
+
 @media (max-width: 560px) {
   .tr { grid-template-columns: 24px auto; padding: 2px 5px 2px 2px; gap: 3px; background: rgba(43,28,22,.66); }
   .tr .hex { width: 24px; height: 24px; }
@@ -2378,7 +2382,7 @@ function settleBattle(G, bt) {
     const team = bt.teams[0]; res.win[team] = B.winner === 0;
     for (const P of G.players) if (P.team === team) {
       const times = G.portal === 'harvest' ? 2 : 1;
-      for (let k = 0; k < times; k++) for (const d of rollLoot(G, R)) giveLoot(G, P, d);
+      for (let k = 0; k < times; k++) for (const d of rollLoot(G, R, res.win[team])) giveLoot(G, P, d);
     }
   } else {
     const w = B.winner;
@@ -2394,7 +2398,7 @@ function settleBattle(G, bt) {
     });
   }
   // 增幅：戰後經濟
-  for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? 2 : 1 }); if (l.key === 'chest') giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
+  for (const l of B.loot || []) { const P = G.players[l.owner]; if (!P) continue; giveLoot(G, P, { type: 'gold', n: l.key === 'chest' ? NEUTRAL_CFG.CHEST_GOLD : NEUTRAL_CFG.CRATE_GOLD }); if (l.key === 'chest' && G.rng(100) < NEUTRAL_CFG.CHEST_MAT_PCT) giveLoot(G, P, { type: 'mat', k: Object.keys(MATS)[G.rng(6)] }); }
   for (const P of G.players) {
     if (P.augs.includes('recycle') && B.deaths[P.id]) P.gold += Math.min(4, B.deaths[P.id]);
     if (P.augs.includes('goldrain')) { if (B.kills[P.id]) P.gold += Math.min(3, B.kills[P.id]); if (B.bigKill[P.id]) P.freeRoll++; }
@@ -2808,17 +2812,17 @@ function aiDraftTurns(G) {
     draftPick(G, pid, best);
   }
 }
-function rollLoot(G, R) {
-  if (R <= 3) return [{ type: 'mat', k: Object.keys(MATS)[G.rng(6)] }].concat(R === 3 ? [{ type: 'gold', n: 2 }] : []);
-  const out = [], st = stageOf(R);
-  for (let i = 0; i < 2; i++) {
-    const r = G.rng(100);
-    if (r < 25) out.push({ type: 'gold', n: 3 + G.rng(3) });
-    else if (r < 55) out.push({ type: 'mat', k: Object.keys(MATS)[G.rng(6)] });
-    else if (r < 75) { const ks = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost <= Math.min(5, st) && G.pool[k] > 0); if (ks.length) out.push({ type: 'unit', k: ks[G.rng(ks.length)] }); else out.push({ type: 'gold', n: 3 }); }
-    else if (r < 90 || R < 13) { const cs = Object.keys(CONSUMABLES); out.push({ type: 'item', k: cs[G.rng(cs.length)] }); }
-    else { const es = Object.keys(EMBLEMS); out.push({ type: 'item', k: es[G.rng(es.length)] }); }
-  }
+// 野怪掉落（v0.12.8 調低，接近聯盟戰棋）：第 1 階段每關 1 個材料；之後的野怪關打贏才有 1 份掉落、打輸只有安慰金幣
+const LOOT_CFG = { EARLY_GOLD: 1, MAT: 40, GOLD: 30, UNIT: 18, GOLD_MIN: 2, GOLD_MAX: 3, LOSE_GOLD: 1 }; // 機率（%，剩下的是消耗品／紋章）與金幣數
+function rollLoot(G, R, win) {
+  if (R <= 3) return [{ type: 'mat', k: Object.keys(MATS)[G.rng(6)] }].concat(R === 3 && LOOT_CFG.EARLY_GOLD ? [{ type: 'gold', n: LOOT_CFG.EARLY_GOLD }] : []);
+  if (win === false) return LOOT_CFG.LOSE_GOLD ? [{ type: 'gold', n: LOOT_CFG.LOSE_GOLD }] : [];
+  const out = [], st = stageOf(R), C = LOOT_CFG, r = G.rng(100);
+  if (r < C.MAT) out.push({ type: 'mat', k: Object.keys(MATS)[G.rng(6)] });
+  else if (r < C.MAT + C.GOLD) out.push({ type: 'gold', n: C.GOLD_MIN + G.rng(C.GOLD_MAX - C.GOLD_MIN + 1) });
+  else if (r < C.MAT + C.GOLD + C.UNIT) { const ks = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost <= Math.min(5, st) && G.pool[k] > 0); if (ks.length) out.push({ type: 'unit', k: ks[G.rng(ks.length)] }); else out.push({ type: 'gold', n: C.GOLD_MIN }); }
+  else if (R < 13 || G.rng(100) < 60) { const cs = Object.keys(CONSUMABLES); out.push({ type: 'item', k: cs[G.rng(cs.length)] }); }
+  else { const es = Object.keys(EMBLEMS); out.push({ type: 'item', k: es[G.rng(es.length)] }); }
   return out;
 }
 function giveLoot(G, P, d) {
@@ -2847,6 +2851,8 @@ function useConsumable(G, P, idx, tgt) {
   if (it === 'dupe') checkMerge(G, P.id);
   return 'ok';
 }
+// 戰鬥中的中立寶箱／木箱（v0.12.8 調低：不是每場都有，掉落也變少）
+const NEUTRAL_CFG = { CHEST_PCT: 50, CRATE_PCT: 50, CHEST_GOLD: 1, CHEST_MAT_PCT: 50, CRATE_GOLD: 1 };
 function rollNeutrals(G, units) {
   if (!G.rules.neutrals) return [];
   const st = stageOf(G.round), out = [], occ = {};
@@ -2855,9 +2861,9 @@ function rollNeutrals(G, units) {
   // 中線寶箱：放在雙方前排之一（隨機），兩隊都有機會打到
   const cols = [3, 2, 4, 1, 5, 0, 6];
   const row = G.rng(2) ? CFG.ROWS_HALF - 1 : CFG.ROWS_HALF;
-  for (const c of cols) if (free(c, row)) { out.push({ key: 'chest', c, r: row, hp: 350 + st * 120 }); break; }
+  if (G.rng(100) < NEUTRAL_CFG.CHEST_PCT) for (const c of cols) if (free(c, row)) { out.push({ key: 'chest', c, r: row, hp: 350 + st * 120 }); break; }
   // 木箱：雙方對稱各一個
-  for (let tries = 0; tries < 20; tries++) {
+  if (G.rng(100) < NEUTRAL_CFG.CRATE_PCT) for (let tries = 0; tries < 20; tries++) {
     const c = G.rng(CFG.COLS), r = 1 + G.rng(2), [c2, r2] = toGlobal(1, c, r);
     if (free(c, r) && free(c2, r2)) { out.push({ key: 'crate', c, r, hp: 200 + st * 60 }, { key: 'crate', c: c2, r: r2, hp: 200 + st * 60 }); break; }
   }
@@ -3724,6 +3730,7 @@ function s3Init(wrap, canvas, overlay) {
   S3.unitRoot = new THREE.Group(); S3.scene.add(S3.unitRoot);
   s3Resize();
   window.addEventListener('resize', s3Resize);
+  try { new ResizeObserver(() => s3Resize()).observe(document.getElementById('stage')); } catch (e) {} // 下方操作區高度變動時，戰場跟著重算大小
 }
 const CAM_FIT = 1; // 額外鏡頭距離倍率（1 = 剛好把整個棋盤＋備戰席放進畫面；數字越大越遠）
 function s3Resize() {
@@ -4947,6 +4954,13 @@ function idleVoice() {
   const v = S3.V[ks[Math.floor(Math.random() * ks.length)]], n = Math.random() < IDLE_VOICE.TWICE ? 2 : 1;
   for (let i = 0; i < n; i++) at(i * 0.7, () => { if (!S3.V[v.k]) return; voice(v.unitKey); v.land = nowS(); sprite('note', v3top(v).add(V3(0.15, 0.1, 0)), { scale: 0.22, scale1: 0.3, life: 0.9, vel: V3(0.25, 0.7, 0), color: 0xfff2c8 }); });
 }
+// 回大廳（pick：直接打開選模式）
+function leaveToLobby(pick) {
+  if (NET.role) netLeave();
+  else { G = null; for (const k in S3.V) s3Remove(k); $('game').hidden = true; $('lobby').hidden = false; }
+  $('overlay').hidden = true; const am = $('augModal'); if (am) am.hidden = true; const m2 = $('modal2'); if (m2) m2.hidden = true;
+  if (pick) setTimeout(() => { const b = $('btnPlay'); if (b) b.click(); }, 60);
+}
 // 戰鬥中也能放裝備：備戰席馬上生效；場上正在打的棋子下一場戰鬥生效
 function equipTo(idx, uid, f) { const r = doAct({ t: 'equip', idx, uid }); if ((r === 'ok' || r === 'net') && G.phase !== 'prep' && f.zone === 'board') toast('裝好了，下一場戰鬥生效', 1600); return r; }
 function doAct(a, quiet) {
@@ -5668,7 +5682,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.7'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.8'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5922,7 +5936,7 @@ function openMenu(sub) {
     else if (m === 'ai') { const was = P.ai; actMe({ t: 'aitoggle' }); if (NET.role !== 'client') { processLog(); refresh(); } toast(!was ? 'AI 代打中，隨時可以取回' : '你取回了控制權'); openMenu(); }
     else if (m === 'mute') { AUD.set.mute = !AUD.set.mute; audApply(); audSave(); openMenu(); }
     else if (m === 'tut') { $('overlay').hidden = true; startTutorial(); }
-    else if (m === 'surrender') { if (b.dataset.sure) { $('overlay').hidden = true; actMe({ t: 'surrender' }); } else { b.dataset.sure = 1; b.textContent = '再按一次確定投降'; b.classList.add('primary'); } }
+    else if (m === 'surrender') { if (b.dataset.sure) { $('overlay').hidden = true; actMe({ t: 'surrender' }); setTimeout(() => leaveToLobby(true), NET.role ? 500 : 50); /* 投降後直接回到選模式的大廳 */ } else { b.dataset.sure = 1; b.textContent = '再按一次確定投降'; b.classList.add('primary'); } }
   };
 }
 

@@ -62,6 +62,7 @@ function s3Init(wrap, canvas, overlay) {
   S3.unitRoot = new THREE.Group(); S3.scene.add(S3.unitRoot);
   s3Resize();
   window.addEventListener('resize', s3Resize);
+  try { new ResizeObserver(() => s3Resize()).observe(document.getElementById('stage')); } catch (e) {} // 下方操作區高度變動時，戰場跟著重算大小
 }
 const CAM_FIT = 1; // 額外鏡頭距離倍率（1 = 剛好把整個棋盤＋備戰席放進畫面；數字越大越遠）
 function s3Resize() {

@@ -177,6 +177,13 @@ function idleVoice() {
   const v = S3.V[ks[Math.floor(Math.random() * ks.length)]], n = Math.random() < IDLE_VOICE.TWICE ? 2 : 1;
   for (let i = 0; i < n; i++) at(i * 0.7, () => { if (!S3.V[v.k]) return; voice(v.unitKey); v.land = nowS(); sprite('note', v3top(v).add(V3(0.15, 0.1, 0)), { scale: 0.22, scale1: 0.3, life: 0.9, vel: V3(0.25, 0.7, 0), color: 0xfff2c8 }); });
 }
+// 回大廳（pick：直接打開選模式）
+function leaveToLobby(pick) {
+  if (NET.role) netLeave();
+  else { G = null; for (const k in S3.V) s3Remove(k); $('game').hidden = true; $('lobby').hidden = false; }
+  $('overlay').hidden = true; const am = $('augModal'); if (am) am.hidden = true; const m2 = $('modal2'); if (m2) m2.hidden = true;
+  if (pick) setTimeout(() => { const b = $('btnPlay'); if (b) b.click(); }, 60);
+}
 // 戰鬥中也能放裝備：備戰席馬上生效；場上正在打的棋子下一場戰鬥生效
 function equipTo(idx, uid, f) { const r = doAct({ t: 'equip', idx, uid }); if ((r === 'ok' || r === 'net') && G.phase !== 'prep' && f.zone === 'board') toast('裝好了，下一場戰鬥生效', 1600); return r; }
 function doAct(a, quiet) {
@@ -898,7 +905,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.7'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.8'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });

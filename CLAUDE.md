@@ -18,7 +18,8 @@
 2. `node test/smoke.js` 必須「全部通過」。平衡改動另跑 `node test/game.js`、`node test/g8.js` 比較前後。
 3. 版本號 +1：`source/src/ui.js` 的 `dataset.v` 與根目錄 `sw.js` 的 CACHE。
 4. `python3 build.py` → 產生根目錄 index.html 與 server/worker.js。
-5. 用無頭瀏覽器開根目錄 index.html，截圖檢查桌機與 400px 手機版面（注意 three.js 已內嵌，不用網路）。
+5. 用無頭瀏覽器開根目錄 index.html，確認沒有 JS 錯誤（smoke.js 只測遊戲邏輯，抓不到介面檔的語法錯），並截圖檢查桌機與 400px 手機版面（注意 three.js 已內嵌，不用網路）。
+   - **一定要檢查 iPhone 動態島**：模擬 393×852、上方安全區 59px、下方 34px（把 #game 的 padding-top 設 59px），倒數計時與上方血條不能被擋、下方「準備好了」不能被切掉、遊戲畫面不能上下捲動。
 6. commit 原始碼＋產物，**直接推到 main**。推上去後 GitHub Pages 約 1～2 分鐘更新網站；Cloudflare 會自動部署 `server/`（專案 zoochess）。
 
 ## 使用者偏好（必守）

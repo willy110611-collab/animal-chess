@@ -229,7 +229,7 @@ function openMenu(sub) {
     else if (m === 'ai') { const was = P.ai; actMe({ t: 'aitoggle' }); if (NET.role !== 'client') { processLog(); refresh(); } toast(!was ? 'AI 代打中，隨時可以取回' : '你取回了控制權'); openMenu(); }
     else if (m === 'mute') { AUD.set.mute = !AUD.set.mute; audApply(); audSave(); openMenu(); }
     else if (m === 'tut') { $('overlay').hidden = true; startTutorial(); }
-    else if (m === 'surrender') { if (b.dataset.sure) { $('overlay').hidden = true; actMe({ t: 'surrender' }); } else { b.dataset.sure = 1; b.textContent = '再按一次確定投降'; b.classList.add('primary'); } }
+    else if (m === 'surrender') { if (b.dataset.sure) { $('overlay').hidden = true; actMe({ t: 'surrender' }); setTimeout(() => leaveToLobby(true), NET.role ? 500 : 50); /* 投降後直接回到選模式的大廳 */ } else { b.dataset.sure = 1; b.textContent = '再按一次確定投降'; b.classList.add('primary'); } }
   };
 }
 
