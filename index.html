@@ -5931,7 +5931,7 @@ function hud() {
     const maxHp = CFG.TEAM_HP, fighting = i => fight && G.battles.some(b => b.teams.includes(t) && b.teams.includes(i) && i !== t);
     const cand = G.phase === 'prep' && G.nextCand ? (G.nextCand[t] || []) : [];
     const wide = el.classList.contains('wide');
-    const head = wide ? `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">可能對手</button>' : ''}<button class="stx" aria-label="縮小排名">縮小</button></div>` : `<div class="sthead"><small>${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">對手</button>' : ''}<button class="stx" aria-label="放大排名">放大</button></div>`;
+    const head = wide ? `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">可能對手</button>' : ''}<button class="stx" aria-label="縮小排名">縮小</button></div>` : `<div class="sthead"><small>${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">對手</button>' : ''}</div>`; // 右邊一列不放「放大」
     if (!el.classList.contains('wide')) { // 精簡：每隊一顆圓形頭像，外圈是血量，下方數字；角標＝連勝／連敗、對手、可能對手
       el.innerHTML = head + '<div class="scells col">' + rows.map(({ T, i }) => { const sk = T.streak || 0, hp = Math.max(0, T.hp), isOpp = fighting(i) || (!fight && i === opp && !cand.length);
         const bd = T.out ? '' : isOpp ? `<i class="sbd vs">${clashSvg('sm')}</i>` : cand.includes(i) ? '<i class="sbd q">?</i>' : sk >= 2 ? `<i class="sbd win">${flameSvg}${sk}</i>` : sk <= -2 ? `<i class="sbd lose">${-sk}</i>` : '';
@@ -6542,7 +6542,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.1'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.2'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
