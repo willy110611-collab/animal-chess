@@ -63,7 +63,7 @@ const NET = { epoch: 0, hostSeat: 0, mm: null, role: null, mq: null, myId: '', l
 const AI_NAMES = ['阿熊', '野狼幫甲', '野狼幫乙', '河馬團甲', '河馬團乙', '鴨鴨隊甲', '鴨鴨隊乙'];
 function netName() { try { return localStorage.getItem('zoo_name') || '玩家'; } catch (e) { return '玩家'; } }
 function netSetName(n) { try { localStorage.setItem('zoo_name', n); } catch (e) {} }
-function netReset() { for (const t of NET.timers || []) clearInterval(t); NET.timers = []; clearInterval(NET.pingT); NET.pingT = 0; if (NET.ws) { const w = NET.ws; NET.ws = null; try { w.close(); } catch (e) {} } NET.srv = false; NET.ownerSeat = -1; NET.ranked = false; NET.code = ''; NET.tries = 0; NET.epoch = 0; NET.hostSeat = 0; NET.mmSeats = null; NET.started = false; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; NET.pred = []; NET.playT = []; }
+function netReset() { NET.spec = false; const gm = document.getElementById('game'); if (gm) gm.classList.remove('spectating'); const sb = document.getElementById('specBar'); if (sb) sb.remove(); for (const t of NET.timers || []) clearInterval(t); NET.timers = []; clearInterval(NET.pingT); NET.pingT = 0; if (NET.ws) { const w = NET.ws; NET.ws = null; try { w.close(); } catch (e) {} } NET.srv = false; NET.ownerSeat = -1; NET.ranked = false; NET.code = ''; NET.tries = 0; NET.epoch = 0; NET.hostSeat = 0; NET.mmSeats = null; NET.started = false; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; NET.pred = []; NET.playT = []; }
 function netLeave() {
   try { if (NET.role === 'client' && NET.host) NET.host.send({ k: 'bye' }); } catch (e) {}
   const r = document.getElementById('netRtt'); if (r) r.remove();
@@ -352,7 +352,7 @@ async function netClientReconnect() {
   }
 }
 function netSendAct(a) {
-  if (!NET.host) return 'bad';
+  if (!NET.host || NET.spec) return 'bad'; // 觀戰不能操作
   const id = NET.reqId++; NET.pending[id] = a.t; NET.host.send({ k: 'act', a, id });
   // 先在自己手機上做出來（伺服器回來的畫面會校正）；還沒被伺服器處理的操作，收到舊畫面時會再套一次
   if (G && NET_CFG.PREDICT.includes(a.t)) {
@@ -367,6 +367,10 @@ function netPredict(a) {
   G.log.length = n; // 特效與音效等伺服器的正式紀錄
   return r;
 }
+function specUi() { // 觀戰畫面：下方操作區鎖起來，上方顯示觀戰中與離開
+  NET.spec = true; $('game').classList.add('spectating');
+  if (!document.getElementById('specBar')) { const b = document.createElement('div'); b.id = 'specBar'; b.innerHTML = '<span>觀戰中</span><button class="btn" id="specLeave">離開</button>'; $('stage').appendChild(b); $('specLeave').onclick = () => netLeave(); }
+}
 function netClientMsg(m) {
   if (!m) return;
   if (m.e !== undefined) { // 換房主後，忽略舊房主的過期訊息
@@ -379,7 +383,7 @@ function netClientMsg(m) {
   else if (m.k === 'hb') {}
   else if (m.k === 'room') { NET.seats = m.seats; NET.code = m.code; renderRoom(); }
   else if (m.k === 'full') { toast(m.why, 3000); setTimeout(netLeave, 50); }
-  else if (m.k === 'start') { const re = NET.started && G; ME = NET.mySeat = m.seat; NET.started = true; if (m.seats) NET.seats = m.seats; if (m.epoch !== undefined) { NET.epoch = m.epoch; NET.hostSeat = m.hostSeat; } if (!re) for (const k in S3.V) s3Remove(k); }
+  else if (m.k === 'start') { if (m.spec) specUi(); const re = NET.started && G; ME = NET.mySeat = m.seat; NET.started = true; if (m.seats) NET.seats = m.seats; if (m.epoch !== undefined) { NET.epoch = m.epoch; NET.hostSeat = m.hostSeat; } if (!re) for (const k in S3.V) s3Remove(k); }
   else if (m.k === 'res') { const t = NET.pending[m.id]; delete NET.pending[m.id]; NET.pred = NET.pred.filter(x => x.id !== m.id); if (m.r !== 'ok' && !['ready', 'ping', 'move'].includes(t)) toast(ERR[m.r] || '不行'); if (m.r !== 'ok' && t === 'move') renderPrep(); }
   else if (m.k === 'snap') netApplySnap(m);
   else if (m.k === 'battles') {

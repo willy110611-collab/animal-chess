@@ -22,6 +22,13 @@
    - **一定要檢查 iPhone 動態島**：模擬 393×852、上方安全區 59px、下方 34px（把 #game 的 padding-top 設 59px），倒數計時與上方血條不能被擋、下方「準備好了」不能被切掉、遊戲畫面不能上下捲動。
 6. commit 原始碼＋產物，**直接推到 main**。推上去後 GitHub Pages 約 1～2 分鐘更新網站；Cloudflare 會自動部署 `server/`（專案 zoochess）。
 
+## Excel 數值流程
+- 使用者改「遊戲數據.xlsx」→ `python3 tools/xlsx2sheet.py 遊戲數據.xlsx` 產生 src/sheet.js → **再跑 `python3 tools/simsheet.py 遊戲數據.xlsx`** 把模擬結果寫進「模擬結果」分頁，連同上線一起交回給使用者。
+- 平衡報告（真人對局統計）：https://zoochess.willy110611.workers.dev/report
+
+## 上線方式（Cowork 專案的雲端 session 不能直接推 GitHub）
+- 用 device_commit_files 把改到的檔案寫進使用者電腦的 animal-chess，最後另外寫入 `D:\##Claude##\Games\動物戰棋\自動上傳\上傳.flag`（內容＝commit 說明），使用者電腦上的自動上傳程式會推上去。細節見專案文件「自動上傳說明」。
+
 ## 使用者偏好（必守）
 - 回覆用繁體中文，先講結論；每次說明：改了什麼、副作用、使用者可調的參數在哪。
 - **新規則／新功能先給預覽**（用最少用量呈現預計的畫面），使用者確認後才做。一次只做被要求的事。

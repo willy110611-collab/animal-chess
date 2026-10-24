@@ -6,10 +6,10 @@ const $$ = sel => document.querySelector(sel);
 // ---- 玩家檔案（本機）----
 const PROFILE = (() => { try { return Object.assign({ games: 0, wins: 0, three: 0, prism: 0, unlocked: { base: 1 }, skinSel: {} }, JSON.parse(localStorage.getItem('zoo_profile') || '{}')); } catch (e) { return { games: 0, wins: 0, three: 0, prism: 0, unlocked: { base: 1 }, skinSel: {} }; } })();
 function saveProfile() { try { localStorage.setItem('zoo_profile', JSON.stringify(PROFILE)); } catch (e) {} }
-const SKIN_RULE = { base: '一開始就有', gold: '贏 1 場', night: '玩 3 場', snow: '做出任一 3 星動物', sakura: '隊伍 50 血以上獲勝', jade: '一場選到 2 個彩色海克斯' };
+const SKIN_RULE = { seasonGold: '賽季結束時黃金以上', seasonDia: '賽季結束時鑽石以上', base: '一開始就有', gold: '贏 1 場', night: '玩 3 場', snow: '做出任一 3 星動物', sakura: '隊伍 50 血以上獲勝', jade: '一場選到 2 個彩色海克斯' };
 function unlockSkin(id) { if (!PROFILE.unlocked[id]) { PROFILE.unlocked[id] = 1; saveProfile(); toast(`解鎖造型：${SKINS[id].name}！`, 2200); } }
 function skinOf(key) { const s = PROFILE.skinSel[key]; return s && PROFILE.unlocked[s] ? s : null; }
-const SKIN_CSS = { base: '', gold: 'sepia(.6) saturate(1.8) brightness(1.1)', night: 'brightness(.7) saturate(.7) hue-rotate(200deg)', snow: 'brightness(1.35) saturate(.25)', sakura: 'hue-rotate(-25deg) saturate(1.3) brightness(1.1)', jade: 'hue-rotate(90deg) saturate(.9)' };
+const SKIN_CSS = { base: '', gold: 'sepia(.6) saturate(1.8) brightness(1.1)', night: 'brightness(.7) saturate(.7) hue-rotate(200deg)', snow: 'brightness(1.35) saturate(.25)', sakura: 'hue-rotate(-25deg) saturate(1.3) brightness(1.1)', jade: 'hue-rotate(90deg) saturate(.9)' , seasonGold: 'sepia(.8) saturate(2.4) brightness(1.15)', seasonDia: 'hue-rotate(160deg) saturate(1.6) brightness(1.2)' };
 
 // ---- 自訂規則（本機記住）----
 function loadRules() { try { const s = JSON.parse(localStorage.getItem('zoo_rules') || '{}'); if (!s.v5) { s.maxRound = 0; s.v5 = 1; } return Object.assign({}, DEFAULT_RULES, s); } catch (e) { return Object.assign({}, DEFAULT_RULES); } }
@@ -46,7 +46,7 @@ function featuresBoot() {
   $('cmdbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (!b) return; const r = actMe({ t: 'cmd', type: b.dataset.cmd }); if (r !== 'ok') { toast(ERR[r] || '現在不能下指令'); sfx('error'); } });
   // 大廳按鈕
   $('btnLadder').onclick = () => openLadder();
-  $('btnStats').onclick = () => openStats(); $('btnQuest').onclick = () => openQuests();
+  $('btnStats').onclick = () => openStats(); $('btnQuest').onclick = () => openQuests(); $('btnFriends').onclick = () => openFriends(); $('btnLive').onclick = () => openLive();
   $('btnPlay').onclick = () => openModes();
   $('btnSettings').onclick = () => openSettings();
   $('btnAcc').onclick = () => openAccount();

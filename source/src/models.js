@@ -788,6 +788,8 @@ const SKINS = {
   snow: { name: '雪白', tint: '#ffffff', glow: '#3a3a40' },
   sakura: { name: '櫻花', tint: '#ffc0d0', glow: '#1a0008' },
   jade: { name: '翡翠', tint: '#a8e0b8', glow: '#001a08' },
+  seasonGold: { name: '賽季黃金', tint: '#ffd34d', glow: '#4a3000' }, // 賽季獎勵
+  seasonDia: { name: '賽季鑽石', tint: '#9fe8ff', glow: '#00303f' },
 };
 function applySkin(R, id) {
   const sk = SKINS[id] || SKINS.base;

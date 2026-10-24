@@ -58,6 +58,11 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .nightsky::after { content: ""; position: absolute; width: 44px; height: 44px; right: 16%; top: 9%; border-radius: 50%; box-shadow: -10px 6px 0 0 #fff4c8; }
 #ov { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 #stage .hud { z-index: 7; }
+#game.spectating #dock { pointer-events: none; opacity: .55; filter: grayscale(.3); }
+#specBar { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 8; display: flex; gap: 8px; align-items: center; background: rgba(43,28,22,.88); color: var(--paper); padding: 4px 6px 4px 12px; border-radius: 999px; font-weight: 800; font-size: 13px; } #specBar .btn { padding: 3px 12px; font-size: 12px; }
+.frow { display: flex; align-items: center; gap: 8px; background: #fff8ec; border-radius: 10px; padding: 6px 10px; margin: 6px 0; flex-wrap: wrap; } .frow small { color: var(--ink-soft); font-size: 11px; flex: 1; min-width: 120px; } .frow .btn { padding: 3px 10px; font-size: 12px; }
+.frow i.on { width: 8px; height: 8px; border-radius: 50%; background: #bbb; } .frow i.on.y { background: #5fbf4a; }
+#btnFriends { position: relative; } .fdot { position: absolute; right: 8px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: #ff5a3c; }
 .sflash { position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: screen; opacity: 0; animation: sflash .45s ease-out; } @keyframes sflash { 15% { opacity: .55; } to { opacity: 0; } } /* 五費大招全畫面閃光 */ /* 上方血條／倒數永遠在棋子血條上面，不會被蓋住 */
 #stage.ot::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px 10px rgba(220,40,20,.55); animation: otp .8s ease-in-out infinite alternate; }
 @keyframes otp { from { opacity: .4; } to { opacity: 1; } }
@@ -654,7 +659,7 @@ var m='載入中';window.LD={set:function(p,msg){t=Math.max(t,p);if(msg)m=msg;},
     <div class="lobby-btns">
       <button class="btn primary big" id="btnPlay">開始遊戲</button>
       <button class="btn" id="btnLadder">天梯排行</button>
-      <div class="lobby-two"><button class="btn" id="btnStats">個人戰績</button><button class="btn" id="btnQuest">每日任務</button></div>
+      <div class="lobby-two"><button class="btn" id="btnStats">個人戰績</button><button class="btn" id="btnQuest">每日任務</button><button class="btn" id="btnFriends">好友<i class="fdot" id="friendDot" hidden></i></button><button class="btn" id="btnLive">觀戰排位</button></div>
       <button class="btn moss" id="btnSettings">設定</button>
       <span class="note" id="loadNote"></span>
     </div>

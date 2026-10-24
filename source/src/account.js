@@ -19,7 +19,7 @@ async function accApi(path, body) {
     return await r.json();
   } catch (e) { return { err: '連不上，請確認網路' }; }
 }
-async function accRefresh() { if (!srvOn() || !ACC.token) return; const r = await accApi('/api/me'); if (r.ok) { ACC.me = r.me; accSave(); } else if (r.err === '請重新登入') { ACC.token = ''; ACC.me = null; accSave(); } }
+async function accRefresh() { if (!srvOn() || !ACC.token) return; const r = await accApi('/api/me'); if (r.ok) { ACC.me = r.me; accSave(); seasonRewards(); } else if (r.err === '請重新登入') { ACC.token = ''; ACC.me = null; accSave(); } }
 function accBadge() {
   const b = document.getElementById('btnAcc'); if (!b) return;
   b.hidden = false; // 登入入口永遠保留
@@ -78,11 +78,11 @@ function openAccount(then, startup) {
 function srvWs(path) { return srvUrl().replace(/^http/, 'ws') + path; }
 function srvConnect(path, onFail) {
   let ws; try { ws = new WebSocket(srvWs(path)); } catch (e) { onFail && onFail(); return; }
-  NET.srv = true; NET.ws = ws; NET.role = 'client'; NET.myId = ACC.me.uid;
+  NET.srv = true; NET.ws = ws; NET.role = 'client'; NET.myId = ACC.me ? ACC.me.uid : 'spec';
   NET.outbox = NET.outbox || [];
   NET.host = { send(x) { if (NET.ws && NET.ws.readyState === 1) NET.ws.send(JSON.stringify(x)); else if (x.k === 'act' && NET.outbox.length < 20) NET.outbox.push(x); } }; // 重連中的操作先排隊，連上再送
   let opened = false;
-  ws.onopen = () => { opened = true; NET.tries = 0; NET.lastHeard = performance.now(); NET.host.send({ k: 'hello', token: ACC.token }); const q = NET.outbox.splice(0); for (const x of q) NET.host.send(x); };
+  ws.onopen = () => { opened = true; NET.tries = 0; NET.lastHeard = performance.now(); NET.host.send(NET.spec ? { k: 'hello', spec: 1, token: ACC.token } : { k: 'hello', token: ACC.token }); const q = NET.outbox.splice(0); for (const x of q) NET.host.send(x); };
   ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } NET.lastHeard = performance.now(); srvMsg(m); };
   ws.onclose = () => {
     if (NET.ws !== ws || ws.dead) return; ws.dead = true;
@@ -125,6 +125,56 @@ function netRttShow() {
   el.className = 'q' + q; el.querySelector('b').textContent = r + 'ms'; el.hidden = !G;
   el.title = q === 3 ? '連線順暢' : q === 2 ? '連線普通' : '連線不穩';
 }
+// ---------- 好友與邀請 ----------
+const FRIEND_CFG = { POLL_MS: 15000 }; // 多久檢查一次好友上線與邀請
+let FRIENDS = { list: [], incoming: [] };
+async function friendPoll() {
+  if (!srvOn() || !ACC.token) return;
+  const r = await accApi('/api/friends'); if (!r || !r.ok) return;
+  FRIENDS = r; const d = document.getElementById('friendDot'); if (d) d.hidden = !r.incoming.length;
+  for (const iv of r.invites || []) inviteToast(iv);
+}
+function inviteToast(iv) {
+  if (NET.role || (G && !$('game').hidden)) return; // 正在玩就不打擾
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>好友邀請</h2><p><b>${esc(iv.name)}</b> 邀請你加入房間 <b>${esc(iv.code)}</b></p><button class="btn primary" id="ivGo">加入</button> <button class="btn" id="ivNo">不要</button>`;
+  $('overlay').hidden = false; sfx('ping'); $('mX').onclick = $('ivNo').onclick = () => { $('overlay').hidden = true; };
+  $('ivGo').onclick = () => { $('overlay').hidden = true; srvJoin(iv.code); };
+}
+setInterval(() => { friendPoll(); }, FRIEND_CFG.POLL_MS);
+setTimeout(() => friendPoll(), 3000);
+async function openFriends() {
+  if (!srvOn()) { toast('好友功能要用正式網址並登入'); return; }
+  needLogin(async () => {
+    await friendPoll();
+    const inRoom = NET.srv && NET.code && !G;
+    const row = f => `<div class="frow"><i class="on ${f.online ? 'y' : ''}"></i><b>${esc(f.name)}</b><small>${f.playing ? '對局中' : f.online ? '在線上' : '離線'}・${f.lp} LP</small>${inRoom ? `<button class="btn" data-inv="${f.uid}">邀請</button>` : ''}<button class="btn" data-rm="${f.uid}" title="刪除好友">✕</button></div>`;
+    $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>好友</h2>
+      <form class="netbox" id="fAdd"><label class="rnum">加好友<input id="fUser" maxlength="16" placeholder="對方的帳號（不是暱稱）" autocapitalize="none"></label><button class="btn primary" type="submit">送出</button></form>
+      ${FRIENDS.incoming.length ? `<h3>好友邀請</h3>${FRIENDS.incoming.map(f => `<div class="frow"><b>${esc(f.name)}</b><button class="btn primary" data-ok="${f.uid}">同意</button><button class="btn" data-rm="${f.uid}">拒絕</button></div>`).join('')}` : ''}
+      <h3>好友（${FRIENDS.list.length}）</h3>${FRIENDS.list.map(row).join('') || '<p class="nethint">還沒有好友。把你的帳號告訴朋友，請他加你。</p>'}
+      <p class="nethint">你的帳號：<b>${esc(ACC.me ? ACC.me.user : '')}</b>${inRoom ? '　在房間裡可以直接邀請好友。' : '　開房後可以在這裡邀請好友。'}</p>`;
+    $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; if (inRoom) renderRoom(); };
+    $('fAdd').onsubmit = async e => { e.preventDefault(); const r = await accApi('/api/friend', { user: $('fUser').value }); toast(r.ok ? r.msg : r.err, 2600); if (r.ok) openFriends(); };
+    $('panel').querySelectorAll('[data-ok]').forEach(b => b.onclick = async () => { const f = FRIENDS.incoming.find(x => x.uid === b.dataset.ok); const r = await accApi('/api/friend', { user: f.uid }); toast(r.ok ? r.msg : r.err); openFriends(); });
+    $('panel').querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { await accApi('/api/friend/remove', { uid: b.dataset.rm }); openFriends(); });
+    $('panel').querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { const r = await accApi('/api/invite', { uid: b.dataset.inv, code: NET.code }); toast(r.ok ? '邀請已送出' : r.err); });
+  });
+}
+// ---------- 觀戰別人的排位對局 ----------
+async function openLive() {
+  if (!srvOn()) { toast('觀戰要用正式網址'); return; }
+  const r = await accApi('/api/live');
+  const L = (r && r.ok ? r.list : []);
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>觀戰排位</h2>${L.map(x => `<div class="frow"><b>${x.solo ? (x.n === 2 ? '1 對 1' : '單人混戰') : (x.n > 4 ? '雙人混戰' : '雙人對戰')}</b><small>${x.names.map(esc).join('、')}・平均 ${x.lp} LP・${Math.max(1, Math.round((Date.now() - x.t) / 60000))} 分鐘前開打</small><button class="btn primary" data-watch="${x.code}">觀戰</button></div>`).join('') || '<p class="nethint">現在沒有正在打的排位對局。</p>'}`;
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('panel').querySelectorAll('[data-watch]').forEach(b => b.onclick = () => { $('overlay').hidden = true; srvSpectate(b.dataset.watch); });
+}
+function srvSpectate(code) {
+  if (NET.role) return; toast('連線觀戰中…'); NET.code = code; NET.spec = true;
+  srvConnect('/ws/room/' + code, () => { toast('連不上這場', 3000); NET.spec = false; netReset(); });
+}
+// ---------- 賽季獎勵：伺服器記錄的牌位造型，登入時自動解鎖 ----------
+function seasonRewards() { if (!ACC.me || !ACC.me.rewards) return; for (const r of ACC.me.rewards) if (typeof SKINS !== 'undefined' && SKINS[r.skin] && !PROFILE.unlocked[r.skin]) unlockSkin(r.skin); }
 // ---------- 伺服器排位配對 ----------
 function srvMatchStart() {
   needLogin(() => {
@@ -183,7 +233,8 @@ function splashShowLogin() {
   openAccount(null, true);
 }
 function openLadderSrv() {
-  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯</h2>
+  accApi('/api/season').then(r => { const e = document.getElementById('seasonInfo'); if (e && r && r.ok) e.textContent = `第 ${r.n} 賽季・還有 ${Math.max(0, Math.ceil((r.end - Date.now()) / 864e5))} 天（結束時黃金以上送賽季造型，之後天梯歸零）`; });
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯</h2><p class="nethint" id="seasonInfo"></p>
     <div class="ltabs"><button class="btn ${LADDER_TAB === 'duo' ? 'on' : ''}" data-lt="duo">雙人</button><button class="btn ${LADDER_TAB === 'solo' ? 'on' : ''}" data-lt="solo">單人</button></div>
     <div id="lpMeBox"></div>
     <h3>全球排行榜 <small id="glRank">讀取中…</small></h3><div class="lplist" id="glList"><small>連線中…</small></div>

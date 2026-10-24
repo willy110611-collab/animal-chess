@@ -2239,8 +2239,8 @@ function rollNeutrals(G, units) {
 // 前面接上 data.js / engine.js / game.js（打包時串在一起）。
 
 const SV = {
-  ORIGINS: ['https://willy110611-collab.github.io', 'http://localhost:8123', 'http://127.0.0.1:8123'],
-  VERSION: '0.12.11',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  ORIGINS: ['https://willy110611-collab.github.io', 'https://zoochess.pages.dev', 'http://localhost:8123', 'http://127.0.0.1:8123'], // 網站網址（Cloudflare Pages 的預覽網址 *.zoochess.pages.dev 也允許）
+  VERSION: '0.12.12',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）
@@ -2249,7 +2249,12 @@ const SV = {
   IDLE_CLOSE_MS: 120000, // 房間沒人多久關掉
   PBKDF2_ITER: 60000,    // 密碼雜湊強度
   SESSION_DAYS: 120,
-  ACTIVE_MAX_MS: 4 * 3600e3, // 「回到對局」紀錄最多保留多久（一場不會打這麼久）
+  ACTIVE_MAX_MS: 4 * 3600e3,
+  SAVE_MS: 5000,         // 對局狀態多久存一次（伺服器重啟或房間被清掉時能接回來）
+  SEASON_DAYS: 35,       // 一個賽季幾天（到期自動結算、天梯歸零）
+  SEASON_REWARD: [[6, 'seasonDia'], [3, 'seasonGold']], // 賽季結束時牌位（0＝黑鐵…6＝鑽石）達到多少給哪個造型
+  FRIEND_MAX: 50, ONLINE_MS: 60000, INVITE_MS: 120000,
+  LIVE_MAX_MS: 2 * 3600e3, // 「回到對局」紀錄最多保留多久（一場不會打這麼久）
   REG_PER_IP_DAY: 5,     // 同一個 IP 一天最多註冊幾個帳號（擋大量分身）
   LOGIN_FAIL_HOUR: 10,   // 同一帳號一小時最多輸錯幾次
   MM_SAME_TZ: 2, MM_WIDEN_MS: 20000,
@@ -2261,11 +2266,13 @@ const MM_ORDER_S = { 4: [0, 2, 1, 3], 8: [0, 2, 4, 6, 1, 3, 5, 7], solo: [0, 1, 
 const te = new TextEncoder();
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
 const rand = n => hex(crypto.getRandomValues(new Uint8Array(n)));
+const avgLp = seats => { const a = seats.filter(Boolean).map(s => s.lp || 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; };
+function weekOf(t) { const d = new Date(t); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); const y = d.getUTCFullYear(), w = Math.ceil(((d - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7); return y + '-W' + String(w).padStart(2, '0'); }
 function roomCode() { const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; const r = crypto.getRandomValues(new Uint8Array(4)); return [...r].map(x => A[x % A.length]).join(''); }
 
 function cors(req) {
   const o = req.headers.get('Origin') || '';
-  return { 'Access-Control-Allow-Origin': SV.ORIGINS.includes(o) ? o : SV.ORIGINS[0], 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Vary': 'Origin' };
+  return { 'Access-Control-Allow-Origin': (SV.ORIGINS.includes(o) || /^https:\/\/[a-z0-9-]+\.zoochess\.pages\.dev$/.test(o)) ? o : SV.ORIGINS[0], 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Vary': 'Origin' };
 }
 const json = (req, obj, status) => new Response(JSON.stringify(obj), { status: status || 200, headers: Object.assign({ 'Content-Type': 'application/json' }, cors(req)) });
 
@@ -2284,6 +2291,13 @@ export default {
       if (p === '/api/logout' && req.method === 'POST') return json(req, await acc.logout(tok));
       if (p === '/api/ladder') return json(req, await acc.ladder(tok, url.searchParams.get('mode') || 'duo'));
       if (p === '/api/meta') return json(req, { ok: true, list: await acc.getMeta() });
+      if (p === '/api/friends') return json(req, await acc.friends(tok));
+      if (p === '/api/friend' && req.method === 'POST') { const b = await req.json(); return json(req, await acc.friendAdd(tok, String(b.user || ''))); }
+      if (p === '/api/friend/remove' && req.method === 'POST') { const b = await req.json(); return json(req, await acc.friendRemove(tok, String(b.uid || ''))); }
+      if (p === '/api/invite' && req.method === 'POST') { const b = await req.json(); return json(req, await acc.invite(tok, String(b.uid || ''), String(b.code || ''))); }
+      if (p === '/api/live') return json(req, await acc.liveList());
+      if (p === '/api/season') return json(req, await acc.seasonInfo());
+      if (p === '/report') return new Response(await acc.reportHtml(url.searchParams.get('w') || ''), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
       if (p === '/api/active') { // 重開 App：有沒有還沒打完、自己也還沒被淘汰的對局
         const a = await acc.getActive(tok); if (!a) return json(req, { ok: true, code: '' });
         const st = await env.ROOM.get(env.ROOM.idFromName(a.code)).status(a.uid).catch(() => null);
@@ -2316,6 +2330,14 @@ export class Accounts extends DurableObject {
     for (const c of ['lp1', 'games1', 'wins1']) { try { this.sql.exec(`ALTER TABLE users ADD COLUMN ${c} INTEGER DEFAULT 0`); } catch (e) {} }
     // v0.12.5：每個帳號正在打的對局（重開 App 自動回到同一場）
     this.sql.exec('CREATE TABLE IF NOT EXISTS active (uid TEXT PRIMARY KEY, code TEXT, t INTEGER)');
+    // v0.12.12：平衡統計、好友、邀請、觀戰清單、賽季
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS bal (week TEXT, kind TEXT, key TEXT, games INTEGER DEFAULT 0, place REAL DEFAULT 0, top INTEGER DEFAULT 0, PRIMARY KEY (week, kind, key));
+      CREATE TABLE IF NOT EXISTS friends (a TEXT, b TEXT, ok INTEGER DEFAULT 0, t INTEGER, PRIMARY KEY (a, b));
+      CREATE TABLE IF NOT EXISTS invites (too TEXT, frm TEXT, code TEXT, t INTEGER, PRIMARY KEY (too, frm));
+      CREATE TABLE IF NOT EXISTS live (code TEXT PRIMARY KEY, data TEXT, t INTEGER);
+      CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
+      CREATE TABLE IF NOT EXISTS season_hist (uid TEXT, season INTEGER, lp INTEGER, lp1 INTEGER, PRIMARY KEY (uid, season));`);
+    try { this.sql.exec('ALTER TABLE users ADD COLUMN seen INTEGER DEFAULT 0'); } catch (e) {}
   }
   async hashPw(pass, salt) {
     const k = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveBits']);
@@ -2351,10 +2373,64 @@ export class Accounts extends DurableObject {
     if (!s || s.exp < Date.now()) return null;
     return this.pub(this.row('SELECT * FROM users WHERE uid=?', s.uid));
   }
-  async me(tok) { const u = this.verify(tok); return u ? { ok: true, me: u } : { err: '請重新登入' }; }
+  async me(tok) { this.seasonCheck(); const u = this.verify(tok); if (!u) return { err: '請重新登入' }; this.sql.exec('UPDATE users SET seen=? WHERE uid=?', Date.now(), u.uid); u.rewards = this.rewardsOf(u.uid); return { ok: true, me: u }; }
+  // ---- 賽季：到期就把分數存進歷史、發造型、天梯歸零 ----
+  kvGet(k) { const r = this.row('SELECT v FROM kv WHERE k=?', k); return r ? JSON.parse(r.v) : null; }
+  kvSet(k, v) { this.sql.exec('INSERT OR REPLACE INTO kv VALUES (?,?)', k, JSON.stringify(v)); }
+  season() { let S = this.kvGet('season'); if (!S) { S = { n: 1, start: Date.now() }; this.kvSet('season', S); } return S; }
+  seasonCheck() {
+    const S = this.season(); if (Date.now() < S.start + SV.SEASON_DAYS * 864e5) return;
+    this.sql.exec('INSERT OR REPLACE INTO season_hist SELECT uid, ?, lp, lp1 FROM users WHERE games>0 OR games1>0', S.n);
+    this.sql.exec('UPDATE users SET lp=0, lp1=0');
+    this.kvSet('season', { n: S.n + 1, start: Date.now() });
+  }
+  async seasonInfo() { this.seasonCheck(); const S = this.season(); return { ok: true, n: S.n, end: S.start + SV.SEASON_DAYS * 864e5 }; }
+  rewardsOf(uid) { const out = []; for (const r of this.sql.exec('SELECT season, lp, lp1 FROM season_hist WHERE uid=?', uid).toArray()) { const tier = Math.floor(Math.max(r.lp, r.lp1) / 100); for (const [need, skin] of SV.SEASON_REWARD) if (tier >= need) { out.push({ season: r.season, skin, tier }); break; } } return out; }
+  // ---- 平衡統計：每週記每隻動物、每個海克斯的出場與名次 ----
+  async balAdd(rows) { const w = weekOf(Date.now()); for (const r of rows || []) this.sql.exec('INSERT INTO bal (week,kind,key,games,place,top) VALUES (?,?,?,1,?,?) ON CONFLICT(week,kind,key) DO UPDATE SET games=games+1, place=place+excluded.place, top=top+excluded.top', w, r.kind, String(r.key), +r.place || 0, r.top ? 1 : 0); return { ok: true }; }
+  async reportHtml(w) {
+    w = /^\d{4}-W\d{2}$/.test(w) ? w : weekOf(Date.now());
+    const weeks = this.sql.exec('SELECT DISTINCT week FROM bal ORDER BY week DESC LIMIT 12').toArray().map(r => r.week);
+    const tab = kind => { const rows = this.sql.exec('SELECT key, games, place, top FROM bal WHERE week=? AND kind=? ORDER BY (place*1.0/games) ASC', w, kind).toArray(); return rows.map(r => `<tr><td>${r.key}</td><td>${r.games}</td><td>${(r.place / r.games * 100).toFixed(0)}</td><td>${Math.round(r.top / r.games * 100)}%</td></tr>`).join('') || '<tr><td colspan=4>這週還沒有資料</td></tr>'; };
+    return `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>動物戰棋 平衡報告</title><style>body{font-family:sans-serif;max-width:720px;margin:20px auto;padding:0 12px}table{border-collapse:collapse;width:100%;margin-bottom:20px}td,th{border-bottom:1px solid #ddd;padding:4px 6px;text-align:left}a{margin-right:8px}</style>
+      <h1>平衡報告 ${w}</h1><p>名次分數：0＝都拿第一、100＝都最後一名，越低越強。前半＝拿到前一半名次的比例。只算真人與電腦都有的正式對局（伺服器上的房間）。</p><p>${weeks.map(x => `<a href="?w=${x}">${x}</a>`).join('')}</p>
+      <h2>動物</h2><table><tr><th>動物</th><th>場</th><th>名次分數</th><th>前半</th></tr>${tab('u')}</table><h2>海克斯</h2><table><tr><th>海克斯</th><th>場</th><th>名次分數</th><th>前半</th></tr>${tab('a')}</table>`;
+  }
+  // ---- 好友與邀請 ----
+  uidByUser(user) { const r = this.row('SELECT uid FROM users WHERE user=?', user.trim().toLowerCase()); return r ? r.uid : null; }
+  async friends(tok) {
+    const u = this.verify(tok); if (!u) return { err: '請重新登入' };
+    const now = Date.now(); this.sql.exec('UPDATE users SET seen=? WHERE uid=?', now, u.uid);
+    const info = (uid) => { const x = this.row('SELECT uid, name, lp, seen FROM users WHERE uid=?', uid); if (!x) return null; const a = this.row('SELECT code FROM active WHERE uid=?', uid); return { uid: x.uid, name: x.name, lp: x.lp, online: now - (x.seen || 0) < SV.ONLINE_MS, playing: !!a }; };
+    const list = this.sql.exec('SELECT b FROM friends WHERE a=? AND ok=1', u.uid).toArray().map(r => info(r.b)).filter(Boolean);
+    const incoming = this.sql.exec('SELECT a FROM friends WHERE b=? AND ok=0', u.uid).toArray().map(r => info(r.a)).filter(Boolean);
+    this.sql.exec('DELETE FROM invites WHERE t<?', now - SV.INVITE_MS);
+    const invites = this.sql.exec('SELECT frm, code FROM invites WHERE too=?', u.uid).toArray().map(r => ({ from: r.frm, name: (this.row('SELECT name FROM users WHERE uid=?', r.frm) || {}).name || '', code: r.code }));
+    this.sql.exec('DELETE FROM invites WHERE too=?', u.uid); // 拿到就清掉，同一個邀請只跳一次
+    return { ok: true, list, incoming, invites };
+  }
+  async friendAdd(tok, user) {
+    const u = this.verify(tok); if (!u) return { err: '請重新登入' };
+    const f = /^u[0-9a-f]{12}$/.test(user) ? user : this.uidByUser(user); if (!f) return { err: '找不到這個帳號' }; if (f === u.uid) return { err: '不能加自己' };
+    if (this.row('SELECT COUNT(*) AS n FROM friends WHERE a=? AND ok=1', u.uid).n >= SV.FRIEND_MAX) return { err: '好友已滿' };
+    const back = this.row('SELECT ok FROM friends WHERE a=? AND b=?', f, u.uid);
+    if (back) { this.sql.exec('INSERT OR REPLACE INTO friends VALUES (?,?,1,?)', u.uid, f, Date.now()); this.sql.exec('UPDATE friends SET ok=1 WHERE a=? AND b=?', f, u.uid); return { ok: true, msg: '已成為好友' }; }
+    this.sql.exec('INSERT OR IGNORE INTO friends VALUES (?,?,0,?)', u.uid, f, Date.now()); return { ok: true, msg: '已送出好友邀請，對方同意後就是好友' };
+  }
+  async friendRemove(tok, f) { const u = this.verify(tok); if (!u) return { err: '請重新登入' }; this.sql.exec('DELETE FROM friends WHERE (a=? AND b=?) OR (a=? AND b=?)', u.uid, f, f, u.uid); return { ok: true }; }
+  async invite(tok, to, code) {
+    const u = this.verify(tok); if (!u) return { err: '請重新登入' };
+    if (!this.row('SELECT ok FROM friends WHERE a=? AND b=? AND ok=1', u.uid, to)) return { err: '對方還不是你的好友' };
+    if (!/^[A-Z0-9]{4}$/.test(code)) return { err: '房號不對' };
+    this.sql.exec('INSERT OR REPLACE INTO invites VALUES (?,?,?,?)', to, u.uid, code, Date.now()); return { ok: true };
+  }
+  // ---- 觀戰：正在打的排位房 ----
+  async liveSet(code, data) { if (data) this.sql.exec('INSERT OR REPLACE INTO live VALUES (?,?,?)', code, JSON.stringify(data), Date.now()); else this.sql.exec('DELETE FROM live WHERE code=?', code); return { ok: true }; }
+  async liveList() { this.sql.exec('DELETE FROM live WHERE t<?', Date.now() - SV.LIVE_MAX_MS); return { ok: true, list: this.sql.exec('SELECT code, data, t FROM live ORDER BY t DESC LIMIT 30').toArray().map(r => Object.assign({ code: r.code, t: r.t }, JSON.parse(r.data))) }; }
   async logout(tok) { this.sql.exec('DELETE FROM sessions WHERE tok=?', String(tok)); return { ok: true }; }
   async rename(tok, name) { const u = this.verify(tok); name = name.trim().slice(0, 8); if (!u) return { err: '請重新登入' }; if (!name) return { err: '請填暱稱' }; this.sql.exec('UPDATE users SET name=? WHERE uid=?', name, u.uid); return { ok: true, me: this.verify(tok) }; }
   async ladder(tok, mode) {
+    this.seasonCheck();
     const [L, Gm, W] = mode === 'solo' ? ['lp1', 'games1', 'wins1'] : ['lp', 'games', 'wins'];
     const top = this.sql.exec(`SELECT uid, name, ${L} AS lp, ${Gm} AS games, ${W} AS wins FROM users WHERE ${Gm}>0 ORDER BY ${L} DESC, ${Gm} DESC LIMIT 100`).toArray();
     const total = this.row(`SELECT COUNT(*) AS n FROM users WHERE ${Gm}>0`).n;
@@ -2423,7 +2499,32 @@ export class Accounts extends DurableObject {
 export class Room extends DurableObject {
   constructor(ctx, env) { super(ctx, env); this.code = ''; this.conns = new Set(); this.seats = null; this.owner = null; this.G = null; this.timer = 0; this.mm = null; this.last = Date.now(); this.settled = {}; }
   acc() { return this.env.ACC.get(this.env.ACC.idFromName('main')); }
+  // ---- 對局存檔：房間被清出記憶體（或伺服器更新）後，有人連回來就從存檔接著打 ----
+  async load() {
+    if (this.G || this.loaded) return; this.loaded = true;
+    let st = null; try { st = await this.ctx.storage.get('st'); } catch (e) {}
+    if (!st || !st.G) return;
+    Object.assign(this, { code: st.code, seats: st.seats, owner: st.owner, mm: st.mm, solo: st.solo, settled: st.settled || {}, activeCleared: st.activeCleared || {}, metaDone: st.metaDone, comps: st.comps || {} });
+    const G = JSON.parse(st.G); G.rng = makeRng(0); G.rng.set(st.ra); G.log = []; G.aiCmd = st.aiCmd || {};
+    G.battles = (st.battles || []).map(b => {
+      const B = createBattle(JSON.parse(JSON.stringify(b.input))), log = b.cmd || []; let done = 0, n = 0;
+      while (B.t < b.t && !B.over && n++ < 20000) { while (done < log.length && log[done].t <= B.t) { const c = log[done++]; B.cmdUsed[c.owner] = false; battleCommand(B, c.owner, c.type); } step(B); }
+      return { teams: b.teams, ghost: b.ghost, input: b.input, B, settled: b.settled };
+    });
+    for (let i = 0; i < G.players.length; i++) if (G.humanAt && G.humanAt[i] && !G.players[i].out) { G.players[i].ai = true; G.players[i].ready = true; } // 真人連回來前先由電腦代打
+    this.G = G; this.lastSnap = ''; this.logSent = 0; this.snapAcc = 1e9; this.ensureTimer();
+  }
+  persist(force) {
+    const G = this.G, now = Date.now(); if (!G) return;
+    if (!force && now - (this.saveAt || 0) < SV.SAVE_MS) return; this.saveAt = now;
+    if (G.phase === 'over') { this.ctx.storage.delete('st').catch(() => {}); return; }
+    const st = { code: this.code, seats: this.seats, owner: this.owner, mm: this.mm, solo: this.solo, settled: this.settled, activeCleared: this.activeCleared || {}, metaDone: this.metaDone, comps: this.comps || {},
+      G: JSON.stringify(G, (k, v) => (k === 'rng' || k === 'battles' || k === 'log' || k === 'aiCmd') ? undefined : v), ra: G.rng.get(), aiCmd: G.aiCmd || {},
+      battles: G.battles.map(b => ({ teams: b.teams, ghost: !!b.ghost, input: b.input, settled: !!b.settled, t: b.B.t, cmd: b.B.cmdLog || [] })) };
+    this.ctx.storage.put('st', st).catch(() => {});
+  }
   async fetch(req) {
+    await this.load();
     const url = new URL(req.url);
     if (!this.code) this.code = url.searchParams.get('code') || '';
     if (!this.seats) { const n = +url.searchParams.get('mode') || 0; if (n) this.seats = Array(n).fill(null); this.solo = url.searchParams.get('solo') === '1'; }
@@ -2444,6 +2545,12 @@ export class Room extends DurableObject {
   roomMsg() { return { k: 'room', code: this.code, seats: this.seats, owner: this.seats ? this.seats.findIndex(s => s && s.uid === this.owner) : -1, ranked: !!this.mm, solo: !!this.solo }; }
   async onMsg(c, m) {
     if (m.k === 'ping') { this.send(c, { k: 'pong', t: m.t }); return; }
+    if (m.k === 'hello' && m.spec) { // 觀戰：不佔座位，只收畫面
+      if (!this.G) { this.send(c, { k: 'full', why: '這場還沒開始或已經結束了' }); return; }
+      c.uid = 'spec:' + rand(4); c.spec = true; c.seat = -1;
+      const sv = this.seats.findIndex(Boolean);
+      this.send(c, { k: 'seat', seat: Math.max(0, sv) }); this.send(c, { k: 'start', seat: Math.max(0, sv), spec: true }); this.resync(); return;
+    }
     if (m.k === 'hello') {
       const u = await this.acc().verify(String(m.token || ''));
       if (!u) { this.send(c, { k: 'full', why: '請先登入帳號' }); return; }
@@ -2494,7 +2601,7 @@ export class Room extends DurableObject {
     this.bcast(this.roomMsg());
   }
   drop(c) {
-    if (!c.uid) return;
+    if (!c.uid || c.spec) return;
     if (this.G) { const P = this.G.players[c.seat]; if (P && ![...this.conns].some(o => o.uid === c.uid)) { P.ai = true; P.ready = true; } }
     else if (!this.mm && c.seat >= 0 && this.seats[c.seat] && this.seats[c.seat].uid === c.uid) { this.seats[c.seat] = null; if (this.owner === c.uid) { const s = this.seats.find(Boolean); this.owner = s ? s.uid : null; } this.bcast(this.roomMsg()); }
   }
@@ -2507,10 +2614,12 @@ export class Room extends DurableObject {
     G.ranked = this.isRanked();
     startGame(G);
     this.acc().setActive(this.seats.filter(Boolean).map(s => s.uid), this.code).catch(() => {});
+    if (this.mm) this.acc().liveSet(this.code, { n: this.seats.length, solo: !!this.solo, names: this.seats.filter(Boolean).map(s => s.name), lp: Math.round(avgLp(this.seats)) }).catch(() => {}); // 排位房：放進觀戰清單
+    this.persist(true);
     for (const c of this.conns) if (c.uid) this.send(c, { k: 'start', seat: c.seat });
     this.resync();
   }
-  async status(uid) { const G = this.G; if (!G || G.phase === 'over' || !this.seats) return { alive: false }; const i = this.seats.findIndex(s => s && s.uid === uid); return { alive: i >= 0 && !!G.players[i] && !G.players[i].out }; }
+  async status(uid) { await this.load(); const G = this.G; if (!G || G.phase === 'over' || !this.seats) return { alive: false }; const i = this.seats.findIndex(s => s && s.uid === uid); return { alive: i >= 0 && !!G.players[i] && !G.players[i].out }; }
   // 進行中對局紀錄：開打時記下所有真人；被淘汰或整場結束就清掉
   trackActive() {
     const G = this.G; if (!G || !this.seats) return;
@@ -2535,6 +2644,8 @@ export class Room extends DurableObject {
     const G = this.G;
     if (G.phase !== 'over') update(G, dt);
     this.settleOuts(); this.trackActive();
+    const pk = G.round + G.phase; if (this.phaseKey !== pk) { this.phaseKey = pk; if (G.phase === 'combat') this.compSnap(); this.persist(true); } else this.persist(false);
+    if (G.phase === 'over' && !this.balDone) { this.balDone = true; this.balReport(); if (this.mm) this.acc().liveSet(this.code, null).catch(() => {}); }
     if (G.phase === 'over' && !this.metaDone) { this.metaDone = true; this.metaReport(); }
     const bk = G.round + G.phase + G.battles.length;
     if (G.phase === 'combat' && this.battleKey !== bk && G.battles.length && G.battles[0].input) this.sendBattles();
@@ -2549,6 +2660,13 @@ export class Room extends DurableObject {
     }
     this.btAcc = (this.btAcc || 0) + dt;
     if (G.phase === 'combat' && this.btAcc >= SV.BTICK_MS) { this.btAcc = 0; this.bcast({ k: 'tick', round: G.round, t: G.battles.map(b => b.B.t), cmds: G.battles.map(b => b.B.cmdLog || []), speed: 1 }); }
+  }
+  compSnap() { const G = this.G; this.comps = this.comps || {}; G.players.forEach((P, i) => { if (!P.out) this.comps[i] = { units: Object.values(G.board).filter(u => u.owner === i).map(u => u.key), augs: (P.augs || []).slice() }; }); }
+  balReport() { // 平衡統計：每位玩家最後的陣容與海克斯，配上隊伍名次
+    const G = this.G, n = G.teams.length, rows = [];
+    G.players.forEach((P, i) => { const c = (this.comps || {})[i]; if (!c) return; const pl = G.teams[P.team].place || n, score = (pl - 1) / Math.max(1, n - 1), top = pl <= Math.max(1, Math.floor(n / 2));
+      for (const k of new Set(c.units)) rows.push({ kind: 'u', key: k, place: score, top }); for (const a of c.augs) rows.push({ kind: 'a', key: a, place: score, top }); });
+    if (rows.length) this.acc().balAdd(rows).catch(() => {});
   }
   metaReport() {
     const G = this.G, n = G.teams.length, top = n <= 3 ? 1 : 2, good = t => (G.teams[t].place || 99) <= top;

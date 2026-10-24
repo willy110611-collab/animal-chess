@@ -58,6 +58,11 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .nightsky::after { content: ""; position: absolute; width: 44px; height: 44px; right: 16%; top: 9%; border-radius: 50%; box-shadow: -10px 6px 0 0 #fff4c8; }
 #ov { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 #stage .hud { z-index: 7; }
+#game.spectating #dock { pointer-events: none; opacity: .55; filter: grayscale(.3); }
+#specBar { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 8; display: flex; gap: 8px; align-items: center; background: rgba(43,28,22,.88); color: var(--paper); padding: 4px 6px 4px 12px; border-radius: 999px; font-weight: 800; font-size: 13px; } #specBar .btn { padding: 3px 12px; font-size: 12px; }
+.frow { display: flex; align-items: center; gap: 8px; background: #fff8ec; border-radius: 10px; padding: 6px 10px; margin: 6px 0; flex-wrap: wrap; } .frow small { color: var(--ink-soft); font-size: 11px; flex: 1; min-width: 120px; } .frow .btn { padding: 3px 10px; font-size: 12px; }
+.frow i.on { width: 8px; height: 8px; border-radius: 50%; background: #bbb; } .frow i.on.y { background: #5fbf4a; }
+#btnFriends { position: relative; } .fdot { position: absolute; right: 8px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: #ff5a3c; }
 .sflash { position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: screen; opacity: 0; animation: sflash .45s ease-out; } @keyframes sflash { 15% { opacity: .55; } to { opacity: 0; } } /* 五費大招全畫面閃光 */ /* 上方血條／倒數永遠在棋子血條上面，不會被蓋住 */
 #stage.ot::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 60px 10px rgba(220,40,20,.55); animation: otp .8s ease-in-out infinite alternate; }
 @keyframes otp { from { opacity: .4; } to { opacity: 1; } }
@@ -654,7 +659,7 @@ var m='載入中';window.LD={set:function(p,msg){t=Math.max(t,p);if(msg)m=msg;},
     <div class="lobby-btns">
       <button class="btn primary big" id="btnPlay">開始遊戲</button>
       <button class="btn" id="btnLadder">天梯排行</button>
-      <div class="lobby-two"><button class="btn" id="btnStats">個人戰績</button><button class="btn" id="btnQuest">每日任務</button></div>
+      <div class="lobby-two"><button class="btn" id="btnStats">個人戰績</button><button class="btn" id="btnQuest">每日任務</button><button class="btn" id="btnFriends">好友<i class="fdot" id="friendDot" hidden></i></button><button class="btn" id="btnLive">觀戰排位</button></div>
       <button class="btn moss" id="btnSettings">設定</button>
       <span class="note" id="loadNote"></span>
     </div>
@@ -3729,6 +3734,8 @@ const SKINS = {
   snow: { name: '雪白', tint: '#ffffff', glow: '#3a3a40' },
   sakura: { name: '櫻花', tint: '#ffc0d0', glow: '#1a0008' },
   jade: { name: '翡翠', tint: '#a8e0b8', glow: '#001a08' },
+  seasonGold: { name: '賽季黃金', tint: '#ffd34d', glow: '#4a3000' }, // 賽季獎勵
+  seasonDia: { name: '賽季鑽石', tint: '#9fe8ff', glow: '#00303f' },
 };
 function applySkin(R, id) {
   const sk = SKINS[id] || SKINS.base;
@@ -5866,7 +5873,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.11'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.12'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -5897,10 +5904,10 @@ const $$ = sel => document.querySelector(sel);
 // ---- 玩家檔案（本機）----
 const PROFILE = (() => { try { return Object.assign({ games: 0, wins: 0, three: 0, prism: 0, unlocked: { base: 1 }, skinSel: {} }, JSON.parse(localStorage.getItem('zoo_profile') || '{}')); } catch (e) { return { games: 0, wins: 0, three: 0, prism: 0, unlocked: { base: 1 }, skinSel: {} }; } })();
 function saveProfile() { try { localStorage.setItem('zoo_profile', JSON.stringify(PROFILE)); } catch (e) {} }
-const SKIN_RULE = { base: '一開始就有', gold: '贏 1 場', night: '玩 3 場', snow: '做出任一 3 星動物', sakura: '隊伍 50 血以上獲勝', jade: '一場選到 2 個彩色海克斯' };
+const SKIN_RULE = { seasonGold: '賽季結束時黃金以上', seasonDia: '賽季結束時鑽石以上', base: '一開始就有', gold: '贏 1 場', night: '玩 3 場', snow: '做出任一 3 星動物', sakura: '隊伍 50 血以上獲勝', jade: '一場選到 2 個彩色海克斯' };
 function unlockSkin(id) { if (!PROFILE.unlocked[id]) { PROFILE.unlocked[id] = 1; saveProfile(); toast(`解鎖造型：${SKINS[id].name}！`, 2200); } }
 function skinOf(key) { const s = PROFILE.skinSel[key]; return s && PROFILE.unlocked[s] ? s : null; }
-const SKIN_CSS = { base: '', gold: 'sepia(.6) saturate(1.8) brightness(1.1)', night: 'brightness(.7) saturate(.7) hue-rotate(200deg)', snow: 'brightness(1.35) saturate(.25)', sakura: 'hue-rotate(-25deg) saturate(1.3) brightness(1.1)', jade: 'hue-rotate(90deg) saturate(.9)' };
+const SKIN_CSS = { base: '', gold: 'sepia(.6) saturate(1.8) brightness(1.1)', night: 'brightness(.7) saturate(.7) hue-rotate(200deg)', snow: 'brightness(1.35) saturate(.25)', sakura: 'hue-rotate(-25deg) saturate(1.3) brightness(1.1)', jade: 'hue-rotate(90deg) saturate(.9)' , seasonGold: 'sepia(.8) saturate(2.4) brightness(1.15)', seasonDia: 'hue-rotate(160deg) saturate(1.6) brightness(1.2)' };
 
 // ---- 自訂規則（本機記住）----
 function loadRules() { try { const s = JSON.parse(localStorage.getItem('zoo_rules') || '{}'); if (!s.v5) { s.maxRound = 0; s.v5 = 1; } return Object.assign({}, DEFAULT_RULES, s); } catch (e) { return Object.assign({}, DEFAULT_RULES); } }
@@ -5937,7 +5944,7 @@ function featuresBoot() {
   $('cmdbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (!b) return; const r = actMe({ t: 'cmd', type: b.dataset.cmd }); if (r !== 'ok') { toast(ERR[r] || '現在不能下指令'); sfx('error'); } });
   // 大廳按鈕
   $('btnLadder').onclick = () => openLadder();
-  $('btnStats').onclick = () => openStats(); $('btnQuest').onclick = () => openQuests();
+  $('btnStats').onclick = () => openStats(); $('btnQuest').onclick = () => openQuests(); $('btnFriends').onclick = () => openFriends(); $('btnLive').onclick = () => openLive();
   $('btnPlay').onclick = () => openModes();
   $('btnSettings').onclick = () => openSettings();
   $('btnAcc').onclick = () => openAccount();
@@ -6575,7 +6582,7 @@ const NET = { epoch: 0, hostSeat: 0, mm: null, role: null, mq: null, myId: '', l
 const AI_NAMES = ['阿熊', '野狼幫甲', '野狼幫乙', '河馬團甲', '河馬團乙', '鴨鴨隊甲', '鴨鴨隊乙'];
 function netName() { try { return localStorage.getItem('zoo_name') || '玩家'; } catch (e) { return '玩家'; } }
 function netSetName(n) { try { localStorage.setItem('zoo_name', n); } catch (e) {} }
-function netReset() { for (const t of NET.timers || []) clearInterval(t); NET.timers = []; clearInterval(NET.pingT); NET.pingT = 0; if (NET.ws) { const w = NET.ws; NET.ws = null; try { w.close(); } catch (e) {} } NET.srv = false; NET.ownerSeat = -1; NET.ranked = false; NET.code = ''; NET.tries = 0; NET.epoch = 0; NET.hostSeat = 0; NET.mmSeats = null; NET.started = false; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; NET.pred = []; NET.playT = []; }
+function netReset() { NET.spec = false; const gm = document.getElementById('game'); if (gm) gm.classList.remove('spectating'); const sb = document.getElementById('specBar'); if (sb) sb.remove(); for (const t of NET.timers || []) clearInterval(t); NET.timers = []; clearInterval(NET.pingT); NET.pingT = 0; if (NET.ws) { const w = NET.ws; NET.ws = null; try { w.close(); } catch (e) {} } NET.srv = false; NET.ownerSeat = -1; NET.ranked = false; NET.code = ''; NET.tries = 0; NET.epoch = 0; NET.hostSeat = 0; NET.mmSeats = null; NET.started = false; NET.role = null; NET.conns = []; NET.host = null; NET.battles = []; NET.cmds = []; NET.lastSnap = ''; NET.logSent = 0; NET.battleKey = ''; NET.pred = []; NET.playT = []; }
 function netLeave() {
   try { if (NET.role === 'client' && NET.host) NET.host.send({ k: 'bye' }); } catch (e) {}
   const r = document.getElementById('netRtt'); if (r) r.remove();
@@ -6864,7 +6871,7 @@ async function netClientReconnect() {
   }
 }
 function netSendAct(a) {
-  if (!NET.host) return 'bad';
+  if (!NET.host || NET.spec) return 'bad'; // 觀戰不能操作
   const id = NET.reqId++; NET.pending[id] = a.t; NET.host.send({ k: 'act', a, id });
   // 先在自己手機上做出來（伺服器回來的畫面會校正）；還沒被伺服器處理的操作，收到舊畫面時會再套一次
   if (G && NET_CFG.PREDICT.includes(a.t)) {
@@ -6879,6 +6886,10 @@ function netPredict(a) {
   G.log.length = n; // 特效與音效等伺服器的正式紀錄
   return r;
 }
+function specUi() { // 觀戰畫面：下方操作區鎖起來，上方顯示觀戰中與離開
+  NET.spec = true; $('game').classList.add('spectating');
+  if (!document.getElementById('specBar')) { const b = document.createElement('div'); b.id = 'specBar'; b.innerHTML = '<span>觀戰中</span><button class="btn" id="specLeave">離開</button>'; $('stage').appendChild(b); $('specLeave').onclick = () => netLeave(); }
+}
 function netClientMsg(m) {
   if (!m) return;
   if (m.e !== undefined) { // 換房主後，忽略舊房主的過期訊息
@@ -6891,7 +6902,7 @@ function netClientMsg(m) {
   else if (m.k === 'hb') {}
   else if (m.k === 'room') { NET.seats = m.seats; NET.code = m.code; renderRoom(); }
   else if (m.k === 'full') { toast(m.why, 3000); setTimeout(netLeave, 50); }
-  else if (m.k === 'start') { const re = NET.started && G; ME = NET.mySeat = m.seat; NET.started = true; if (m.seats) NET.seats = m.seats; if (m.epoch !== undefined) { NET.epoch = m.epoch; NET.hostSeat = m.hostSeat; } if (!re) for (const k in S3.V) s3Remove(k); }
+  else if (m.k === 'start') { if (m.spec) specUi(); const re = NET.started && G; ME = NET.mySeat = m.seat; NET.started = true; if (m.seats) NET.seats = m.seats; if (m.epoch !== undefined) { NET.epoch = m.epoch; NET.hostSeat = m.hostSeat; } if (!re) for (const k in S3.V) s3Remove(k); }
   else if (m.k === 'res') { const t = NET.pending[m.id]; delete NET.pending[m.id]; NET.pred = NET.pred.filter(x => x.id !== m.id); if (m.r !== 'ok' && !['ready', 'ping', 'move'].includes(t)) toast(ERR[m.r] || '不行'); if (m.r !== 'ok' && t === 'move') renderPrep(); }
   else if (m.k === 'snap') netApplySnap(m);
   else if (m.k === 'battles') {
@@ -7068,7 +7079,7 @@ async function accApi(path, body) {
     return await r.json();
   } catch (e) { return { err: '連不上，請確認網路' }; }
 }
-async function accRefresh() { if (!srvOn() || !ACC.token) return; const r = await accApi('/api/me'); if (r.ok) { ACC.me = r.me; accSave(); } else if (r.err === '請重新登入') { ACC.token = ''; ACC.me = null; accSave(); } }
+async function accRefresh() { if (!srvOn() || !ACC.token) return; const r = await accApi('/api/me'); if (r.ok) { ACC.me = r.me; accSave(); seasonRewards(); } else if (r.err === '請重新登入') { ACC.token = ''; ACC.me = null; accSave(); } }
 function accBadge() {
   const b = document.getElementById('btnAcc'); if (!b) return;
   b.hidden = false; // 登入入口永遠保留
@@ -7127,11 +7138,11 @@ function openAccount(then, startup) {
 function srvWs(path) { return srvUrl().replace(/^http/, 'ws') + path; }
 function srvConnect(path, onFail) {
   let ws; try { ws = new WebSocket(srvWs(path)); } catch (e) { onFail && onFail(); return; }
-  NET.srv = true; NET.ws = ws; NET.role = 'client'; NET.myId = ACC.me.uid;
+  NET.srv = true; NET.ws = ws; NET.role = 'client'; NET.myId = ACC.me ? ACC.me.uid : 'spec';
   NET.outbox = NET.outbox || [];
   NET.host = { send(x) { if (NET.ws && NET.ws.readyState === 1) NET.ws.send(JSON.stringify(x)); else if (x.k === 'act' && NET.outbox.length < 20) NET.outbox.push(x); } }; // 重連中的操作先排隊，連上再送
   let opened = false;
-  ws.onopen = () => { opened = true; NET.tries = 0; NET.lastHeard = performance.now(); NET.host.send({ k: 'hello', token: ACC.token }); const q = NET.outbox.splice(0); for (const x of q) NET.host.send(x); };
+  ws.onopen = () => { opened = true; NET.tries = 0; NET.lastHeard = performance.now(); NET.host.send(NET.spec ? { k: 'hello', spec: 1, token: ACC.token } : { k: 'hello', token: ACC.token }); const q = NET.outbox.splice(0); for (const x of q) NET.host.send(x); };
   ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } NET.lastHeard = performance.now(); srvMsg(m); };
   ws.onclose = () => {
     if (NET.ws !== ws || ws.dead) return; ws.dead = true;
@@ -7174,6 +7185,56 @@ function netRttShow() {
   el.className = 'q' + q; el.querySelector('b').textContent = r + 'ms'; el.hidden = !G;
   el.title = q === 3 ? '連線順暢' : q === 2 ? '連線普通' : '連線不穩';
 }
+// ---------- 好友與邀請 ----------
+const FRIEND_CFG = { POLL_MS: 15000 }; // 多久檢查一次好友上線與邀請
+let FRIENDS = { list: [], incoming: [] };
+async function friendPoll() {
+  if (!srvOn() || !ACC.token) return;
+  const r = await accApi('/api/friends'); if (!r || !r.ok) return;
+  FRIENDS = r; const d = document.getElementById('friendDot'); if (d) d.hidden = !r.incoming.length;
+  for (const iv of r.invites || []) inviteToast(iv);
+}
+function inviteToast(iv) {
+  if (NET.role || (G && !$('game').hidden)) return; // 正在玩就不打擾
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>好友邀請</h2><p><b>${esc(iv.name)}</b> 邀請你加入房間 <b>${esc(iv.code)}</b></p><button class="btn primary" id="ivGo">加入</button> <button class="btn" id="ivNo">不要</button>`;
+  $('overlay').hidden = false; sfx('ping'); $('mX').onclick = $('ivNo').onclick = () => { $('overlay').hidden = true; };
+  $('ivGo').onclick = () => { $('overlay').hidden = true; srvJoin(iv.code); };
+}
+setInterval(() => { friendPoll(); }, FRIEND_CFG.POLL_MS);
+setTimeout(() => friendPoll(), 3000);
+async function openFriends() {
+  if (!srvOn()) { toast('好友功能要用正式網址並登入'); return; }
+  needLogin(async () => {
+    await friendPoll();
+    const inRoom = NET.srv && NET.code && !G;
+    const row = f => `<div class="frow"><i class="on ${f.online ? 'y' : ''}"></i><b>${esc(f.name)}</b><small>${f.playing ? '對局中' : f.online ? '在線上' : '離線'}・${f.lp} LP</small>${inRoom ? `<button class="btn" data-inv="${f.uid}">邀請</button>` : ''}<button class="btn" data-rm="${f.uid}" title="刪除好友">✕</button></div>`;
+    $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>好友</h2>
+      <form class="netbox" id="fAdd"><label class="rnum">加好友<input id="fUser" maxlength="16" placeholder="對方的帳號（不是暱稱）" autocapitalize="none"></label><button class="btn primary" type="submit">送出</button></form>
+      ${FRIENDS.incoming.length ? `<h3>好友邀請</h3>${FRIENDS.incoming.map(f => `<div class="frow"><b>${esc(f.name)}</b><button class="btn primary" data-ok="${f.uid}">同意</button><button class="btn" data-rm="${f.uid}">拒絕</button></div>`).join('')}` : ''}
+      <h3>好友（${FRIENDS.list.length}）</h3>${FRIENDS.list.map(row).join('') || '<p class="nethint">還沒有好友。把你的帳號告訴朋友，請他加你。</p>'}
+      <p class="nethint">你的帳號：<b>${esc(ACC.me ? ACC.me.user : '')}</b>${inRoom ? '　在房間裡可以直接邀請好友。' : '　開房後可以在這裡邀請好友。'}</p>`;
+    $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; if (inRoom) renderRoom(); };
+    $('fAdd').onsubmit = async e => { e.preventDefault(); const r = await accApi('/api/friend', { user: $('fUser').value }); toast(r.ok ? r.msg : r.err, 2600); if (r.ok) openFriends(); };
+    $('panel').querySelectorAll('[data-ok]').forEach(b => b.onclick = async () => { const f = FRIENDS.incoming.find(x => x.uid === b.dataset.ok); const r = await accApi('/api/friend', { user: f.uid }); toast(r.ok ? r.msg : r.err); openFriends(); });
+    $('panel').querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { await accApi('/api/friend/remove', { uid: b.dataset.rm }); openFriends(); });
+    $('panel').querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { const r = await accApi('/api/invite', { uid: b.dataset.inv, code: NET.code }); toast(r.ok ? '邀請已送出' : r.err); });
+  });
+}
+// ---------- 觀戰別人的排位對局 ----------
+async function openLive() {
+  if (!srvOn()) { toast('觀戰要用正式網址'); return; }
+  const r = await accApi('/api/live');
+  const L = (r && r.ok ? r.list : []);
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>觀戰排位</h2>${L.map(x => `<div class="frow"><b>${x.solo ? (x.n === 2 ? '1 對 1' : '單人混戰') : (x.n > 4 ? '雙人混戰' : '雙人對戰')}</b><small>${x.names.map(esc).join('、')}・平均 ${x.lp} LP・${Math.max(1, Math.round((Date.now() - x.t) / 60000))} 分鐘前開打</small><button class="btn primary" data-watch="${x.code}">觀戰</button></div>`).join('') || '<p class="nethint">現在沒有正在打的排位對局。</p>'}`;
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('panel').querySelectorAll('[data-watch]').forEach(b => b.onclick = () => { $('overlay').hidden = true; srvSpectate(b.dataset.watch); });
+}
+function srvSpectate(code) {
+  if (NET.role) return; toast('連線觀戰中…'); NET.code = code; NET.spec = true;
+  srvConnect('/ws/room/' + code, () => { toast('連不上這場', 3000); NET.spec = false; netReset(); });
+}
+// ---------- 賽季獎勵：伺服器記錄的牌位造型，登入時自動解鎖 ----------
+function seasonRewards() { if (!ACC.me || !ACC.me.rewards) return; for (const r of ACC.me.rewards) if (typeof SKINS !== 'undefined' && SKINS[r.skin] && !PROFILE.unlocked[r.skin]) unlockSkin(r.skin); }
 // ---------- 伺服器排位配對 ----------
 function srvMatchStart() {
   needLogin(() => {
@@ -7232,7 +7293,8 @@ function splashShowLogin() {
   openAccount(null, true);
 }
 function openLadderSrv() {
-  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯</h2>
+  accApi('/api/season').then(r => { const e = document.getElementById('seasonInfo'); if (e && r && r.ok) e.textContent = `第 ${r.n} 賽季・還有 ${Math.max(0, Math.ceil((r.end - Date.now()) / 864e5))} 天（結束時黃金以上送賽季造型，之後天梯歸零）`; });
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>天梯</h2><p class="nethint" id="seasonInfo"></p>
     <div class="ltabs"><button class="btn ${LADDER_TAB === 'duo' ? 'on' : ''}" data-lt="duo">雙人</button><button class="btn ${LADDER_TAB === 'solo' ? 'on' : ''}" data-lt="solo">單人</button></div>
     <div id="lpMeBox"></div>
     <h3>全球排行榜 <small id="glRank">讀取中…</small></h3><div class="lplist" id="glList"><small>連線中…</small></div>
