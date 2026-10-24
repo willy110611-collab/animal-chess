@@ -181,6 +181,10 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team .who span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c); margin-right: 3px; }
 .team.hit { animation: shake .4s; }
 /* 隊伍血量：圓形頭像＋外圈血量環。可調：.tav 大小、--rc 顏色 */
+.bgmrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.05); font-size: 13px; font-weight: 800; }
+.bgmrow select { font: inherit; font-weight: 700; padding: 5px 8px; border-radius: 8px; border: 1.5px solid rgba(60,40,30,.3); background: #fffaf0; color: inherit; flex: 1; min-width: 150px; }
+.bgmrow input[type=range] { flex: 1; min-width: 90px; }
+.ecochk { display: flex; align-items: center; gap: 4px; font-weight: 700; font-size: 12px; }
 .avhint { font-size: 12px; opacity: .75; margin: 0 0 8px; }
 .avgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .avpick { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border-radius: 10px; font-size: 12px; font-weight: 800; }
@@ -6581,7 +6585,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.5'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.6'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -6967,8 +6971,8 @@ function ecoActive() { // 回傳湊到最高階的環境羈絆（只看自己這
   for (const t of ECO_TRAITS) { const x = tc[t], T = TRAITS[t]; if (x && T && x.tier >= T.tiers.length - 1) return t; }
   return null;
 }
-function bgmSelectHtml() { return `<div class="mrow"><span>背景音樂</span><select id="bgmSel" aria-label="背景音樂">${BGM_PICK.map(([k, n]) => `<option value="${k}" ${(AUD.set.bgm || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select><label class="ecochk"><input type="checkbox" id="bgmEco" ${AUD.set.eco ? 'checked' : ''}>生態圈換專屬曲</label></div>`; }
-function bgmSelectBind() { const s = $('bgmSel'), c = $('bgmEco'); if (s) s.onchange = () => { AUD.set.bgm = s.value; audSave(); if (G) G._bgm = null; audInit(); bgmAuto(); }; if (c) c.onchange = () => { AUD.set.eco = c.checked; audSave(); }; }
+function bgmSelectHtml(vol) { return `${vol ? `<div class="mrow bgmrow"><span>音效</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.sfx}" id="volS2" aria-label="音效音量"><span>配樂</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.mus}" id="volM2" aria-label="配樂音量"></div>` : ''}<div class="mrow bgmrow"><span>背景音樂</span><select id="bgmSel" aria-label="背景音樂">${BGM_PICK.map(([k, n]) => `<option value="${k}" ${(AUD.set.bgm || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select><label class="ecochk"><input type="checkbox" id="bgmEco" ${AUD.set.eco ? 'checked' : ''}>生態圈換專屬曲</label></div>`; }
+function bgmSelectBind() { const s = $('bgmSel'), c = $('bgmEco'), vs = $('volS2'), vm = $('volM2'); if (vs) vs.oninput = e => { AUD.set.sfx = +e.target.value; audApply(); audSave(); }; if (vm) vm.oninput = e => { AUD.set.mus = +e.target.value; audApply(); audSave(); }; if (s) s.onchange = () => { AUD.set.bgm = s.value; audSave(); if (G) G._bgm = null; audInit(); bgmAuto(); }; if (c) c.onchange = () => { AUD.set.eco = c.checked; audSave(); }; }
 // 選曲規則（v0.13.1）：同一場比賽從頭到尾同一首，不因準備／戰鬥切換；可在設定裡指定固定曲目或關閉
 const BGM_PICK = [['auto', '依場地（整場不換）'], ['lobby', '輕快拍手'], ['jungle', '叢林'], ['desert', '熱帶鼓'], ['city', '8-bit 巴薩'], ['battle', '晶片冒險'], ['td', '開心冒險'], ['eco_water', '海底'], ['eco_sky', '天空'], ['off', '關閉']];
 function bgmAuto() {
@@ -7259,7 +7263,7 @@ function openSettings() {
       <button class="btn" data-set="acc">帳號與暱稱</button><button class="btn" data-set="logout">登出（換其他帳號）</button>`
       : `<button class="btn primary" data-set="login">登入／註冊</button>`) : `<button class="btn primary" data-set="login">登入／註冊</button>`}
     <button class="btn" data-set="rules">自訂規則（練習用）</button>
-    ${bgmSelectHtml()}
+    ${bgmSelectHtml(true)}
     <button class="btn" data-set="avatar">頭像</button>
     <button class="btn" data-set="collect">收藏與造型</button>
     <button class="btn" data-set="dex">圖鑑與規則</button>

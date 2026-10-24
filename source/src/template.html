@@ -181,6 +181,10 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team .who span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c); margin-right: 3px; }
 .team.hit { animation: shake .4s; }
 /* 隊伍血量：圓形頭像＋外圈血量環。可調：.tav 大小、--rc 顏色 */
+.bgmrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.05); font-size: 13px; font-weight: 800; }
+.bgmrow select { font: inherit; font-weight: 700; padding: 5px 8px; border-radius: 8px; border: 1.5px solid rgba(60,40,30,.3); background: #fffaf0; color: inherit; flex: 1; min-width: 150px; }
+.bgmrow input[type=range] { flex: 1; min-width: 90px; }
+.ecochk { display: flex; align-items: center; gap: 4px; font-weight: 700; font-size: 12px; }
 .avhint { font-size: 12px; opacity: .75; margin: 0 0 8px; }
 .avgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .avpick { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border-radius: 10px; font-size: 12px; font-weight: 800; }

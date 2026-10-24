@@ -5,6 +5,13 @@ H = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(H); S = o
 rd = lambda p: open(p, encoding='utf-8').read()
 CLIENT = ['data','sheet','engine','game','models','scene3d','units3d','icons','audio','ui','features','net','account','ladder','eggs','progress','td','main']
 js = '\n'.join(rd(os.path.join(S, f + '.js')) for f in CLIENT)
+# 語法檢查：任何一個檔案有語法錯誤就停下來，不產生壞掉的網站（node 沒裝就跳過）
+import subprocess, tempfile, shutil
+if shutil.which('node'):
+    for f in CLIENT + ['../server/server']:
+        fp = os.path.join(S, f + '.js')
+        r = subprocess.run(['node', '--check', fp], capture_output=True, text=True)
+        if r.returncode: sys.exit('語法錯誤，沒有打包：' + f + '.js\n' + r.stderr.strip()[:600])
 page = rd(os.path.join(S, 'template.html')).replace('/*__JS__*/', '(function(){\n' + js + '\n})();')
 three_p = os.path.join(H, 'node_modules/three/build/three.min.js')
 if not os.path.exists(three_p): sys.exit('先在 source/ 執行 npm install（需要 three.js）')
