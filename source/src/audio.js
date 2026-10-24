@@ -215,7 +215,8 @@ function musicStop() { if (AUD.music) { clearInterval(AUD.music.timer); AUD.musi
 const BGM_CFG = {
   FADE_IN: 2.5, FADE_OUT: 2.0, VOL: 0.5, // 淡入／淡出秒數；VOL＝音檔音量（再乘上設定裡的配樂音量）
   TRACKS: {
-    lobby: 'music/lobby.mp3',     // Happy Clappy Loop — OwlishMedia
+    lobby: 'music/lobby.mp3',     // v0.13.10 大廳：Birds, Wind and Synth — Spring Spring（鳥叫＋微風＋柔和合成器）
+    clappy: 'music/clappy.mp3',   // Happy Clappy Loop — OwlishMedia（舊大廳曲，可在設定選）
     jungle: 'music/jungle.mp3',   // Joyful Jungle — MintoDog
     desert: 'music/desert.mp3',   // Tropical Loop — wipics
     city: 'music/city.mp3',       // 8bit Bossa — Joth
@@ -227,33 +228,58 @@ const BGM_CFG = {
     eco_water: 'music/eco_water.mp3',     // Underwater Theme — Cleyton Kauffman
     eco_sky: 'music/eco_sky.mp3',         // Up in the Sky — Memoraphile
   },
+  // 疊在主音樂下面的環境音（vol＝相對主音樂的音量）
+  LAYERS: { lobby: { src: 'music/amb_crickets.mp3', vol: 0.35 } }, // Crickets Ambient — Wolfgang_
 };
-const BGM = { key: '', el: {}, bad: {}, on: null };
+// v0.13.10：固定 3 個播放器（2 個給主音樂交叉淡入、1 個給環境音），第一次點畫面時一起「解鎖」。
+// 手機（尤其 iPhone）只允許「點擊當下」開始播放新的播放器；解鎖後換曲就不會被擋。
+const BGM_SILENT = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAACAAAA/oAR0dHR0dHR0dHR0dHYmJiYmJiYmJiYmJifHx8fHx8fHx8fHx8fJaWlpaWlpaWlpaWlrGxsbGxsbGxsbGxsbHLy8vLy8vLy8vLy8vl5eXl5eXl5eXl5eXl////////////////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQC1AAAAAAAAAP6yysejgAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==';
+const BGM = { key: '', bad: {}, slots: [], cur: -1, amb: null, ambKey: '', unlocked: false, el: {} };
 function bgmVol() { return AUD.set.mute ? 0 : AUD.set.mus * BGM_CFG.VOL; }
-function bgmEl(key) {
-  if (BGM.el[key]) return BGM.el[key];
-  const src = BGM_CFG.TRACKS[key]; if (!src) return null;
-  const a = new Audio(); a.src = src; a.loop = true; a.preload = 'auto'; a.volume = 0;
-  a.addEventListener('error', () => { BGM.bad[key] = 1; if (BGM.key === key) { BGM.key = ''; bgmFallback(); } });
-  BGM.el[key] = a; return a;
+function bgmSlots() {
+  if (BGM.slots.length) return BGM.slots;
+  for (let i = 0; i < 2; i++) { const a = new Audio(); a.loop = true; a.preload = 'auto'; a.volume = 0; a._key = ''; a.addEventListener('error', () => { if (a._key && a.src.indexOf('data:') !== 0) { BGM.bad[a._key] = 1; if (BGM.key === a._key) { BGM.key = ''; bgmFallback(); } } }); BGM.slots.push(a); }
+  const m = new Audio(); m.loop = true; m.preload = 'auto'; m.volume = 0; BGM.amb = m;
+  return BGM.slots;
+}
+// 第一次點畫面時呼叫：讓 3 個播放器都先在點擊當下播放一次（無聲），之後就能隨時換曲
+function bgmUnlock() {
+  if (BGM.unlocked) return; BGM.unlocked = true;
+  for (const a of bgmSlots().concat([BGM.amb])) { if (!a.src) { a.src = BGM_SILENT; } const p = a.play(); if (p && p.then) p.then(() => { if (a.src === BGM_SILENT || a.src.indexOf('data:') === 0) a.pause(); }).catch(() => {}); }
 }
 let BGM_FB = null; // 音檔不能用時，遊戲中改用電腦合成配樂
 function bgmFallback() { if (BGM_FB) musicStart(BGM_FB); }
 // 切到指定曲目（同一首不重來）；key 為空字串＝安靜
 function bgmPlay(key, fallbackArena) {
   BGM_FB = fallbackArena || null;
-  if (key && BGM.bad[key]) { if (BGM.key) bgmFade(BGM.el[BGM.key], 0, true); BGM.key = ''; bgmFallback(); return; }
-  if (key === BGM.key) { const a = BGM.el[key]; if (a && a.paused && AUD.ctx) a.play().catch(() => {}); return; }
-  const old = BGM.key ? BGM.el[BGM.key] : null; BGM.key = key;
-  if (old) bgmFade(old, 0, true);
-  if (!key) return;
-  const a = bgmEl(key); if (!a) { bgmFallback(); return; }
+  const slots = bgmSlots();
+  bgmLayer(key);
+  if (key && BGM.bad[key]) { if (BGM.cur >= 0) bgmFade(slots[BGM.cur], 0, true); BGM.key = ''; BGM.cur = -1; bgmFallback(); return; }
+  if (key === BGM.key) { const a = slots[BGM.cur]; if (a && a.paused && AUD.ctx) { const p = a.play(); if (p && p.catch) p.catch(() => {}); } return; }
+  if (BGM.cur >= 0) bgmFade(slots[BGM.cur], 0, true);
+  BGM.key = key;
+  if (!key) { BGM.cur = -1; return; }
+  const src = BGM_CFG.TRACKS[key]; if (!src) { BGM.cur = -1; bgmFallback(); return; }
+  BGM.cur = BGM.cur === 0 ? 1 : 0;
+  const a = slots[BGM.cur]; clearInterval(a._fade);
   musicStop(); // 有音檔就不用電腦合成的
-  a.volume = 0; const p = a.play(); if (p && p.catch) p.catch(() => {});
+  a._key = key; a.src = src; a.currentTime = 0; a.volume = 0;
+  const p = a.play(); if (p && p.catch) p.catch(() => {});
   bgmFade(a, bgmVol(), false);
+}
+// 環境音（疊在主音樂下面，例如大廳的蟲鳴）：BGM_CFG.LAYERS[曲目] = { src, vol }
+function bgmLayer(key) {
+  const L = (BGM_CFG.LAYERS || {})[key], m = BGM.amb; if (!m) return;
+  const want = L ? L.src : '';
+  if (want === BGM.ambKey) { if (want && m.paused && AUD.ctx) m.play().catch(() => {}); return; }
+  BGM.ambKey = want;
+  if (!want) { bgmFade(m, 0, true); return; }
+  clearInterval(m._fade); m.src = want; m.currentTime = 0; m.volume = 0; m._vol = L.vol || 0.3;
+  const p = m.play(); if (p && p.catch) p.catch(() => {});
+  bgmFade(m, bgmVol() * m._vol, false);
 }
 function bgmFade(a, to, pause) {
   if (!a) return; clearInterval(a._fade); const from = a.volume, t0 = performance.now(), dur = (to > from ? BGM_CFG.FADE_IN : BGM_CFG.FADE_OUT) * 1000;
   a._fade = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / dur); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) { clearInterval(a._fade); if (pause && to === 0) a.pause(); } }, 50);
 }
-function bgmApplyVol() { const a = BGM.key && BGM.el[BGM.key]; if (a) { clearInterval(a._fade); a.volume = Math.min(1, bgmVol()); } }
+function bgmApplyVol() { const a = BGM.cur >= 0 && BGM.slots[BGM.cur]; if (a) { clearInterval(a._fade); a.volume = Math.min(1, bgmVol()); } const m = BGM.amb; if (m && BGM.ambKey) { clearInterval(m._fade); m.volume = Math.min(1, bgmVol() * (m._vol || 0.3)); } }

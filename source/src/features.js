@@ -52,7 +52,7 @@ function featuresBoot() {
   $('btnAcc').onclick = () => openAccount();
   setupInstall();
   // 開啟聲音（需要使用者點擊）
-  document.addEventListener('pointerdown', () => { audInit(); try { bgmAuto(); const a = BGM.key && BGM.el[BGM.key]; if (a && a.paused) a.play().catch(() => {}); } catch (e) {} }, { once: false, passive: true }); // 在點擊當下播放（手機瀏覽器規定）
+  document.addEventListener('pointerdown', () => { audInit(); try { bgmUnlock(); bgmAuto(); const a = BGM.cur >= 0 && BGM.slots[BGM.cur]; if (a && a.paused) a.play().catch(() => {}); if (BGM.ambKey && BGM.amb && BGM.amb.paused) BGM.amb.play().catch(() => {}); } catch (e) {} }, { once: false, passive: true }); // 在點擊當下播放（手機瀏覽器規定）
   // 快捷鍵
   window.addEventListener('keydown', onHotkey);
   // 長按標記
@@ -364,7 +364,7 @@ function ecoActive() { // 回傳湊到最高階的環境羈絆（只看自己這
 function bgmSelectHtml(vol) { return `${vol ? `<div class="mrow bgmrow"><span>音效</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.sfx}" id="volS2" aria-label="音效音量"><span>配樂</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.mus}" id="volM2" aria-label="配樂音量"></div>` : ''}<div class="mrow bgmrow"><span>背景音樂</span><select id="bgmSel" aria-label="背景音樂">${BGM_PICK.map(([k, n]) => `<option value="${k}" ${(AUD.set.bgm || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select><label class="ecochk"><input type="checkbox" id="bgmEco" ${AUD.set.eco ? 'checked' : ''}>生態圈換專屬曲</label></div>`; }
 function bgmSelectBind() { const s = $('bgmSel'), c = $('bgmEco'), vs = $('volS2'), vm = $('volM2'); if (vs) vs.oninput = e => { AUD.set.sfx = +e.target.value; audApply(); audSave(); }; if (vm) vm.oninput = e => { AUD.set.mus = +e.target.value; audApply(); audSave(); }; if (s) s.onchange = () => { AUD.set.bgm = s.value; audSave(); BGM.matchKey = ''; audInit(); bgmAuto(); }; if (c) c.onchange = () => { AUD.set.eco = c.checked; audSave(); }; }
 // 選曲規則（v0.13.1）：同一場比賽從頭到尾同一首，不因準備／戰鬥切換；可在設定裡指定固定曲目或關閉
-const BGM_PICK = [['auto', '依場地（整場不換）'], ['lobby', '輕快拍手'], ['jungle', '叢林'], ['desert', '熱帶鼓'], ['city', '8-bit 巴薩'], ['battle', '晶片冒險'], ['td', '開心冒險'], ['eco_water', '海底'], ['eco_sky', '天空'], ['off', '關閉']];
+const BGM_PICK = [['auto', '依場地（整場不換）'], ['lobby', '森林鳥鳴（療癒）'], ['clappy', '輕快拍手'], ['jungle', '叢林'], ['desert', '熱帶鼓'], ['city', '8-bit 巴薩'], ['battle', '晶片冒險'], ['td', '開心冒險'], ['eco_water', '海底'], ['eco_sky', '天空'], ['off', '關閉']];
 function bgmAuto() {
   if (!AUD.ctx) return;
   const pick = AUD.set.bgm || 'auto';
