@@ -300,7 +300,7 @@ function renderDock() {
   const ot = odds.map((o, i) => `<span style="--cc:${COST_COL[i + 1]}"><i></i>${o}%</span>`).join('');
   if (oe.dataset.k !== ot) { oe.dataset.k = ot; oe.innerHTML = ot; }
   const shopH = P.shop.map((k, i) => {
-    if (!k) return `<div class="card empty"></div>`;
+    if (!k || (G.pool && G.pool[k] !== undefined && G.pool[k] <= 0)) return `<div class="card empty"></div>`; // 卡池被買光：不顯示，免得以為還能買
     const A = ANIMALS[k];
     const n = own[k] || 0, up = n >= 2 ? `<span class="own up" title="再買一隻就升星">★↑</span>` : n ? `<span class="own" title="已經有 ${n} 隻">${n}</span>` : '';
     return `<button class="card c${A.cost} ${(own[k] || 0) >= 2 ? 'pair' : ''} ${P.gold < A.cost ? 'poor' : ''} ${flipShop ? 'flip shine' : ''}" style="animation-delay:${i * 55}ms" data-slot="${i}" aria-label="購買${A.name}">
@@ -392,9 +392,10 @@ function hud() {
     const rows = G.teams.map((T, i) => ({ T, i })).sort((a, b) => (a.T.out - b.T.out) || (b.T.hp - a.T.hp) || ((a.T.place || 0) - (b.T.place || 0))), alive = rows.filter(r => !r.T.out).length;
     const maxHp = CFG.TEAM_HP, fighting = i => fight && G.battles.some(b => b.teams.includes(t) && b.teams.includes(i) && i !== t);
     const cand = G.phase === 'prep' && G.nextCand ? (G.nextCand[t] || []) : [];
-    const head = `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">可能對手</button>' : ''}<button class="stx" aria-label="放大排名">${el.classList.contains('wide') ? '縮小' : '放大'}</button></div>`;
+    const wide = el.classList.contains('wide');
+    const head = wide ? `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">可能對手</button>' : ''}<button class="stx" aria-label="縮小排名">縮小</button></div>` : `<div class="sthead"><small>${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">對手</button>' : ''}<button class="stx" aria-label="放大排名">放大</button></div>`;
     if (!el.classList.contains('wide')) { // 精簡：每隊一顆圓形頭像，外圈是血量，下方數字；角標＝連勝／連敗、對手、可能對手
-      el.innerHTML = head + '<div class="scells">' + rows.map(({ T, i }) => { const sk = T.streak || 0, hp = Math.max(0, T.hp), isOpp = fighting(i) || (!fight && i === opp && !cand.length);
+      el.innerHTML = head + '<div class="scells col">' + rows.map(({ T, i }) => { const sk = T.streak || 0, hp = Math.max(0, T.hp), isOpp = fighting(i) || (!fight && i === opp && !cand.length);
         const bd = T.out ? '' : isOpp ? `<i class="sbd vs">${clashSvg('sm')}</i>` : cand.includes(i) ? '<i class="sbd q">?</i>' : sk >= 2 ? `<i class="sbd win">${flameSvg}${sk}</i>` : sk <= -2 ? `<i class="sbd lose">${-sk}</i>` : '';
         return `<button class="scell ${cand.includes(i) ? 'cand' : ''} ${i === t ? 'me' : ''} ${isOpp ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}"><span class="tav sm" style="--p:${Math.round(hp / maxHp * 100)}%;--tc:${teamColor(i)}"><img src="${avSrc(teamAvatar(i))}" alt="">${bd}</span><b>${T.out ? '#' + T.place : hp}</b></button>`; }).join('') + '</div>';
       return;
@@ -422,6 +423,7 @@ function hud() {
   if (G.tutorial && G.phase === 'prep') { sec = '教學'; ph = '慢慢來，不倒數'; }
   if (G.td) { if (G.phase === 'prep') ph = '退潮・準備'; else if (cv) { sec = Math.max(0, Math.ceil(TD_CFG.WAVE_MAX_SEC - cv.B.t * CFG.TICK_MS / 1000)); ph = G.td.tide ? '大潮來襲' : '漲潮'; } }
   $('timer').textContent = sec; $('phaseTxt').textContent = ph;
+  if (G.phase === 'prep') { const v = Math.ceil(Math.max(0, G.timer) / 1000); document.querySelectorAll('.cdT').forEach(x => { if (x.textContent != v) x.textContent = v; }); } // 選擇視窗裡的倒數
   $('clock').classList.toggle('hurry', G.phase === 'prep' && sec <= 5);
   if (G.phase === 'prep' && sec <= 5 && sec >= 1 && hud.tick !== G.round * 100 + sec) { hud.tick = G.round * 100 + sec; sfx(sec === 1 ? 'tickLast' : 'tick', 200); } // 最後 5 秒滴答
   const tm = G.teams[myTeam()], mood = tm.hp <= 25 ? 'tense' : (tm.streak || 0) >= 3 ? 'hype' : 'calm'; if (hud.mood !== mood) { hud.mood = mood; musicMood(mood); }
@@ -900,7 +902,7 @@ function renderAugs() {
     if (m.dataset.k !== P.augChoice.join()) {
       m.dataset.k = P.augChoice.join(); m.classList.remove('min');
       const tier = AUG[P.augChoice[0]].tier;
-      m.innerHTML = `<div class="augbox"><h2>${AUG_TIER_NAME[tier]}海克斯增幅</h2><p class="sub">三選一。選擇時準備倒數會暫停。</p><div class="augcards">${P.augChoice.map((id, i) => `<button class="augcard t${AUG[id].tier}" data-pick="${id}" style="animation-delay:${i * 90}ms"><span class="frame"></span>${augIcon(id, 'big')}<b>${AUG[id].name}</b><span class="d">${AUG[id].desc}</span></button>`).join('')}</div><button class="btn" id="augHide">先看棋盤</button></div><button class="augpill" id="augShow">選擇海克斯增幅</button>`;
+      m.innerHTML = `<div class="augbox"><h2>${AUG_TIER_NAME[tier]}海克斯增幅</h2><p class="sub">三選一。倒數結束會自動選第一個：剩 <b class="cdT">${Math.ceil(Math.max(0, G.timer) / 1000)}</b> 秒</p><div class="augcards">${P.augChoice.map((id, i) => `<button class="augcard t${AUG[id].tier}" data-pick="${id}" style="animation-delay:${i * 90}ms"><span class="frame"></span>${augIcon(id, 'big')}<b>${AUG[id].name}</b><span class="d">${AUG[id].desc}</span></button>`).join('')}</div><button class="btn" id="augHide">先看棋盤</button></div><button class="augpill" id="augShow">選擇海克斯增幅</button>`;
     }
     m.hidden = false;
   } else { m.hidden = true; m.dataset.k = ''; }
@@ -1002,7 +1004,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.0'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.1'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });

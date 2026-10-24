@@ -52,7 +52,7 @@ function featuresBoot() {
   $('btnAcc').onclick = () => openAccount();
   setupInstall();
   // 開啟聲音（需要使用者點擊）
-  document.addEventListener('pointerdown', () => { audInit(); if (G && !$('game').hidden) musicStart(G.arena); }, { once: false, passive: true });
+  document.addEventListener('pointerdown', () => { audInit(); try { bgmAuto(); const a = BGM.key && BGM.el[BGM.key]; if (a && a.paused) a.play().catch(() => {}); } catch (e) {} }, { once: false, passive: true }); // 在點擊當下播放（手機瀏覽器規定）
   // 快捷鍵
   window.addEventListener('keydown', onHotkey);
   // 長按標記
@@ -241,12 +241,14 @@ function openMenu(sub) {
       ${G.solo ? '' : `<div class="mrow"><span>隊伍</span><button class="btn" data-m="captain" ${T.captain === ME ? '' : 'disabled'}>把隊長交給隊友</button></div>`}
       <div class="mrow"><span>AI 代打</span><button class="btn ${P.ai ? 'primary' : ''}" data-m="ai">${P.ai ? '代打中（點一下取回）' : '讓 AI 幫我打'}</button></div>
       <div class="mrow"><span>音效</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.sfx}" id="volS" aria-label="音效音量"><span>配樂</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.mus}" id="volM" aria-label="配樂音量"><button class="btn" data-m="mute">${AUD.set.mute ? '取消靜音' : '靜音'}</button></div>
+      ${bgmSelectHtml()}
       <div class="mrow"><span>其他</span><button class="btn" data-m="tut">新手教學</button><button class="btn" data-m="surrender" id="btnSur">投降</button></div>
     </div>`;
   $('overlay').hidden = false;
   $('mX').onclick = () => { $('overlay').hidden = true; };
   $('volS').oninput = e => { AUD.set.sfx = +e.target.value; audApply(); audSave(); };
   $('volM').oninput = e => { AUD.set.mus = +e.target.value; audApply(); audSave(); };
+  bgmSelectBind();
   $('panel').querySelector('.menu').onclick = e => {
     const b = e.target.closest('[data-m]'); if (!b) return; const m = b.dataset.m; sfx('click');
     if (m.startsWith('spd') && NET.role === 'client') { toast('連線中只有房主能調整戰鬥速度'); }
@@ -359,15 +361,19 @@ function ecoActive() { // 回傳湊到最高階的環境羈絆（只看自己這
   for (const t of ECO_TRAITS) { const x = tc[t], T = TRAITS[t]; if (x && T && x.tier >= T.tiers.length - 1) return t; }
   return null;
 }
+function bgmSelectHtml() { return `<div class="mrow"><span>背景音樂</span><select id="bgmSel" aria-label="背景音樂">${BGM_PICK.map(([k, n]) => `<option value="${k}" ${(AUD.set.bgm || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select><label class="ecochk"><input type="checkbox" id="bgmEco" ${AUD.set.eco ? 'checked' : ''}>生態圈換專屬曲</label></div>`; }
+function bgmSelectBind() { const s = $('bgmSel'), c = $('bgmEco'); if (s) s.onchange = () => { AUD.set.bgm = s.value; audSave(); if (G) G._bgm = null; audInit(); bgmAuto(); }; if (c) c.onchange = () => { AUD.set.eco = c.checked; audSave(); }; }
+// 選曲規則（v0.13.1）：同一場比賽從頭到尾同一首，不因準備／戰鬥切換；可在設定裡指定固定曲目或關閉
+const BGM_PICK = [['auto', '依場地（整場不換）'], ['lobby', '輕快拍手'], ['jungle', '叢林'], ['desert', '熱帶鼓'], ['city', '8-bit 巴薩'], ['battle', '晶片冒險'], ['td', '開心冒險'], ['eco_water', '海底'], ['eco_sky', '天空'], ['off', '關閉']];
 function bgmAuto() {
   if (!AUD.ctx) return;
-  const inGame = G && !$('game').hidden;
-  if (!inGame) { bgmPlay('lobby'); return; }
-  const eco = ecoActive();
-  let key = G.arena;
-  if (G.td) key = 'td';
-  else if (eco) key = 'eco_' + eco;
-  else if (G.phase === 'combat' || G.phase === 'result') key = isBoss(G.round) ? 'boss' : 'battle';
+  const pick = AUD.set.bgm || 'auto';
+  if (pick === 'off') { bgmPlay(''); musicStop(); return; }
+  const inGame = G && !$('game').hidden && !(REPLAY && REPLAY.demo);
+  if (!inGame) { bgmPlay(pick === 'auto' ? 'lobby' : pick); return; }
+  if (!G._bgm) G._bgm = pick !== 'auto' ? pick : G.td ? 'td' : (G.arena || 'jungle'); // 開局決定，整場不換
+  let key = G._bgm;
+  if (AUD.set.eco && pick === 'auto') { const eco = ecoActive(); if (eco) key = 'eco_' + eco; }
   bgmPlay(key, G.arena);
 }
 setInterval(() => { try { bgmAuto(); } catch (e) {} }, 500);
@@ -417,7 +423,7 @@ function previewSkill(uid) {
 function showPortal() {
   const m = $('modal2'); if (m && !m.hidden && m.dataset.k === 'portal') return;
   const opts = G.portalVote.options.map(id => PORTALS.find(p => p.id === id));
-  const mm = modal(`<div class="mbox"><h2>選擇傳送門</h2><p class="sub">四位玩家投票，決定這局的特殊規則。</p><div class="mcards">${opts.map(p => `<button class="mcard portal" data-vote="${p.id}"><b>${p.name}</b><span>${p.desc}</span></button>`).join('')}</div></div>`);
+  const mm = modal(`<div class="mbox"><h2>選擇傳送門</h2><p class="sub">大家投票決定這局的特殊規則，倒數結束還沒投就自動決定：剩 <b class="cdT">${Math.ceil(Math.max(0, G.timer) / 1000)}</b> 秒</p><div class="mcards">${opts.map(p => `<button class="mcard portal" data-vote="${p.id}"><b>${p.name}</b><span>${p.desc}</span></button>`).join('')}</div></div>`);
   mm.dataset.k = 'portal';
   mm.onclick = e => { const b = e.target.closest('[data-vote]'); if (!b) return; actMe({ t: 'vote', id: b.dataset.vote }); sfx('click'); closeModal(); };
 }
@@ -435,7 +441,7 @@ function showDraft() {
 // ---- 隊長抉擇 ----
 function showCaptain() {
   const m = $('modal2'); if (m && !m.hidden && m.dataset.k === 'captain') return;
-  const mm = modal(`<div class="mbox"><h2>隊長的抉擇</h2><p class="sub">你是隊長，替全隊決定：</p><div class="mcards"><button class="mcard" data-cap="gold"><b>每人 +4 金</b><span>馬上可以花</span></button><button class="mcard" data-cap="item"><b>每人 1 件成品裝備</b><span>隨機成品</span></button></div></div>`);
+  const mm = modal(`<div class="mbox"><h2>隊長的抉擇</h2><p class="sub">你是隊長，替全隊決定：（剩 <b class="cdT">${Math.ceil(Math.max(0, G.timer) / 1000)}</b> 秒，沒選就自動選第一個）</p><div class="mcards"><button class="mcard" data-cap="gold"><b>每人 +4 金</b><span>馬上可以花</span></button><button class="mcard" data-cap="item"><b>每人 1 件成品裝備</b><span>隨機成品</span></button></div></div>`);
   mm.dataset.k = 'captain';
   mm.onclick = e => { const b = e.target.closest('[data-cap]'); if (!b) return; actMe({ t: 'encounter', choice: b.dataset.cap }); processLog(); renderPrep(); closeModal(); };
 }
@@ -647,12 +653,13 @@ function openSettings() {
       <button class="btn" data-set="acc">帳號與暱稱</button><button class="btn" data-set="logout">登出（換其他帳號）</button>`
       : `<button class="btn primary" data-set="login">登入／註冊</button>`) : `<button class="btn primary" data-set="login">登入／註冊</button>`}
     <button class="btn" data-set="rules">自訂規則（練習用）</button>
+    ${bgmSelectHtml()}
     <button class="btn" data-set="avatar">頭像</button>
     <button class="btn" data-set="collect">收藏與造型</button>
     <button class="btn" data-set="dex">圖鑑與規則</button>
     ${INSTALL_SHOW ? '<button class="btn" data-set="install">加到主畫面（像 App 一樣開）</button>' : ''}
   </div>`;
-  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; }; bgmSelectBind();
   $('panel').querySelectorAll('[data-set]').forEach(b => b.onclick = async () => {
     const k = b.dataset.set;
     if (k === 'acc') openAccount(); else if (k === 'avatar') openAvatar(); else if (k === 'rules') openRules(); else if (k === 'collect') openCollection(); else if (k === 'dex') { $('overlay').hidden = true; showDex(); }

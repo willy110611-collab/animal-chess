@@ -21,7 +21,7 @@ const CFG = {
   SHOP_SIZE: 5, REROLL_COST: 2,
   // 商店機率（%）：等級 → [1費, 2費, 3費, 4費, 5費]
   SHOP_ODDS: { 1: [100, 0, 0, 0, 0], 2: [100, 0, 0, 0, 0], 3: [75, 25, 0, 0, 0], 4: [55, 30, 15, 0, 0], 5: [45, 33, 20, 2, 0], 6: [30, 40, 25, 5, 0], 7: [19, 30, 35, 15, 1], 8: [18, 25, 32, 22, 3], 9: [10, 20, 25, 35, 10] }, // v0.12.6 起照聯盟戰棋
-  POOL: { 1: 12, 2: 12, 3: 11, 4: 10, 5: 8 },           // 全場共用卡池（每隻幾張）；每費只有 5 種動物（聯盟戰棋約 13 種），所以張數比較少，3 星難度才接近
+  POOL: { 1: 36, 2: 12, 3: 11, 4: 10, 5: 8 },           // v0.13.1：一費 36 張＝最多 4 家同時三星           // 全場共用卡池（每隻幾張）；每費只有 5 種動物（聯盟戰棋約 13 種），所以張數比較少，3 星難度才接近
   POOL_8P_PCT: 150,                                     // 8 人局（4 隊）卡池數量 %
   CAROUSEL_ROUNDS: [6, 11, 16, 21],                     // 選秀回合
   ENCOUNTER_ROUNDS: [2, 7, 12, 18],                     // 遭遇事件回合
@@ -1910,7 +1910,7 @@ function update(G, dt) {
     const humans = G.players.filter(p => !p.ai && !p.out);
     if (G.portalVote && humans.every(p => p.vote)) resolvePortal(G);
     if (G.draft) aiDraftTurns(G);
-    const waiting = humans.some(p => p.augChoice) || G.portalVote || G.draft || (G.encounter && G.encounter.pending) || G.paused;
+    const waiting = G.draft || G.paused; // v0.13.1：海克斯、傳送門、奇遇都不暫停，倒數結束自動決定
     if (!waiting) G.timer -= dt; // 有人在選擇時暫停倒數
     if (G.timer <= 5000 && G.aiLate !== G.round) { G.aiLate = G.round; for (const P of G.players) if (P.ai && !P.out) aiLate(G, P.id); } // 準備最後 5 秒：電腦隊友再看一次真人隊友的擺法
     if (G.aiMid !== G.round && G.timer < G.rules.prepSec * 600) { G.aiMid = G.round; for (const P of G.players) if (P.ai && !P.out) aiHelpMate(G, P.id); } // 準備到一半：AI 隊友看玩家買了什麼，再幫一次
@@ -2364,7 +2364,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'https://zoochess.pages.dev', 'http://localhost:8123', 'http://127.0.0.1:8123'], // 網站網址（Cloudflare Pages 的預覽網址 *.zoochess.pages.dev 也允許）
-  VERSION: '0.13.0',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.13.1',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）

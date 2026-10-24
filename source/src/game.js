@@ -591,7 +591,7 @@ function update(G, dt) {
     const humans = G.players.filter(p => !p.ai && !p.out);
     if (G.portalVote && humans.every(p => p.vote)) resolvePortal(G);
     if (G.draft) aiDraftTurns(G);
-    const waiting = humans.some(p => p.augChoice) || G.portalVote || G.draft || (G.encounter && G.encounter.pending) || G.paused;
+    const waiting = G.draft || G.paused; // v0.13.1：海克斯、傳送門、奇遇都不暫停，倒數結束自動決定
     if (!waiting) G.timer -= dt; // 有人在選擇時暫停倒數
     if (G.timer <= 5000 && G.aiLate !== G.round) { G.aiLate = G.round; for (const P of G.players) if (P.ai && !P.out) aiLate(G, P.id); } // 準備最後 5 秒：電腦隊友再看一次真人隊友的擺法
     if (G.aiMid !== G.round && G.timer < G.rules.prepSec * 600) { G.aiMid = G.round; for (const P of G.players) if (P.ai && !P.out) aiHelpMate(G, P.id); } // 準備到一半：AI 隊友看玩家買了什麼，再幫一次

@@ -102,7 +102,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team .hp { height: 6px; background: rgba(255,255,255,.15); border-radius: 4px; overflow: hidden; }
 .team .hp i { display: block; height: 100%; background: var(--good); transition: width .6s cubic-bezier(.2,.9,.3,1.2); }
 .team.r .hp i { background: var(--enemy); margin-left: auto; }
-#stage.multi .helpbtn { top: calc(var(--sth, 108px) + 12px); } #stage.multi .menubtn { top: calc(var(--sth, 108px) + 52px); }
+
 /* 多隊排名表：一列一行，名字太長用…；可以點 */
 .team.stand { gap: 0; padding: 4px 6px 5px; pointer-events: auto; min-width: 0; }
 .team.stand .sthead { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; opacity: .75; padding: 0 2px 2px; }
@@ -288,7 +288,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 @keyframes band { 0% { opacity: 0; transform: scaleY(.2); } 12% { opacity: 1; transform: scaleY(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes inl { 0% { transform: translateX(-160px); } 15% { transform: translateX(0); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateX(10px); } }
 @keyframes inr { 0% { transform: translateX(160px) scaleX(-1); } 15% { transform: translateX(0) scaleX(-1); } 80% { opacity: 1; } 100% { opacity: 0; } }
-.helpbtn { position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); top: 92px; width: 34px; height: 34px; border-radius: 50%; background: rgba(43,28,22,.75); color: var(--paper); font-weight: 900; pointer-events: auto; }
+.helpbtn { position: absolute; right: calc(max(8px, env(safe-area-inset-right, 0px)) + 36px); top: 8px; z-index: 8; width: 32px; height: 32px; border-radius: 50%; background: rgba(43,28,22,.75); color: var(--paper); font-weight: 900; pointer-events: auto; }
 
 /* ---------- 操作區 ---------- */
 #dock { background: linear-gradient(var(--dock-2), var(--dock)); color: var(--paper); padding: 8px max(10px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); display: grid; gap: 8px; position: relative; flex: 1; align-content: start; }
@@ -454,9 +454,20 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .num.aug { color: #ffe08a; font-size: 13px; -webkit-text-stroke: 3px #5a3a10; }
 
 /* ===== v0.4 介面 ===== */
-.menubtn { position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); top: 132px; width: 34px; height: 34px; border-radius: 50%; background: rgba(43,28,22,.75); color: var(--paper); display: grid; place-items: center; }
+.menubtn { position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); top: 8px; z-index: 8; width: 32px; height: 32px; border-radius: 50%; background: rgba(43,28,22,.75); color: var(--paper); display: grid; place-items: center; }
 .menubtn svg { width: 18px; height: 18px; }
-@media (max-width: 560px) { .menubtn { top: 104px; } }
+/* v0.13.1：圖鑑、選單固定在右上角；頂部列右邊留位置給它們 */
+#stage .hud { padding-right: calc(max(8px, env(safe-area-inset-right, 0px)) + 74px); }
+/* 排名改成最右邊一整列（不擋棋盤中間） */
+.team.stand:not(.wide) { position: absolute; right: max(6px, env(safe-area-inset-right, 0px)); top: 48px; padding: 4px 3px; border-radius: 12px; }
+.team.stand:not(.wide) .sthead { display: grid; justify-items: center; gap: 2px; padding: 0 0 3px; font-size: 9px; }
+.team.stand:not(.wide) .sthead > span { display: none; }
+.team.stand:not(.wide) .stx { font-size: 9px; padding: 1px 5px; margin: 0; }
+.team.stand .scells.col { grid-template-columns: 1fr; gap: 5px; justify-items: center; padding: 1px; }
+.team.stand .scells.col .scell { position: relative; padding: 0 0 5px; }
+.team.stand .scells.col .scell .tav { width: 30px; }
+.team.stand .scells.col .scell b { position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); font-size: 10px; line-height: 11px; padding: 0 4px; border-radius: 999px; background: #2b1c16; }
+@media (max-height: 700px) { .team.stand .scells.col .scell .tav { width: 24px; padding: 2px; } .team.stand .scells.col { gap: 3px; } }
 .meterbtn { position: absolute; left: max(6px, env(safe-area-inset-left, 0px)); bottom: 8px; background: rgba(43,28,22,.75); color: var(--paper); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
 .meter { position: absolute; left: max(6px, env(safe-area-inset-left, 0px)); bottom: 36px; width: 180px; max-height: 46%; overflow-y: auto; background: rgba(30,20,16,.82); color: var(--paper); border-radius: 10px; padding: 6px; font-size: 11px; display: grid; gap: 3px; }
 .mt-tabs { display: flex; gap: 3px; } .mt-tabs button { flex: 1; border-radius: 6px; padding: 2px 0; background: #4a362e; font-size: 11px; font-weight: 700; } .mt-tabs button.on { background: var(--rust); }
@@ -595,7 +606,6 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   #traits { top: 68px; gap: 6px; }
   .team .who { display: none; }
   .team b { font-size: 16px; }
-  .helpbtn { top: 68px; }
   .tav { width: 40px; height: 40px; padding: 3.5px; } .tav .tn { font-size: 13px; line-height: 14px; bottom: -6px; }
   .team.av { padding: 3px 9px 3px 4px; } .team.av.r { padding: 3px 4px 3px 9px; }
   .team.stand { padding: 4px 4px 5px; }
@@ -663,6 +673,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   .meter { left: auto; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 60px; width: 220px; max-height: 52%; }
   .team.stand.wide { min-width: 240px; } .team.stand .scells { justify-content: start; } .team.stand .srow { font-size: 12px; line-height: 16px; }
   .tav { width: 58px; height: 58px; padding: 5px; } .tav .tn { font-size: 16px; line-height: 17px; }
+  .team.stand:not(.wide) { top: 56px; } .team.stand .scells.col .scell .tav { width: 44px; padding: 3.5px; } .team.stand .scells.col .scell b { font-size: 12px; line-height: 13px; } .helpbtn, .menubtn { width: 38px; height: 38px; } .helpbtn { right: calc(max(8px, env(safe-area-inset-right, 0px)) + 44px); } #stage .hud { padding-right: calc(max(8px, env(safe-area-inset-right, 0px)) + 92px); }
   .team.stand .scells { grid-template-columns: repeat(4, 44px); gap: 5px 6px; } .team.stand .scell .tav { width: 40px; padding: 3.5px; } .team.stand .scell b { font-size: 13px; line-height: 14px; }
   .sheet > div { width: min(640px, 60vw); }
 }

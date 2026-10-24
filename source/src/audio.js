@@ -1,5 +1,5 @@
 // ===== 音效與配樂：全部用 WebAudio 即時合成，不載入任何音檔 =====
-const AUD = { ctx: null, master: null, sfxG: null, musG: null, last: {}, music: null, set: { sfx: 0.8, mus: 0.45, mute: false } };
+const AUD = { ctx: null, master: null, sfxG: null, musG: null, last: {}, music: null, set: { sfx: 0.7, mus: 0.4, mute: false, bgm: 'auto', eco: false } }; // bgm：auto＝依場地（整場不換）、曲目代號＝固定那首、off＝關閉；eco＝生態圈專屬曲
 try { const s = JSON.parse(localStorage.getItem('zoo_audio') || 'null'); if (s) Object.assign(AUD.set, s); } catch (e) {}
 function audSave() { try { localStorage.setItem('zoo_audio', JSON.stringify(AUD.set)); } catch (e) {} }
 function audInit() {
@@ -213,7 +213,7 @@ function musicStop() { if (AUD.music) { clearInterval(AUD.music.timer); AUD.musi
 // ===== 背景音樂（音檔，全部 CC0；用到才載入，載入失敗就回到上面的電腦合成配樂）=====
 // 可調：BGM_CFG.TRACKS 換曲目檔名、FADE 交叉淡入秒數、VOL 音檔音量（再乘上設定裡的音樂音量）
 const BGM_CFG = {
-  FADE: 1.0, VOL: 0.9,
+  FADE_IN: 2.5, FADE_OUT: 2.0, VOL: 0.5, // 淡入／淡出秒數；VOL＝音檔音量（再乘上設定裡的配樂音量）
   TRACKS: {
     lobby: 'music/lobby.mp3',     // Happy Clappy Loop — OwlishMedia
     jungle: 'music/jungle.mp3',   // Joyful Jungle — MintoDog
@@ -253,7 +253,7 @@ function bgmPlay(key, fallbackArena) {
   bgmFade(a, bgmVol(), false);
 }
 function bgmFade(a, to, pause) {
-  if (!a) return; clearInterval(a._fade); const from = a.volume, t0 = performance.now(), dur = BGM_CFG.FADE * 1000;
+  if (!a) return; clearInterval(a._fade); const from = a.volume, t0 = performance.now(), dur = (to > from ? BGM_CFG.FADE_IN : BGM_CFG.FADE_OUT) * 1000;
   a._fade = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / dur); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) { clearInterval(a._fade); if (pause && to === 0) a.pause(); } }, 50);
 }
 function bgmApplyVol() { const a = BGM.key && BGM.el[BGM.key]; if (a) { clearInterval(a._fade); a.volume = Math.min(1, bgmVol()); } }

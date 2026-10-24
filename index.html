@@ -102,7 +102,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team .hp { height: 6px; background: rgba(255,255,255,.15); border-radius: 4px; overflow: hidden; }
 .team .hp i { display: block; height: 100%; background: var(--good); transition: width .6s cubic-bezier(.2,.9,.3,1.2); }
 .team.r .hp i { background: var(--enemy); margin-left: auto; }
-#stage.multi .helpbtn { top: calc(var(--sth, 108px) + 12px); } #stage.multi .menubtn { top: calc(var(--sth, 108px) + 52px); }
+
 /* 多隊排名表：一列一行，名字太長用…；可以點 */
 .team.stand { gap: 0; padding: 4px 6px 5px; pointer-events: auto; min-width: 0; }
 .team.stand .sthead { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; opacity: .75; padding: 0 2px 2px; }
@@ -288,7 +288,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 @keyframes band { 0% { opacity: 0; transform: scaleY(.2); } 12% { opacity: 1; transform: scaleY(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes inl { 0% { transform: translateX(-160px); } 15% { transform: translateX(0); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateX(10px); } }
 @keyframes inr { 0% { transform: translateX(160px) scaleX(-1); } 15% { transform: translateX(0) scaleX(-1); } 80% { opacity: 1; } 100% { opacity: 0; } }
-.helpbtn { position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); top: 92px; width: 34px; height: 34px; border-radius: 50%; background: rgba(43,28,22,.75); color: var(--paper); font-weight: 900; pointer-events: auto; }
+.helpbtn { position: absolute; right: calc(max(8px, env(safe-area-inset-right, 0px)) + 36px); top: 8px; z-index: 8; width: 32px; height: 32px; border-radius: 50%; background: rgba(43,28,22,.75); color: var(--paper); font-weight: 900; pointer-events: auto; }
 
 /* ---------- 操作區 ---------- */
 #dock { background: linear-gradient(var(--dock-2), var(--dock)); color: var(--paper); padding: 8px max(10px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); display: grid; gap: 8px; position: relative; flex: 1; align-content: start; }
@@ -454,9 +454,20 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .num.aug { color: #ffe08a; font-size: 13px; -webkit-text-stroke: 3px #5a3a10; }
 
 /* ===== v0.4 介面 ===== */
-.menubtn { position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); top: 132px; width: 34px; height: 34px; border-radius: 50%; background: rgba(43,28,22,.75); color: var(--paper); display: grid; place-items: center; }
+.menubtn { position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); top: 8px; z-index: 8; width: 32px; height: 32px; border-radius: 50%; background: rgba(43,28,22,.75); color: var(--paper); display: grid; place-items: center; }
 .menubtn svg { width: 18px; height: 18px; }
-@media (max-width: 560px) { .menubtn { top: 104px; } }
+/* v0.13.1：圖鑑、選單固定在右上角；頂部列右邊留位置給它們 */
+#stage .hud { padding-right: calc(max(8px, env(safe-area-inset-right, 0px)) + 74px); }
+/* 排名改成最右邊一整列（不擋棋盤中間） */
+.team.stand:not(.wide) { position: absolute; right: max(6px, env(safe-area-inset-right, 0px)); top: 48px; padding: 4px 3px; border-radius: 12px; }
+.team.stand:not(.wide) .sthead { display: grid; justify-items: center; gap: 2px; padding: 0 0 3px; font-size: 9px; }
+.team.stand:not(.wide) .sthead > span { display: none; }
+.team.stand:not(.wide) .stx { font-size: 9px; padding: 1px 5px; margin: 0; }
+.team.stand .scells.col { grid-template-columns: 1fr; gap: 5px; justify-items: center; padding: 1px; }
+.team.stand .scells.col .scell { position: relative; padding: 0 0 5px; }
+.team.stand .scells.col .scell .tav { width: 30px; }
+.team.stand .scells.col .scell b { position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); font-size: 10px; line-height: 11px; padding: 0 4px; border-radius: 999px; background: #2b1c16; }
+@media (max-height: 700px) { .team.stand .scells.col .scell .tav { width: 24px; padding: 2px; } .team.stand .scells.col { gap: 3px; } }
 .meterbtn { position: absolute; left: max(6px, env(safe-area-inset-left, 0px)); bottom: 8px; background: rgba(43,28,22,.75); color: var(--paper); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
 .meter { position: absolute; left: max(6px, env(safe-area-inset-left, 0px)); bottom: 36px; width: 180px; max-height: 46%; overflow-y: auto; background: rgba(30,20,16,.82); color: var(--paper); border-radius: 10px; padding: 6px; font-size: 11px; display: grid; gap: 3px; }
 .mt-tabs { display: flex; gap: 3px; } .mt-tabs button { flex: 1; border-radius: 6px; padding: 2px 0; background: #4a362e; font-size: 11px; font-weight: 700; } .mt-tabs button.on { background: var(--rust); }
@@ -595,7 +606,6 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   #traits { top: 68px; gap: 6px; }
   .team .who { display: none; }
   .team b { font-size: 16px; }
-  .helpbtn { top: 68px; }
   .tav { width: 40px; height: 40px; padding: 3.5px; } .tav .tn { font-size: 13px; line-height: 14px; bottom: -6px; }
   .team.av { padding: 3px 9px 3px 4px; } .team.av.r { padding: 3px 4px 3px 9px; }
   .team.stand { padding: 4px 4px 5px; }
@@ -663,6 +673,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   .meter { left: auto; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 60px; width: 220px; max-height: 52%; }
   .team.stand.wide { min-width: 240px; } .team.stand .scells { justify-content: start; } .team.stand .srow { font-size: 12px; line-height: 16px; }
   .tav { width: 58px; height: 58px; padding: 5px; } .tav .tn { font-size: 16px; line-height: 17px; }
+  .team.stand:not(.wide) { top: 56px; } .team.stand .scells.col .scell .tav { width: 44px; padding: 3.5px; } .team.stand .scells.col .scell b { font-size: 12px; line-height: 13px; } .helpbtn, .menubtn { width: 38px; height: 38px; } .helpbtn { right: calc(max(8px, env(safe-area-inset-right, 0px)) + 44px); } #stage .hud { padding-right: calc(max(8px, env(safe-area-inset-right, 0px)) + 92px); }
   .team.stand .scells { grid-template-columns: repeat(4, 44px); gap: 5px 6px; } .team.stand .scell .tav { width: 40px; padding: 3.5px; } .team.stand .scell b { font-size: 13px; line-height: 14px; }
   .sheet > div { width: min(640px, 60vw); }
 }
@@ -815,7 +826,7 @@ const CFG = {
   SHOP_SIZE: 5, REROLL_COST: 2,
   // 商店機率（%）：等級 → [1費, 2費, 3費, 4費, 5費]
   SHOP_ODDS: { 1: [100, 0, 0, 0, 0], 2: [100, 0, 0, 0, 0], 3: [75, 25, 0, 0, 0], 4: [55, 30, 15, 0, 0], 5: [45, 33, 20, 2, 0], 6: [30, 40, 25, 5, 0], 7: [19, 30, 35, 15, 1], 8: [18, 25, 32, 22, 3], 9: [10, 20, 25, 35, 10] }, // v0.12.6 起照聯盟戰棋
-  POOL: { 1: 12, 2: 12, 3: 11, 4: 10, 5: 8 },           // 全場共用卡池（每隻幾張）；每費只有 5 種動物（聯盟戰棋約 13 種），所以張數比較少，3 星難度才接近
+  POOL: { 1: 36, 2: 12, 3: 11, 4: 10, 5: 8 },           // v0.13.1：一費 36 張＝最多 4 家同時三星           // 全場共用卡池（每隻幾張）；每費只有 5 種動物（聯盟戰棋約 13 種），所以張數比較少，3 星難度才接近
   POOL_8P_PCT: 150,                                     // 8 人局（4 隊）卡池數量 %
   CAROUSEL_ROUNDS: [6, 11, 16, 21],                     // 選秀回合
   ENCOUNTER_ROUNDS: [2, 7, 12, 18],                     // 遭遇事件回合
@@ -2704,7 +2715,7 @@ function update(G, dt) {
     const humans = G.players.filter(p => !p.ai && !p.out);
     if (G.portalVote && humans.every(p => p.vote)) resolvePortal(G);
     if (G.draft) aiDraftTurns(G);
-    const waiting = humans.some(p => p.augChoice) || G.portalVote || G.draft || (G.encounter && G.encounter.pending) || G.paused;
+    const waiting = G.draft || G.paused; // v0.13.1：海克斯、傳送門、奇遇都不暫停，倒數結束自動決定
     if (!waiting) G.timer -= dt; // 有人在選擇時暫停倒數
     if (G.timer <= 5000 && G.aiLate !== G.round) { G.aiLate = G.round; for (const P of G.players) if (P.ai && !P.out) aiLate(G, P.id); } // 準備最後 5 秒：電腦隊友再看一次真人隊友的擺法
     if (G.aiMid !== G.round && G.timer < G.rules.prepSec * 600) { G.aiMid = G.round; for (const P of G.players) if (P.ai && !P.out) aiHelpMate(G, P.id); } // 準備到一半：AI 隊友看玩家買了什麼，再幫一次
@@ -5266,7 +5277,7 @@ const AUG_COL = { 1: 'linear-gradient(135deg,#9aa6b2,#e8eef4,#9aa6b2)', 2: 'line
 const augIcon = (id, cls) => { const a = AUG[id]; return `<span class="aug-ic t${a.tier} ${cls || ''}" title="${a.name}">${a.name[0]}</span>`; };
 
 // ===== 音效與配樂：全部用 WebAudio 即時合成，不載入任何音檔 =====
-const AUD = { ctx: null, master: null, sfxG: null, musG: null, last: {}, music: null, set: { sfx: 0.8, mus: 0.45, mute: false } };
+const AUD = { ctx: null, master: null, sfxG: null, musG: null, last: {}, music: null, set: { sfx: 0.7, mus: 0.4, mute: false, bgm: 'auto', eco: false } }; // bgm：auto＝依場地（整場不換）、曲目代號＝固定那首、off＝關閉；eco＝生態圈專屬曲
 try { const s = JSON.parse(localStorage.getItem('zoo_audio') || 'null'); if (s) Object.assign(AUD.set, s); } catch (e) {}
 function audSave() { try { localStorage.setItem('zoo_audio', JSON.stringify(AUD.set)); } catch (e) {} }
 function audInit() {
@@ -5480,7 +5491,7 @@ function musicStop() { if (AUD.music) { clearInterval(AUD.music.timer); AUD.musi
 // ===== 背景音樂（音檔，全部 CC0；用到才載入，載入失敗就回到上面的電腦合成配樂）=====
 // 可調：BGM_CFG.TRACKS 換曲目檔名、FADE 交叉淡入秒數、VOL 音檔音量（再乘上設定裡的音樂音量）
 const BGM_CFG = {
-  FADE: 1.0, VOL: 0.9,
+  FADE_IN: 2.5, FADE_OUT: 2.0, VOL: 0.5, // 淡入／淡出秒數；VOL＝音檔音量（再乘上設定裡的配樂音量）
   TRACKS: {
     lobby: 'music/lobby.mp3',     // Happy Clappy Loop — OwlishMedia
     jungle: 'music/jungle.mp3',   // Joyful Jungle — MintoDog
@@ -5520,7 +5531,7 @@ function bgmPlay(key, fallbackArena) {
   bgmFade(a, bgmVol(), false);
 }
 function bgmFade(a, to, pause) {
-  if (!a) return; clearInterval(a._fade); const from = a.volume, t0 = performance.now(), dur = BGM_CFG.FADE * 1000;
+  if (!a) return; clearInterval(a._fade); const from = a.volume, t0 = performance.now(), dur = (to > from ? BGM_CFG.FADE_IN : BGM_CFG.FADE_OUT) * 1000;
   a._fade = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / dur); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k >= 1) { clearInterval(a._fade); if (pause && to === 0) a.pause(); } }, 50);
 }
 function bgmApplyVol() { const a = BGM.key && BGM.el[BGM.key]; if (a) { clearInterval(a._fade); a.volume = Math.min(1, bgmVol()); } }
@@ -5827,7 +5838,7 @@ function renderDock() {
   const ot = odds.map((o, i) => `<span style="--cc:${COST_COL[i + 1]}"><i></i>${o}%</span>`).join('');
   if (oe.dataset.k !== ot) { oe.dataset.k = ot; oe.innerHTML = ot; }
   const shopH = P.shop.map((k, i) => {
-    if (!k) return `<div class="card empty"></div>`;
+    if (!k || (G.pool && G.pool[k] !== undefined && G.pool[k] <= 0)) return `<div class="card empty"></div>`; // 卡池被買光：不顯示，免得以為還能買
     const A = ANIMALS[k];
     const n = own[k] || 0, up = n >= 2 ? `<span class="own up" title="再買一隻就升星">★↑</span>` : n ? `<span class="own" title="已經有 ${n} 隻">${n}</span>` : '';
     return `<button class="card c${A.cost} ${(own[k] || 0) >= 2 ? 'pair' : ''} ${P.gold < A.cost ? 'poor' : ''} ${flipShop ? 'flip shine' : ''}" style="animation-delay:${i * 55}ms" data-slot="${i}" aria-label="購買${A.name}">
@@ -5919,9 +5930,10 @@ function hud() {
     const rows = G.teams.map((T, i) => ({ T, i })).sort((a, b) => (a.T.out - b.T.out) || (b.T.hp - a.T.hp) || ((a.T.place || 0) - (b.T.place || 0))), alive = rows.filter(r => !r.T.out).length;
     const maxHp = CFG.TEAM_HP, fighting = i => fight && G.battles.some(b => b.teams.includes(t) && b.teams.includes(i) && i !== t);
     const cand = G.phase === 'prep' && G.nextCand ? (G.nextCand[t] || []) : [];
-    const head = `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">可能對手</button>' : ''}<button class="stx" aria-label="放大排名">${el.classList.contains('wide') ? '縮小' : '放大'}</button></div>`;
+    const wide = el.classList.contains('wide');
+    const head = wide ? `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">可能對手</button>' : ''}<button class="stx" aria-label="縮小排名">縮小</button></div>` : `<div class="sthead"><small>${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">對手</button>' : ''}<button class="stx" aria-label="放大排名">放大</button></div>`;
     if (!el.classList.contains('wide')) { // 精簡：每隊一顆圓形頭像，外圈是血量，下方數字；角標＝連勝／連敗、對手、可能對手
-      el.innerHTML = head + '<div class="scells">' + rows.map(({ T, i }) => { const sk = T.streak || 0, hp = Math.max(0, T.hp), isOpp = fighting(i) || (!fight && i === opp && !cand.length);
+      el.innerHTML = head + '<div class="scells col">' + rows.map(({ T, i }) => { const sk = T.streak || 0, hp = Math.max(0, T.hp), isOpp = fighting(i) || (!fight && i === opp && !cand.length);
         const bd = T.out ? '' : isOpp ? `<i class="sbd vs">${clashSvg('sm')}</i>` : cand.includes(i) ? '<i class="sbd q">?</i>' : sk >= 2 ? `<i class="sbd win">${flameSvg}${sk}</i>` : sk <= -2 ? `<i class="sbd lose">${-sk}</i>` : '';
         return `<button class="scell ${cand.includes(i) ? 'cand' : ''} ${i === t ? 'me' : ''} ${isOpp ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}"><span class="tav sm" style="--p:${Math.round(hp / maxHp * 100)}%;--tc:${teamColor(i)}"><img src="${avSrc(teamAvatar(i))}" alt="">${bd}</span><b>${T.out ? '#' + T.place : hp}</b></button>`; }).join('') + '</div>';
       return;
@@ -5949,6 +5961,7 @@ function hud() {
   if (G.tutorial && G.phase === 'prep') { sec = '教學'; ph = '慢慢來，不倒數'; }
   if (G.td) { if (G.phase === 'prep') ph = '退潮・準備'; else if (cv) { sec = Math.max(0, Math.ceil(TD_CFG.WAVE_MAX_SEC - cv.B.t * CFG.TICK_MS / 1000)); ph = G.td.tide ? '大潮來襲' : '漲潮'; } }
   $('timer').textContent = sec; $('phaseTxt').textContent = ph;
+  if (G.phase === 'prep') { const v = Math.ceil(Math.max(0, G.timer) / 1000); document.querySelectorAll('.cdT').forEach(x => { if (x.textContent != v) x.textContent = v; }); } // 選擇視窗裡的倒數
   $('clock').classList.toggle('hurry', G.phase === 'prep' && sec <= 5);
   if (G.phase === 'prep' && sec <= 5 && sec >= 1 && hud.tick !== G.round * 100 + sec) { hud.tick = G.round * 100 + sec; sfx(sec === 1 ? 'tickLast' : 'tick', 200); } // 最後 5 秒滴答
   const tm = G.teams[myTeam()], mood = tm.hp <= 25 ? 'tense' : (tm.streak || 0) >= 3 ? 'hype' : 'calm'; if (hud.mood !== mood) { hud.mood = mood; musicMood(mood); }
@@ -6427,7 +6440,7 @@ function renderAugs() {
     if (m.dataset.k !== P.augChoice.join()) {
       m.dataset.k = P.augChoice.join(); m.classList.remove('min');
       const tier = AUG[P.augChoice[0]].tier;
-      m.innerHTML = `<div class="augbox"><h2>${AUG_TIER_NAME[tier]}海克斯增幅</h2><p class="sub">三選一。選擇時準備倒數會暫停。</p><div class="augcards">${P.augChoice.map((id, i) => `<button class="augcard t${AUG[id].tier}" data-pick="${id}" style="animation-delay:${i * 90}ms"><span class="frame"></span>${augIcon(id, 'big')}<b>${AUG[id].name}</b><span class="d">${AUG[id].desc}</span></button>`).join('')}</div><button class="btn" id="augHide">先看棋盤</button></div><button class="augpill" id="augShow">選擇海克斯增幅</button>`;
+      m.innerHTML = `<div class="augbox"><h2>${AUG_TIER_NAME[tier]}海克斯增幅</h2><p class="sub">三選一。倒數結束會自動選第一個：剩 <b class="cdT">${Math.ceil(Math.max(0, G.timer) / 1000)}</b> 秒</p><div class="augcards">${P.augChoice.map((id, i) => `<button class="augcard t${AUG[id].tier}" data-pick="${id}" style="animation-delay:${i * 90}ms"><span class="frame"></span>${augIcon(id, 'big')}<b>${AUG[id].name}</b><span class="d">${AUG[id].desc}</span></button>`).join('')}</div><button class="btn" id="augHide">先看棋盤</button></div><button class="augpill" id="augShow">選擇海克斯增幅</button>`;
     }
     m.hidden = false;
   } else { m.hidden = true; m.dataset.k = ''; }
@@ -6529,7 +6542,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.0'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.1'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -6606,7 +6619,7 @@ function featuresBoot() {
   $('btnAcc').onclick = () => openAccount();
   setupInstall();
   // 開啟聲音（需要使用者點擊）
-  document.addEventListener('pointerdown', () => { audInit(); if (G && !$('game').hidden) musicStart(G.arena); }, { once: false, passive: true });
+  document.addEventListener('pointerdown', () => { audInit(); try { bgmAuto(); const a = BGM.key && BGM.el[BGM.key]; if (a && a.paused) a.play().catch(() => {}); } catch (e) {} }, { once: false, passive: true }); // 在點擊當下播放（手機瀏覽器規定）
   // 快捷鍵
   window.addEventListener('keydown', onHotkey);
   // 長按標記
@@ -6795,12 +6808,14 @@ function openMenu(sub) {
       ${G.solo ? '' : `<div class="mrow"><span>隊伍</span><button class="btn" data-m="captain" ${T.captain === ME ? '' : 'disabled'}>把隊長交給隊友</button></div>`}
       <div class="mrow"><span>AI 代打</span><button class="btn ${P.ai ? 'primary' : ''}" data-m="ai">${P.ai ? '代打中（點一下取回）' : '讓 AI 幫我打'}</button></div>
       <div class="mrow"><span>音效</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.sfx}" id="volS" aria-label="音效音量"><span>配樂</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.mus}" id="volM" aria-label="配樂音量"><button class="btn" data-m="mute">${AUD.set.mute ? '取消靜音' : '靜音'}</button></div>
+      ${bgmSelectHtml()}
       <div class="mrow"><span>其他</span><button class="btn" data-m="tut">新手教學</button><button class="btn" data-m="surrender" id="btnSur">投降</button></div>
     </div>`;
   $('overlay').hidden = false;
   $('mX').onclick = () => { $('overlay').hidden = true; };
   $('volS').oninput = e => { AUD.set.sfx = +e.target.value; audApply(); audSave(); };
   $('volM').oninput = e => { AUD.set.mus = +e.target.value; audApply(); audSave(); };
+  bgmSelectBind();
   $('panel').querySelector('.menu').onclick = e => {
     const b = e.target.closest('[data-m]'); if (!b) return; const m = b.dataset.m; sfx('click');
     if (m.startsWith('spd') && NET.role === 'client') { toast('連線中只有房主能調整戰鬥速度'); }
@@ -6913,15 +6928,19 @@ function ecoActive() { // 回傳湊到最高階的環境羈絆（只看自己這
   for (const t of ECO_TRAITS) { const x = tc[t], T = TRAITS[t]; if (x && T && x.tier >= T.tiers.length - 1) return t; }
   return null;
 }
+function bgmSelectHtml() { return `<div class="mrow"><span>背景音樂</span><select id="bgmSel" aria-label="背景音樂">${BGM_PICK.map(([k, n]) => `<option value="${k}" ${(AUD.set.bgm || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select><label class="ecochk"><input type="checkbox" id="bgmEco" ${AUD.set.eco ? 'checked' : ''}>生態圈換專屬曲</label></div>`; }
+function bgmSelectBind() { const s = $('bgmSel'), c = $('bgmEco'); if (s) s.onchange = () => { AUD.set.bgm = s.value; audSave(); if (G) G._bgm = null; audInit(); bgmAuto(); }; if (c) c.onchange = () => { AUD.set.eco = c.checked; audSave(); }; }
+// 選曲規則（v0.13.1）：同一場比賽從頭到尾同一首，不因準備／戰鬥切換；可在設定裡指定固定曲目或關閉
+const BGM_PICK = [['auto', '依場地（整場不換）'], ['lobby', '輕快拍手'], ['jungle', '叢林'], ['desert', '熱帶鼓'], ['city', '8-bit 巴薩'], ['battle', '晶片冒險'], ['td', '開心冒險'], ['eco_water', '海底'], ['eco_sky', '天空'], ['off', '關閉']];
 function bgmAuto() {
   if (!AUD.ctx) return;
-  const inGame = G && !$('game').hidden;
-  if (!inGame) { bgmPlay('lobby'); return; }
-  const eco = ecoActive();
-  let key = G.arena;
-  if (G.td) key = 'td';
-  else if (eco) key = 'eco_' + eco;
-  else if (G.phase === 'combat' || G.phase === 'result') key = isBoss(G.round) ? 'boss' : 'battle';
+  const pick = AUD.set.bgm || 'auto';
+  if (pick === 'off') { bgmPlay(''); musicStop(); return; }
+  const inGame = G && !$('game').hidden && !(REPLAY && REPLAY.demo);
+  if (!inGame) { bgmPlay(pick === 'auto' ? 'lobby' : pick); return; }
+  if (!G._bgm) G._bgm = pick !== 'auto' ? pick : G.td ? 'td' : (G.arena || 'jungle'); // 開局決定，整場不換
+  let key = G._bgm;
+  if (AUD.set.eco && pick === 'auto') { const eco = ecoActive(); if (eco) key = 'eco_' + eco; }
   bgmPlay(key, G.arena);
 }
 setInterval(() => { try { bgmAuto(); } catch (e) {} }, 500);
@@ -6971,7 +6990,7 @@ function previewSkill(uid) {
 function showPortal() {
   const m = $('modal2'); if (m && !m.hidden && m.dataset.k === 'portal') return;
   const opts = G.portalVote.options.map(id => PORTALS.find(p => p.id === id));
-  const mm = modal(`<div class="mbox"><h2>選擇傳送門</h2><p class="sub">四位玩家投票，決定這局的特殊規則。</p><div class="mcards">${opts.map(p => `<button class="mcard portal" data-vote="${p.id}"><b>${p.name}</b><span>${p.desc}</span></button>`).join('')}</div></div>`);
+  const mm = modal(`<div class="mbox"><h2>選擇傳送門</h2><p class="sub">大家投票決定這局的特殊規則，倒數結束還沒投就自動決定：剩 <b class="cdT">${Math.ceil(Math.max(0, G.timer) / 1000)}</b> 秒</p><div class="mcards">${opts.map(p => `<button class="mcard portal" data-vote="${p.id}"><b>${p.name}</b><span>${p.desc}</span></button>`).join('')}</div></div>`);
   mm.dataset.k = 'portal';
   mm.onclick = e => { const b = e.target.closest('[data-vote]'); if (!b) return; actMe({ t: 'vote', id: b.dataset.vote }); sfx('click'); closeModal(); };
 }
@@ -6989,7 +7008,7 @@ function showDraft() {
 // ---- 隊長抉擇 ----
 function showCaptain() {
   const m = $('modal2'); if (m && !m.hidden && m.dataset.k === 'captain') return;
-  const mm = modal(`<div class="mbox"><h2>隊長的抉擇</h2><p class="sub">你是隊長，替全隊決定：</p><div class="mcards"><button class="mcard" data-cap="gold"><b>每人 +4 金</b><span>馬上可以花</span></button><button class="mcard" data-cap="item"><b>每人 1 件成品裝備</b><span>隨機成品</span></button></div></div>`);
+  const mm = modal(`<div class="mbox"><h2>隊長的抉擇</h2><p class="sub">你是隊長，替全隊決定：（剩 <b class="cdT">${Math.ceil(Math.max(0, G.timer) / 1000)}</b> 秒，沒選就自動選第一個）</p><div class="mcards"><button class="mcard" data-cap="gold"><b>每人 +4 金</b><span>馬上可以花</span></button><button class="mcard" data-cap="item"><b>每人 1 件成品裝備</b><span>隨機成品</span></button></div></div>`);
   mm.dataset.k = 'captain';
   mm.onclick = e => { const b = e.target.closest('[data-cap]'); if (!b) return; actMe({ t: 'encounter', choice: b.dataset.cap }); processLog(); renderPrep(); closeModal(); };
 }
@@ -7201,12 +7220,13 @@ function openSettings() {
       <button class="btn" data-set="acc">帳號與暱稱</button><button class="btn" data-set="logout">登出（換其他帳號）</button>`
       : `<button class="btn primary" data-set="login">登入／註冊</button>`) : `<button class="btn primary" data-set="login">登入／註冊</button>`}
     <button class="btn" data-set="rules">自訂規則（練習用）</button>
+    ${bgmSelectHtml()}
     <button class="btn" data-set="avatar">頭像</button>
     <button class="btn" data-set="collect">收藏與造型</button>
     <button class="btn" data-set="dex">圖鑑與規則</button>
     ${INSTALL_SHOW ? '<button class="btn" data-set="install">加到主畫面（像 App 一樣開）</button>' : ''}
   </div>`;
-  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; }; bgmSelectBind();
   $('panel').querySelectorAll('[data-set]').forEach(b => b.onclick = async () => {
     const k = b.dataset.set;
     if (k === 'acc') openAccount(); else if (k === 'avatar') openAvatar(); else if (k === 'rules') openRules(); else if (k === 'collect') openCollection(); else if (k === 'dex') { $('overlay').hidden = true; showDex(); }
