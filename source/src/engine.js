@@ -38,7 +38,8 @@ function createBattle(input) {
   for (const s of input.units) {
     let c = s.c, r = s.r;
     if (B.grid[idx(c, r)] !== -1 || B.terrain[idx(c, r)] === 'rock') { const f = freeNear(B, c, r, null); if (!f) continue; c = f[0]; r = f[1]; } // 前線爭奪等情況撞格時往旁邊挪
-    spawn(B, s.key, s.star, s.owner, s.team, c, r, s.items || [], false).uid = s.uid;
+    const nu = spawn(B, s.key, s.star, s.owner, s.team, c, r, s.items || [], false); nu.uid = s.uid;
+    if (s.mul) { nu.maxhp = Math.floor(nu.maxhp * s.mul / 100); nu.atk = Math.floor(nu.atk * s.mul / 100); } // 魔王依回合變強
   }
   for (const n of input.neutrals || []) if (B.grid[idx(n.c, n.r)] === -1 && B.terrain[idx(n.c, n.r)] !== 'rock') { const x = spawn(B, n.key, 1, -2, 2, n.c, n.r, [], false); x.maxhp = x.hp = n.hp || x.maxhp; }
   applyTraits(B);
@@ -448,6 +449,10 @@ function cast(B, u) {
       B.ev.push({ k: 'proj', id: u.id, tg: low.id, s: 'owl' });
       damage(B, u, low, sk(350), 'phys', { skill: 1, crit: 1 });
       break; }
+    case 'kingboar': // 魔王：震地
+      for (const e of es) if (dist(e, u) <= 2) { stun(B, e, 25); damage(B, u, e, sk(150), 'magic', { skill: 1 }); }
+      B.ev.push({ k: 'shake', id: u.id });
+      break;
     case 'elephant':
       for (const e of es) if (dist(e, u) <= 2) { stun(B, e, 30); damage(B, u, e, sk(220), 'magic', { skill: 1 }); }
       B.ev.push({ k: 'shake', id: u.id });

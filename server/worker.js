@@ -70,7 +70,7 @@ const ANIMALS = {
     hp: 1080, atk: 72, ai: 22, rng: 1, arm: 40, mr: 40, mana: 100, sm: 0, mv: 10,
     skill: '起床氣', desc: '開場睡覺，每秒回 5% 生命、能量 +10。被打掉 15% 生命或能量滿時醒來，攻擊 +80% 持續 5 秒。樹格回血加倍。' },
   cheetah: { name: '獵豹', cost: 3, traits: ['savanna'], role: '刺客',
-    hp: 720, atk: 74, ai: 14, rng: 1, arm: 25, mr: 20, mana: 80, sm: 0, mv: 4,
+    hp: 720, atk: 67, ai: 14, rng: 1, arm: 25, mr: 20, mana: 80, sm: 0, mv: 4,
     skill: '疾馳撲殺', desc: '移動極快。連續攻擊同一目標每次攻速 +8%（最多 5 層）。技能：衝向血最少的敵人 300 物理傷害。' },
   octopus: { name: '章魚', cost: 4, traits: ['water', 'night'], role: '控制法師',
     hp: 920, atk: 58, ai: 20, rng: 3, arm: 25, mr: 40, mana: 80, sm: 20, mv: 8,
@@ -107,13 +107,13 @@ const ANIMALS = {
     hp: 1280, atk: 76, ai: 24, rng: 1, arm: 45, mr: 40, mana: 100, sm: 40, mv: 9,
     skill: '捶胸震地', desc: '捶胸嘲諷 2 格內敵人 2.5 秒，獲得 18% 生命護盾，再雙拳砸地，周圍 1 格 200 魔法傷害。' },
   whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor'], role: '坦／法師',
-    hp: 2000, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
+    hp: 1850, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
     skill: '潮汐巨浪', desc: '噴出巨浪，沿自己左右各 1 格寬的直線橫掃全場：敵人 260 魔法傷害並暈 1 秒，友軍回復 15% 生命。' },
   peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest'], role: '輔助',
     hp: 1350, atk: 95, ai: 20, rng: 3, arm: 30, mr: 40, mana: 100, sm: 30, mv: 8,
     skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
   komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor'], role: '戰士',
-    hp: 1520, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
+    hp: 1440, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
     skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 20% 生命。' },
 };
 
@@ -122,6 +122,7 @@ const EXTRA = {
   minibee: { name: '小蜂', cost: 0, traits: [], hp: 160, atk: 22, ai: 14, rng: 1, arm: 10, mr: 10, mana: 999, sm: 0, mv: 5 },
   hare: { name: '野兔', cost: 0, traits: [], hp: 300, atk: 22, ai: 20, rng: 1, arm: 10, mr: 10, mana: 999, sm: 0, mv: 6 },
   boar: { name: '野豬', cost: 0, traits: [], hp: 900, atk: 45, ai: 24, rng: 1, arm: 35, mr: 25, mana: 999, sm: 0, mv: 8 },
+  kingboar: { name: '野豬王', cost: 0, traits: [], hp: 8000, atk: 240, ai: 21, rng: 1, arm: 95, mr: 85, mana: 100, sm: 30, mv: 9, skill: '震地', desc: '用力踏地，2 格內的敵人受到魔法傷害並暈眩。' }, // 魔王（第 3 階段起的野生回合）
 };
 
 const TRAITS = {
@@ -212,9 +213,10 @@ const PVE = {
   2: [['hare', 1, 3], ['hare', 3, 3], ['hare', 5, 3]],
   3: [['boar', 2, 3], ['boar', 4, 3]],
   8: [['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3], ['hare', 2, 1], ['hare', 4, 1]],
-  13: [['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3], ['boar', 2, 2], ['boar', 4, 2], ['hare', 3, 0]],
-  18: [['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3], ['boar', 1, 2], ['boar', 3, 2], ['boar', 5, 2]],
-  23: [['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3], ['boar', 1, 2], ['boar', 3, 2], ['boar', 5, 2], ['boar', 3, 1]],
+  // 第 3 階段起：魔王回合（野豬王＋小弟）
+  13: [['kingboar', 3, 2], ['boar', 1, 3], ['boar', 5, 3], ['hare', 3, 3]],
+  18: [['kingboar', 3, 2], ['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3]],
+  23: [['kingboar', 2, 2], ['kingboar', 4, 2], ['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3]],
 };
 const PVE_STAR = { 1: 1, 2: 1, 3: 1, 8: 2, 13: 2, 18: 3, 23: 3 };
 
@@ -407,7 +409,8 @@ function createBattle(input) {
   for (const s of input.units) {
     let c = s.c, r = s.r;
     if (B.grid[idx(c, r)] !== -1 || B.terrain[idx(c, r)] === 'rock') { const f = freeNear(B, c, r, null); if (!f) continue; c = f[0]; r = f[1]; } // 前線爭奪等情況撞格時往旁邊挪
-    spawn(B, s.key, s.star, s.owner, s.team, c, r, s.items || [], false).uid = s.uid;
+    const nu = spawn(B, s.key, s.star, s.owner, s.team, c, r, s.items || [], false); nu.uid = s.uid;
+    if (s.mul) { nu.maxhp = Math.floor(nu.maxhp * s.mul / 100); nu.atk = Math.floor(nu.atk * s.mul / 100); } // 魔王依回合變強
   }
   for (const n of input.neutrals || []) if (B.grid[idx(n.c, n.r)] === -1 && B.terrain[idx(n.c, n.r)] !== 'rock') { const x = spawn(B, n.key, 1, -2, 2, n.c, n.r, [], false); x.maxhp = x.hp = n.hp || x.maxhp; }
   applyTraits(B);
@@ -817,6 +820,10 @@ function cast(B, u) {
       B.ev.push({ k: 'proj', id: u.id, tg: low.id, s: 'owl' });
       damage(B, u, low, sk(350), 'phys', { skill: 1, crit: 1 });
       break; }
+    case 'kingboar': // 魔王：震地
+      for (const e of es) if (dist(e, u) <= 2) { stun(B, e, 25); damage(B, u, e, sk(150), 'magic', { skill: 1 }); }
+      B.ev.push({ k: 'shake', id: u.id });
+      break;
     case 'elephant':
       for (const e of es) if (dist(e, u) <= 2) { stun(B, e, 30); damage(B, u, e, sk(220), 'magic', { skill: 1 }); }
       B.ev.push({ k: 'shake', id: u.id });
@@ -1191,6 +1198,9 @@ function battleCommand(B, owner, type) {
 
 // ===== 對局流程：經濟、卡池、升星、送禮、回合、AI =====
 const isPve = R => R <= 3 || (R - 3) % 5 === 0;
+const isBoss = R => isPve(R) && R >= 13; // 第 3 階段起的野生回合是魔王
+const BOSS_CFG = { STAR: 2, MUL: { 13: 100, 18: 320, 23: 300 }, MUL_STEP: 80 }; // 魔王星數；各回合生命攻擊倍率（%），之後每 5 回合 +MUL_STEP
+const bossMul = R => BOSS_CFG.MUL[R] || (BOSS_CFG.MUL[23] + Math.floor((R - 23) / 5) * BOSS_CFG.MUL_STEP); // 魔王固定幾星（強度主要調 data.js 的 EXTRA.kingboar）
 const stageOf = R => R <= 3 ? 1 : 2 + Math.floor((R - 4) / 5);
 const stageStart = R => R === 1 || (R >= 4 && (R - 4) % 5 === 0);
 // team 本地座標（自己半場 r0 後排 → r3 前排）↔ 全場座標
@@ -1575,6 +1585,7 @@ function startPrep(G) {
   if (G.rules.augments && CFG.AUG_ROUNDS.includes(R)) offerAugments(G);
   if (G.rules.carousel && CFG.CAROUSEL_ROUNDS.includes(R)) startDraft(G);
   G.phase = 'prep'; G.timer = G.rules.prepSec * 1000;
+  planNextOpponents(G);
   // AI 行動順序每回合輪替，避免某一隊總是先搶卡池
   const order = G.players.map(p => p.id); for (let i = 0; i < G.round % 4; i++) order.push(order.shift());
   for (const id of order) if (G.players[id].ai && !G.players[id].out) aiPrep(G, id);
@@ -1611,7 +1622,7 @@ function startCombat(G) {
   if (isPve(R)) {
     for (const team of aliveTeams(G)) {
       const units = battleUnitsForTeam(G, team, 0);
-      for (const [key, c, r] of pveOf(R)) { const [gc, gr] = toGlobal(1, c, r); units.push({ key, star: PVE_STAR[R] || 3, owner: -1, team: 1, c: gc, r: gr, items: [] }); }
+      for (const [key, c, r] of pveOf(R)) { const [gc, gr] = toGlobal(1, c, r); units.push({ key, star: key === 'kingboar' ? BOSS_CFG.STAR : PVE_STAR[R] || 3, mul: key === 'kingboar' ? bossMul(R) : 0, owner: -1, team: 1, c: gc, r: gr, items: [] }); }
       const input = { seed: seed + team, terrain: terrainFor(G, team), height: heightFor(G, team), units, pve: true, aug: augMap(G), low: lowMap(G), flags: battleFlags(G), weather: G.weather };
       G.battles.push({ teams: [team, -1], input: JSON.parse(JSON.stringify(input)), B: createBattle(input) });
     }
@@ -1628,7 +1639,24 @@ function startCombat(G) {
 }
 function combatDone(G) { return G.battles.every(b => b.B.over); }
 // 對戰配對：2 隊就是 0 對 1；4 隊每回合隨機配對、盡量不連續打同一隊；剩奇數隊時有一隊打「幽靈」（別隊的複製，輸贏不影響對方）
-function pairTeams(G) {
+// 準備階段就先排好下一場的配對（藏在 G.nextPairs，不會傳給玩家），再給每隊幾個「可能的對手」（真正的對手一定在裡面）
+const NEXT_OPP_CFG = { SOLO: 3, TEAM: 2 }; // 單人混戰顯示 3 個、雙人（4 隊）顯示 2 個
+function planNextOpponents(G) {
+  G.nextPairs = null; G.nextCand = null;
+  const alive = aliveTeams(G); if (alive.length <= 2 || isPve(G.round)) return;
+  const pairs = pairTeams(G, true); G.nextPairs = pairs;
+  const opp = {}; for (const [a, b, gh] of pairs) { opp[a] = b; if (!gh) opp[b] = a; }
+  const n = G.solo ? NEXT_OPP_CFG.SOLO : NEXT_OPP_CFG.TEAM; G.nextCand = {};
+  for (const t of alive) {
+    const others = alive.filter(x => x !== t && x !== opp[t]);
+    for (let i = others.length - 1; i > 0; i--) { const j = G.rng(i + 1); [others[i], others[j]] = [others[j], others[i]]; }
+    const c = [opp[t]].concat(others.slice(0, Math.max(0, n - 1))).filter(x => x !== undefined);
+    for (let i = c.length - 1; i > 0; i--) { const j = G.rng(i + 1); [c[i], c[j]] = [c[j], c[i]]; }
+    G.nextCand[t] = c;
+  }
+}
+function pairTeams(G, planOnly) {
+  if (!planOnly && G.nextPairs && G.nextPairs.every(([a, b]) => !G.teams[a].out && !G.teams[b].out)) { const best = G.nextPairs; G.nextPairs = null; for (const [p, q, gh] of best) { G.lastOpp[p] = q; if (!gh) G.lastOpp[q] = p; } return best; }
   const alive = aliveTeams(G);
   if (alive.length === 2) { G.lastOpp[alive[0]] = alive[1]; G.lastOpp[alive[1]] = alive[0]; return [[alive[0], alive[1], false]]; }
   let best = null, bestBad = 99;
@@ -1639,7 +1667,7 @@ function pairTeams(G) {
     const bad = pairs.filter(([p, q, gh]) => !gh && G.lastOpp[p] === q).length;
     if (bad < bestBad) { best = pairs; bestBad = bad; if (!bad) break; }
   }
-  for (const [p, q, gh] of best) { G.lastOpp[p] = q; if (!gh) G.lastOpp[q] = p; }
+  if (!planOnly) for (const [p, q, gh] of best) { G.lastOpp[p] = q; if (!gh) G.lastOpp[q] = p; }
   return best;
 }
 // 淘汰：血量歸零的隊伍出局，依血量決定名次；剩 1 隊（或回合上限）時結束
@@ -2152,7 +2180,8 @@ const LOOT_CFG = { EARLY_GOLD: 1, MAT: 40, GOLD: 30, UNIT: 18, GOLD_MIN: 2, GOLD
 function rollLoot(G, R, win) {
   if (R <= 3) return [{ type: 'mat', k: Object.keys(MATS)[G.rng(6)] }].concat(R === 3 && LOOT_CFG.EARLY_GOLD ? [{ type: 'gold', n: LOOT_CFG.EARLY_GOLD }] : []);
   if (win === false) return LOOT_CFG.LOSE_GOLD ? [{ type: 'gold', n: LOOT_CFG.LOSE_GOLD }] : [];
-  const out = [], st = stageOf(R), C = LOOT_CFG, r = G.rng(100);
+  const out = isBoss(R) ? [{ type: 'mat', k: Object.keys(MATS)[G.rng(6)] }] : [], // 打贏魔王多一個材料
+    st = stageOf(R), C = LOOT_CFG, r = G.rng(100);
   if (r < C.MAT) out.push({ type: 'mat', k: Object.keys(MATS)[G.rng(6)] });
   else if (r < C.MAT + C.GOLD) out.push({ type: 'gold', n: C.GOLD_MIN + G.rng(C.GOLD_MAX - C.GOLD_MIN + 1) });
   else if (r < C.MAT + C.GOLD + C.UNIT) { const ks = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost <= Math.min(5, st) && G.pool[k] > 0); if (ks.length) out.push({ type: 'unit', k: ks[G.rng(ks.length)] }); else out.push({ type: 'gold', n: C.GOLD_MIN }); }
@@ -2211,7 +2240,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'http://localhost:8123', 'http://127.0.0.1:8123'],
-  VERSION: '0.12.9',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.12.10',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）
@@ -2513,7 +2542,7 @@ export class Room extends DurableObject {
     if (this.snapAcc >= SV.SNAP_MS) {
       this.snapAcc = 0;
       const log = G.log.slice(this.logSent || 0);
-      const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input') ? undefined : v);
+      const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input' || k === 'nextPairs') ? undefined : v); // nextPairs：下一場真正的配對，不能讓玩家看到
       // 只有內容真的變了才送（倒數計時與戰鬥進度每格都在變，比對時不算；客人自己會倒數），另外每隔一段時間保底送一次校正
       const cmp = s.replace(/"(timer|acc)":-?[0-9.e+-]+/g, '');
       if (cmp !== this.lastSnap || log.length || now - (this.snapAt || 0) >= SV.SNAP_KEEPALIVE_MS) { this.lastSnap = cmp; this.snapAt = now; this.bcast({ k: 'snap', s, log, logFrom: this.logSent || 0 }); this.logSent = G.log.length; }

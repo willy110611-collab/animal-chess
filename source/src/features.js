@@ -46,6 +46,7 @@ function featuresBoot() {
   $('cmdbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (!b) return; const r = actMe({ t: 'cmd', type: b.dataset.cmd }); if (r !== 'ok') { toast(ERR[r] || '現在不能下指令'); sfx('error'); } });
   // 大廳按鈕
   $('btnLadder').onclick = () => openLadder();
+  $('btnStats').onclick = () => openStats(); $('btnQuest').onclick = () => openQuests();
   $('btnPlay').onclick = () => openModes();
   $('btnSettings').onclick = () => openSettings();
   $('btnAcc').onclick = () => openAccount();
@@ -83,10 +84,12 @@ function featuresPhase(ph) {
   } else if (ph === 'result') {
     $('cmdbar').hidden = true;
     const r = G.lastResult, t = myTeam();
+    if (r.pve && r.win[t] && isBoss(G.round)) questEvent('boss');
     if (r.win[t]) { sfx('win'); avatarMood('win'); } else if (!r.pve) { sfx('lose'); avatarMood('sad'); } else sfx('coin');
     renderMeter(true);
     if (r.ark) toast('最後的方舟：這次敗北不扣血', 2000);
   } else if (ph === 'over') {
+    recordMatch();
     PROFILE.games++; const win = G.winner === myTeam(); if (win) PROFILE.wins++;
     const prism = G.players[ME].augs.filter(a => AUG[a].tier === 3).length;
     saveProfile();
@@ -103,6 +106,7 @@ function featuresPhase(ph) {
 function featuresFrame(dt) {
   if (!G) return;
   const now = performance.now();
+  recordMatch(); tutFrame();
   // 選擇視窗：傳送門、選秀、隊長抉擇
   const P = G.players[ME];
   if (G.portalVote && !P.vote) showPortal();
@@ -170,8 +174,8 @@ function featuresLog(L) {
     case 'emote': showEmote(L); break;
     case 'buy': if (mine) sfx('buy'); break;
     case 'sell': if (mine) sfx('sell'); break;
-    case 'reroll': if (mine) sfx('reroll'); break;
-    case 'merge': if (mine) { sfx('star'); if (L.star >= 3) { PROFILE.three++; saveProfile(); unlockSkin('snow'); setTimeout(() => banner(`進化！${EVOLVE[L.key] || ''}`, '生命攻擊 +20%、技能 +30%', 'win'), 600); } } break;
+    case 'reroll': if (mine) { sfx('reroll'); questEvent('roll'); } break;
+    case 'merge': if (mine) { sfx('star'); if (L.star >= 3) { PROFILE.three++; saveProfile(); unlockSkin('snow'); questEvent('three'); setTimeout(() => banner(`進化！${EVOLVE[L.key] || ''}`, '生命攻擊 +20%、技能 +30%', 'win'), 600); } } break;
     case 'aug': if (mine) sfx('aug'); break;
     case 'craft': case 'equip': if (mine) sfx('coin'); break;
     case 'portal': { const p = PORTALS.find(x => x.id === L.id); banner(`傳送門：${p.name}`, p.desc); sfx('aug'); break; }
@@ -527,11 +531,12 @@ function openRules() {
 function openCollection(focus) {
   const keys = Object.keys(ANIMALS);
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>收藏與造型</h2>
-    <p>已玩 ${PROFILE.games} 場・勝 ${PROFILE.wins} 場・做出 3 星 ${PROFILE.three} 次</p>
+    <p>已玩 ${PROFILE.games} 場・勝 ${PROFILE.wins} 場・做出 3 星 ${PROFILE.three} 次・造型碎片 <b>${PROFILE.shards || 0}</b></p>
     ${eggPanel()}
-    <div class="skinrules">${Object.keys(SKINS).map(id => `<span class="${PROFILE.unlocked[id] ? 'ok' : ''}"><b>${SKINS[id].name}</b>${PROFILE.unlocked[id] ? '已解鎖' : SKIN_RULE[id]}</span>`).join('')}</div>
+    <div class="skinrules">${Object.keys(SKINS).map(id => `<span class="${PROFILE.unlocked[id] ? 'ok' : ''}"><b>${SKINS[id].name}</b>${PROFILE.unlocked[id] ? '已解鎖' : SKIN_RULE[id] + `<button class="btn shardbtn" data-shard="${id}">碎片 ${QUEST_CFG.SKIN_COST} 解鎖</button>`}</span>`).join('')}</div>
     <div class="coll">${keys.map(k => { const cur = skinOf(k) || 'base'; return `<div class="citem"><img src="${PORT[k]}" alt="" style="filter:${SKIN_CSS[cur]}"><b>${ANIMALS[k].name}</b><div class="cskins">${Object.keys(SKINS).map(id => `<button data-skin="${k}:${id}" class="${cur === id ? 'on' : ''}" ${PROFILE.unlocked[id] ? '' : 'disabled'} title="${SKINS[id].name}" style="background:${SKINS[id].tint}"></button>`).join('')}</div></div>`; }).join('')}</div>`;
   $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('panel').querySelectorAll('[data-shard]').forEach(b => b.onclick = () => shardUnlock(b.dataset.shard));
   $('panel').querySelector('.coll').onclick = e => { const b = e.target.closest('[data-skin]'); if (!b || b.disabled) return; const [k, id] = b.dataset.skin.split(':'); PROFILE.skinSel[k] = id === 'base' ? undefined : id; saveProfile(); sfx('click'); openCollection(); };
 }
 
@@ -541,7 +546,9 @@ let INSTALL_SHOW = false, INSTALL_FN = null;
 // ---- 大廳：模式選單與設定 ----
 function openModes() {
   const online = !netBlocked();
+  let tutDone = false; try { tutDone = !!localStorage.getItem('zoo_tutmatch'); } catch (e) {}
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>選擇模式</h2><div class="modes">
+    <button class="btn ${tutDone ? '' : 'primary'} tutbtn" data-mode="tutorial"><b>新手教學局</b><small>${tutDone ? '再練一次：升星、羈絆、裝備（3 回合）' : '第一次玩推薦！3 回合學會升星、羈絆、裝備'}</small></button>
     <div><h3>練習 <small>跟電腦打，不計分</small></h3>
     <div class="ltabs ailv"><span>電腦強度</span>${[['easy', '簡單'], ['normal', '普通'], ['hard', '困難']].map(([k, n]) => `<button class="btn ${(loadRules().aiLevel || 'normal') === k ? 'on' : ''}" data-ailv="${k}">${n}</button>`).join('')}</div>
     <div class="mgrid">
@@ -564,7 +571,8 @@ function openModes() {
   $('panel').querySelectorAll('[data-ailv]').forEach(b => b.onclick = () => { const r = loadRules(); r.aiLevel = b.dataset.ailv; saveRules(r); $('panel').querySelectorAll('[data-ailv]').forEach(x => x.classList.toggle('on', x === b)); });
   $('panel').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
     const m = b.dataset.mode; $('overlay').hidden = true;
-    if (m === 'p-solo') { ME = 0; netReset(); newGame(8, true); }
+    if (m === 'tutorial') startTutorialMatch();
+    else if (m === 'p-solo') { ME = 0; netReset(); newGame(8, true); }
     else if (m === 'p-duel') { ME = 0; netReset(); newGame(2, true); }
     else if (m === 'p-duo') { ME = 0; netReset(); newGame(2); }
     else if (m === 'p-duo8') { ME = 0; netReset(); newGame(4); }

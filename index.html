@@ -129,6 +129,10 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team.stand .sstk.win { background: #ff7a1a; color: #fff; } .team.stand .sstk.lose { background: #5a7fb0; color: #fff; }
 .team.stand .svs svg { width: 14px; height: 14px; display: block; }
 .team.stand .srow.opp { box-shadow: inset 0 0 0 1px rgba(255,138,106,.7); }
+.team.stand .srow.cand { box-shadow: inset 0 0 0 1px rgba(255,211,77,.55); } .team.stand .scand { font-size: 10px; font-weight: 900; width: 14px; height: 14px; border-radius: 50%; display: grid; place-items: center; background: #f2c14e; color: #5a3010; }
+.nopp { background: #fff8ec; border-radius: 12px; padding: 8px 10px; margin: 8px 0; } .nopp .nh { display: flex; align-items: center; gap: 6px; } .nopp .nh small { color: var(--ink-soft); } .nopp .nh .btn { margin-left: auto; padding: 4px 10px; font-size: 12px; }
+.nopp .nu { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; } .nopp .nu span { position: relative; width: 40px; height: 40px; border-radius: 8px; background: #efe2cc; box-shadow: inset 0 0 0 2px var(--cc); overflow: hidden; } .nopp .nu img { width: 100%; height: 100%; }
+.nopp .nu i { position: absolute; left: 0; right: 0; bottom: 0; font-style: normal; font-size: 8px; text-align: center; color: #ffd34d; background: rgba(43,28,22,.7); line-height: 10px; }
 .team.stand .srow:hover { background: rgba(255,255,255,.08); }
 .team.stand .srow em { font-style: normal; font-size: 9px; opacity: .65; text-align: right; }
 .team.stand .srow b, .team.stand .spair b { font-size: 12px; font-family: var(--f-display); font-variant-numeric: tabular-nums; }
@@ -493,6 +497,16 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team.onfire::after { padding-left: 16px; background: #ff7a1a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M6 0C6.6 2.6 10 4.2 10 8.2A4 4 0 0 1 2 8.2C2 6.4 3 5.4 3.6 4.6 3.8 6 4.6 6.8 5.4 7 5 4.6 5.4 2.2 6 0Z' fill='%23ffe08a'/%3E%3Cpath d='M6 6.4C6.4 7.8 8 8.6 8 10.2A2 2 0 0 1 4 10.2C4 9.2 4.6 8.6 5 8.2 5.2 8.8 5.6 9.2 6 9.2 5.8 8.2 5.8 7.2 6 6.4Z' fill='%23fff7d6'/%3E%3C/svg%3E") no-repeat 5px 50% / 9px 11px; }
 .team.cold::after { background: #5a7fb0; }
 .lobby-btns .btn.big { font-size: 20px; padding: 16px; }
+.lobby-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modes .tutbtn { width: 100%; display: grid; gap: 2px; padding: 10px 12px; margin-bottom: 10px; text-align: left; } .modes .tutbtn small { font-size: 12px; opacity: .85; }
+.stsum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; margin: 6px 0 10px; } .stsum span { background: #fff8ec; border-radius: 10px; padding: 6px 2px; font-size: 11px; } .stsum b { display: block; font-size: 20px; font-family: var(--f-display); }
+.sttab { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6px; } .sttab th, .sttab td { padding: 4px 6px; border-bottom: 1px solid #eadcc4; text-align: left; } .sttab img.mini { width: 22px; height: 22px; vertical-align: middle; }
+.sanis { display: flex; flex-wrap: wrap; gap: 8px; } .sani { display: grid; justify-items: center; width: 64px; font-size: 12px; } .sani img { width: 48px; height: 48px; } .sani small { font-size: 10px; color: var(--ink-soft); }
+.quest { display: grid; grid-template-columns: 1fr 90px 50px; gap: 8px; align-items: center; background: #fff8ec; border-radius: 10px; padding: 8px 10px; margin: 6px 0; } .quest small { display: block; font-size: 11px; color: var(--ink-soft); } .quest.ok { background: #e8f8dc; }
+.qbar { height: 6px; border-radius: 3px; background: #e6d8c2; overflow: hidden; } .qbar i { display: block; height: 100%; background: linear-gradient(90deg, #f2c14e, #e08a2c); } .quest span { font-size: 12px; font-weight: 800; text-align: right; }
+.shardbtn { display: block; margin-top: 4px; padding: 2px 8px; font-size: 11px; }
+#coach { position: absolute; left: 50%; top: 84px; transform: translateX(-50%); z-index: 9; width: min(360px, calc(100% - 24px)); background: rgba(255,248,230,.97); color: var(--ink); border-radius: 14px; padding: 10px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.35); border: 2px solid var(--gold-2); }
+#coach b { font-size: 12px; color: #a86a10; } #coach p { margin: 4px 0 6px; font-size: 14px; line-height: 1.5; } #coach .btn { padding: 3px 10px; font-size: 11px; }
 .acchip { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); background: rgba(43,28,22,.55); color: var(--paper); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: 13px; display: flex; gap: 6px; align-items: center; }
 #lobby { position: relative; }
 .modes { display: grid; gap: 14px; }
@@ -639,6 +653,7 @@ var m='載入中';window.LD={set:function(p,msg){t=Math.max(t,p);if(msg)m=msg;},
     <div class="lobby-btns">
       <button class="btn primary big" id="btnPlay">開始遊戲</button>
       <button class="btn" id="btnLadder">天梯排行</button>
+      <div class="lobby-two"><button class="btn" id="btnStats">個人戰績</button><button class="btn" id="btnQuest">每日任務</button></div>
       <button class="btn moss" id="btnSettings">設定</button>
       <span class="note" id="loadNote"></span>
     </div>
@@ -759,7 +774,7 @@ const ANIMALS = {
     hp: 1080, atk: 72, ai: 22, rng: 1, arm: 40, mr: 40, mana: 100, sm: 0, mv: 10,
     skill: '起床氣', desc: '開場睡覺，每秒回 5% 生命、能量 +10。被打掉 15% 生命或能量滿時醒來，攻擊 +80% 持續 5 秒。樹格回血加倍。' },
   cheetah: { name: '獵豹', cost: 3, traits: ['savanna'], role: '刺客',
-    hp: 720, atk: 74, ai: 14, rng: 1, arm: 25, mr: 20, mana: 80, sm: 0, mv: 4,
+    hp: 720, atk: 67, ai: 14, rng: 1, arm: 25, mr: 20, mana: 80, sm: 0, mv: 4,
     skill: '疾馳撲殺', desc: '移動極快。連續攻擊同一目標每次攻速 +8%（最多 5 層）。技能：衝向血最少的敵人 300 物理傷害。' },
   octopus: { name: '章魚', cost: 4, traits: ['water', 'night'], role: '控制法師',
     hp: 920, atk: 58, ai: 20, rng: 3, arm: 25, mr: 40, mana: 80, sm: 20, mv: 8,
@@ -796,13 +811,13 @@ const ANIMALS = {
     hp: 1280, atk: 76, ai: 24, rng: 1, arm: 45, mr: 40, mana: 100, sm: 40, mv: 9,
     skill: '捶胸震地', desc: '捶胸嘲諷 2 格內敵人 2.5 秒，獲得 18% 生命護盾，再雙拳砸地，周圍 1 格 200 魔法傷害。' },
   whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor'], role: '坦／法師',
-    hp: 2000, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
+    hp: 1850, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
     skill: '潮汐巨浪', desc: '噴出巨浪，沿自己左右各 1 格寬的直線橫掃全場：敵人 260 魔法傷害並暈 1 秒，友軍回復 15% 生命。' },
   peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest'], role: '輔助',
     hp: 1350, atk: 95, ai: 20, rng: 3, arm: 30, mr: 40, mana: 100, sm: 30, mv: 8,
     skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
   komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor'], role: '戰士',
-    hp: 1520, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
+    hp: 1440, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
     skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 20% 生命。' },
 };
 
@@ -811,6 +826,7 @@ const EXTRA = {
   minibee: { name: '小蜂', cost: 0, traits: [], hp: 160, atk: 22, ai: 14, rng: 1, arm: 10, mr: 10, mana: 999, sm: 0, mv: 5 },
   hare: { name: '野兔', cost: 0, traits: [], hp: 300, atk: 22, ai: 20, rng: 1, arm: 10, mr: 10, mana: 999, sm: 0, mv: 6 },
   boar: { name: '野豬', cost: 0, traits: [], hp: 900, atk: 45, ai: 24, rng: 1, arm: 35, mr: 25, mana: 999, sm: 0, mv: 8 },
+  kingboar: { name: '野豬王', cost: 0, traits: [], hp: 8000, atk: 240, ai: 21, rng: 1, arm: 95, mr: 85, mana: 100, sm: 30, mv: 9, skill: '震地', desc: '用力踏地，2 格內的敵人受到魔法傷害並暈眩。' }, // 魔王（第 3 階段起的野生回合）
 };
 
 const TRAITS = {
@@ -901,9 +917,10 @@ const PVE = {
   2: [['hare', 1, 3], ['hare', 3, 3], ['hare', 5, 3]],
   3: [['boar', 2, 3], ['boar', 4, 3]],
   8: [['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3], ['hare', 2, 1], ['hare', 4, 1]],
-  13: [['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3], ['boar', 2, 2], ['boar', 4, 2], ['hare', 3, 0]],
-  18: [['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3], ['boar', 1, 2], ['boar', 3, 2], ['boar', 5, 2]],
-  23: [['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3], ['boar', 1, 2], ['boar', 3, 2], ['boar', 5, 2], ['boar', 3, 1]],
+  // 第 3 階段起：魔王回合（野豬王＋小弟）
+  13: [['kingboar', 3, 2], ['boar', 1, 3], ['boar', 5, 3], ['hare', 3, 3]],
+  18: [['kingboar', 3, 2], ['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3]],
+  23: [['kingboar', 2, 2], ['kingboar', 4, 2], ['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3]],
 };
 const PVE_STAR = { 1: 1, 2: 1, 3: 1, 8: 2, 13: 2, 18: 3, 23: 3 };
 
@@ -1096,7 +1113,8 @@ function createBattle(input) {
   for (const s of input.units) {
     let c = s.c, r = s.r;
     if (B.grid[idx(c, r)] !== -1 || B.terrain[idx(c, r)] === 'rock') { const f = freeNear(B, c, r, null); if (!f) continue; c = f[0]; r = f[1]; } // 前線爭奪等情況撞格時往旁邊挪
-    spawn(B, s.key, s.star, s.owner, s.team, c, r, s.items || [], false).uid = s.uid;
+    const nu = spawn(B, s.key, s.star, s.owner, s.team, c, r, s.items || [], false); nu.uid = s.uid;
+    if (s.mul) { nu.maxhp = Math.floor(nu.maxhp * s.mul / 100); nu.atk = Math.floor(nu.atk * s.mul / 100); } // 魔王依回合變強
   }
   for (const n of input.neutrals || []) if (B.grid[idx(n.c, n.r)] === -1 && B.terrain[idx(n.c, n.r)] !== 'rock') { const x = spawn(B, n.key, 1, -2, 2, n.c, n.r, [], false); x.maxhp = x.hp = n.hp || x.maxhp; }
   applyTraits(B);
@@ -1506,6 +1524,10 @@ function cast(B, u) {
       B.ev.push({ k: 'proj', id: u.id, tg: low.id, s: 'owl' });
       damage(B, u, low, sk(350), 'phys', { skill: 1, crit: 1 });
       break; }
+    case 'kingboar': // 魔王：震地
+      for (const e of es) if (dist(e, u) <= 2) { stun(B, e, 25); damage(B, u, e, sk(150), 'magic', { skill: 1 }); }
+      B.ev.push({ k: 'shake', id: u.id });
+      break;
     case 'elephant':
       for (const e of es) if (dist(e, u) <= 2) { stun(B, e, 30); damage(B, u, e, sk(220), 'magic', { skill: 1 }); }
       B.ev.push({ k: 'shake', id: u.id });
@@ -1880,6 +1902,9 @@ function battleCommand(B, owner, type) {
 
 // ===== 對局流程：經濟、卡池、升星、送禮、回合、AI =====
 const isPve = R => R <= 3 || (R - 3) % 5 === 0;
+const isBoss = R => isPve(R) && R >= 13; // 第 3 階段起的野生回合是魔王
+const BOSS_CFG = { STAR: 2, MUL: { 13: 100, 18: 320, 23: 300 }, MUL_STEP: 80 }; // 魔王星數；各回合生命攻擊倍率（%），之後每 5 回合 +MUL_STEP
+const bossMul = R => BOSS_CFG.MUL[R] || (BOSS_CFG.MUL[23] + Math.floor((R - 23) / 5) * BOSS_CFG.MUL_STEP); // 魔王固定幾星（強度主要調 data.js 的 EXTRA.kingboar）
 const stageOf = R => R <= 3 ? 1 : 2 + Math.floor((R - 4) / 5);
 const stageStart = R => R === 1 || (R >= 4 && (R - 4) % 5 === 0);
 // team 本地座標（自己半場 r0 後排 → r3 前排）↔ 全場座標
@@ -2264,6 +2289,7 @@ function startPrep(G) {
   if (G.rules.augments && CFG.AUG_ROUNDS.includes(R)) offerAugments(G);
   if (G.rules.carousel && CFG.CAROUSEL_ROUNDS.includes(R)) startDraft(G);
   G.phase = 'prep'; G.timer = G.rules.prepSec * 1000;
+  planNextOpponents(G);
   // AI 行動順序每回合輪替，避免某一隊總是先搶卡池
   const order = G.players.map(p => p.id); for (let i = 0; i < G.round % 4; i++) order.push(order.shift());
   for (const id of order) if (G.players[id].ai && !G.players[id].out) aiPrep(G, id);
@@ -2300,7 +2326,7 @@ function startCombat(G) {
   if (isPve(R)) {
     for (const team of aliveTeams(G)) {
       const units = battleUnitsForTeam(G, team, 0);
-      for (const [key, c, r] of pveOf(R)) { const [gc, gr] = toGlobal(1, c, r); units.push({ key, star: PVE_STAR[R] || 3, owner: -1, team: 1, c: gc, r: gr, items: [] }); }
+      for (const [key, c, r] of pveOf(R)) { const [gc, gr] = toGlobal(1, c, r); units.push({ key, star: key === 'kingboar' ? BOSS_CFG.STAR : PVE_STAR[R] || 3, mul: key === 'kingboar' ? bossMul(R) : 0, owner: -1, team: 1, c: gc, r: gr, items: [] }); }
       const input = { seed: seed + team, terrain: terrainFor(G, team), height: heightFor(G, team), units, pve: true, aug: augMap(G), low: lowMap(G), flags: battleFlags(G), weather: G.weather };
       G.battles.push({ teams: [team, -1], input: JSON.parse(JSON.stringify(input)), B: createBattle(input) });
     }
@@ -2317,7 +2343,24 @@ function startCombat(G) {
 }
 function combatDone(G) { return G.battles.every(b => b.B.over); }
 // 對戰配對：2 隊就是 0 對 1；4 隊每回合隨機配對、盡量不連續打同一隊；剩奇數隊時有一隊打「幽靈」（別隊的複製，輸贏不影響對方）
-function pairTeams(G) {
+// 準備階段就先排好下一場的配對（藏在 G.nextPairs，不會傳給玩家），再給每隊幾個「可能的對手」（真正的對手一定在裡面）
+const NEXT_OPP_CFG = { SOLO: 3, TEAM: 2 }; // 單人混戰顯示 3 個、雙人（4 隊）顯示 2 個
+function planNextOpponents(G) {
+  G.nextPairs = null; G.nextCand = null;
+  const alive = aliveTeams(G); if (alive.length <= 2 || isPve(G.round)) return;
+  const pairs = pairTeams(G, true); G.nextPairs = pairs;
+  const opp = {}; for (const [a, b, gh] of pairs) { opp[a] = b; if (!gh) opp[b] = a; }
+  const n = G.solo ? NEXT_OPP_CFG.SOLO : NEXT_OPP_CFG.TEAM; G.nextCand = {};
+  for (const t of alive) {
+    const others = alive.filter(x => x !== t && x !== opp[t]);
+    for (let i = others.length - 1; i > 0; i--) { const j = G.rng(i + 1); [others[i], others[j]] = [others[j], others[i]]; }
+    const c = [opp[t]].concat(others.slice(0, Math.max(0, n - 1))).filter(x => x !== undefined);
+    for (let i = c.length - 1; i > 0; i--) { const j = G.rng(i + 1); [c[i], c[j]] = [c[j], c[i]]; }
+    G.nextCand[t] = c;
+  }
+}
+function pairTeams(G, planOnly) {
+  if (!planOnly && G.nextPairs && G.nextPairs.every(([a, b]) => !G.teams[a].out && !G.teams[b].out)) { const best = G.nextPairs; G.nextPairs = null; for (const [p, q, gh] of best) { G.lastOpp[p] = q; if (!gh) G.lastOpp[q] = p; } return best; }
   const alive = aliveTeams(G);
   if (alive.length === 2) { G.lastOpp[alive[0]] = alive[1]; G.lastOpp[alive[1]] = alive[0]; return [[alive[0], alive[1], false]]; }
   let best = null, bestBad = 99;
@@ -2328,7 +2371,7 @@ function pairTeams(G) {
     const bad = pairs.filter(([p, q, gh]) => !gh && G.lastOpp[p] === q).length;
     if (bad < bestBad) { best = pairs; bestBad = bad; if (!bad) break; }
   }
-  for (const [p, q, gh] of best) { G.lastOpp[p] = q; if (!gh) G.lastOpp[q] = p; }
+  if (!planOnly) for (const [p, q, gh] of best) { G.lastOpp[p] = q; if (!gh) G.lastOpp[q] = p; }
   return best;
 }
 // 淘汰：血量歸零的隊伍出局，依血量決定名次；剩 1 隊（或回合上限）時結束
@@ -2841,7 +2884,8 @@ const LOOT_CFG = { EARLY_GOLD: 1, MAT: 40, GOLD: 30, UNIT: 18, GOLD_MIN: 2, GOLD
 function rollLoot(G, R, win) {
   if (R <= 3) return [{ type: 'mat', k: Object.keys(MATS)[G.rng(6)] }].concat(R === 3 && LOOT_CFG.EARLY_GOLD ? [{ type: 'gold', n: LOOT_CFG.EARLY_GOLD }] : []);
   if (win === false) return LOOT_CFG.LOSE_GOLD ? [{ type: 'gold', n: LOOT_CFG.LOSE_GOLD }] : [];
-  const out = [], st = stageOf(R), C = LOOT_CFG, r = G.rng(100);
+  const out = isBoss(R) ? [{ type: 'mat', k: Object.keys(MATS)[G.rng(6)] }] : [], // 打贏魔王多一個材料
+    st = stageOf(R), C = LOOT_CFG, r = G.rng(100);
   if (r < C.MAT) out.push({ type: 'mat', k: Object.keys(MATS)[G.rng(6)] });
   else if (r < C.MAT + C.GOLD) out.push({ type: 'gold', n: C.GOLD_MIN + G.rng(C.GOLD_MAX - C.GOLD_MIN + 1) });
   else if (r < C.MAT + C.GOLD + C.UNIT) { const ks = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost <= Math.min(5, st) && G.pool[k] > 0); if (ks.length) out.push({ type: 'unit', k: ks[G.rng(ks.length)] }); else out.push({ type: 'gold', n: C.GOLD_MIN }); }
@@ -3238,6 +3282,15 @@ const BUILD = {
     for (let i = 0; i < 6; i++) R.head.add(mesh(GEO.cone, R.M('#4e3628'), [0, 0.43 - i * 0.03, -0.05 - i * 0.06], [0.03, 0.09, 0.03], [-0.5 - i * 0.2, 0, 0]));
   },
 };
+// 魔王：野豬王（野豬加金冠、大獠牙）
+BUILD.kingboar = function (R) {
+  BUILD.boar(R);
+  const crown = grp(R.head); crown.position.set(0, 0.42, 0);
+  crown.add(mesh(GEO.cyl, R.M('#f2c14e'), [0, 0, 0], [0.16, 0.05, 0.16]));
+  for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; crown.add(mesh(GEO.cone, R.M('#ffd34d'), [Math.cos(a) * 0.14, 0.07, Math.sin(a) * 0.14], [0.035, 0.08, 0.035])); }
+  crown.add(mesh(GEO.sph, R.M('#d9483a'), [0, 0.03, 0.16], 0.03));
+  for (const s of [-1, 1]) R.head.add(mesh(GEO.cone, R.M('#fff6e0'), [s * 0.13, 0.1, 0.27], [0.035, 0.16, 0.035], [0.3, 0, -s * 0.6]));
+};
 // ---- v0.5 新動物 ----
 Object.assign(BUILD, {
   penguin(R) {
@@ -3555,6 +3608,7 @@ const ACT = {
   },
   hare: { atk: { dur: 0.45, hit: 0.55, fx: 'kick', fn(R, p) { hopUp(R, p, 0.25); R.legL.rotation.x -= 1.5 * bell(p, 0.35, 0.8); R.legR.rotation.x -= 1.5 * bell(p, 0.35, 0.8); R.body.position.z += 0.25 * bell(p, 0.2, 0.9); } } },
   boar: { atk: { dur: 0.5, hit: 0.6, fx: 'bump', fn(R, p) { R.body.position.z -= 0.12 * bell(p, 0, 0.45); lunge(R, p, 0.45, 0.4); R.head.rotation.x += 0.4 * bell(p, 0.45, 0.85); } } },
+  kingboar: { atk: { dur: 0.55, hit: 0.6, fx: 'headbutt', fn(R, p) { R.body.position.z -= 0.15 * bell(p, 0, 0.45); lunge(R, p, 0.5, 0.45); R.head.rotation.x += 0.5 * bell(p, 0.45, 0.85); } }, skill: { dur: 1.1, hit: 0.55, fx: 'stomp', fn(R, p) { const up = bell(p, 0, 0.55); R.body.rotation.x -= 0.6 * up; R.body.position.y += 0.35 * up; R.head.rotation.x -= 0.4 * up; } } },
 };
 
 // ---- v0.5 新動物動作 ----
@@ -3662,7 +3716,7 @@ const ART_SCALE = { 0: 1.0, 1: 1.0, 2: 1.07, 3: 1.14, 4: 1.22, 5: 1.32 };
 function animalScale(key, star) {
   const A = ANIMALS[key] || EXTRA[key];
   let s = ART_SCALE[A.cost] || 0.95;
-  if (key === 'boar') s = 1.15; if (key === 'minibee') s = 1.1;
+  if (key === 'boar') s = 1.15; if (key === 'minibee') s = 1.1; if (key === 'kingboar') s = 1.85;
   return s * (1 + (star - 1) * 0.08);
 }
 
@@ -4942,7 +4996,7 @@ function prepList() {
   }
   G.players[ME].bench.forEach((u, i) => { if (!u) return; const [x, z] = benchWorld(i), st = unitStats(u); list.push({ k: 'u' + u.uid, key: u.key, items: u.items, star: u.star, color: ownerColor(ME), x, z, hp: st.hp, maxhp: st.hp, mana: st.sm, manaMax: ANIMALS[u.key].mana, skin: skinOf(u.key) }); });
   oppBenchList(list);
-  if (pve) pveOf(G.round).forEach(([key, c, r], i) => { const [gc, gr] = toGlobal(1 - vt === 1 ? 1 : 0, c, r); const [vc, vr] = [CFG.COLS - 1 - c, CFG.ROWS - 1 - r]; const [x, z] = cellWorld(vc, vr); const st = unitStats({ key, star: PVE_STAR[G.round] || 3, items: [] }); list.push({ k: 'pw' + i, key, star: PVE_STAR[G.round] || 3, enemy: true, x, z, hp: st.hp, maxhp: st.hp }); });
+  if (pve) pveOf(G.round).forEach(([key, c, r], i) => { const [gc, gr] = toGlobal(1 - vt === 1 ? 1 : 0, c, r); const [vc, vr] = [CFG.COLS - 1 - c, CFG.ROWS - 1 - r]; const [x, z] = cellWorld(vc, vr); const st = unitStats({ key, star: key === 'kingboar' ? BOSS_CFG.STAR : PVE_STAR[G.round] || 3, items: [] }); list.push({ k: 'pw' + i, key, star: PVE_STAR[G.round] || 3, enemy: true, x, z, hp: st.hp, maxhp: st.hp }); });
   return list;
 }
 function renderPrep() {
@@ -4992,6 +5046,15 @@ function leaveToLobby(pick) {
   else { G = null; for (const k in S3.V) s3Remove(k); $('game').hidden = true; $('lobby').hidden = false; }
   $('overlay').hidden = true; const am = $('augModal'); if (am) am.hidden = true; const m2 = $('modal2'); if (m2) m2.hidden = true;
   if (pick) setTimeout(() => { const b = $('btnPlay'); if (b) b.click(); }, 60);
+}
+// 下一場可能的對手：每隊的陣容縮圖（場上的動物，貴的、星高的排前面）
+function openNextOpp() {
+  const t = myTeam(), cand = (G.nextCand && G.nextCand[t]) || [];
+  const comp = team => Object.values(G.board).filter(u => G.players[u.owner].team === team).sort((a, b) => (ANIMALS[b.key].cost * 10 + b.star) - (ANIMALS[a.key].cost * 10 + a.star));
+  const rows = cand.map(c => { const T = G.teams[c], us = comp(c); return `<div class="nopp"><div class="nh"><i class="dot" style="--c:${teamColor(c)}"></i><b>${esc(teamLabel(c))}</b><small>血 ${Math.max(0, T.hp)}${(T.streak || 0) >= 2 ? `・${T.streak} 連勝` : (T.streak || 0) <= -2 ? `・${-T.streak} 連敗` : ''}</small><button class="btn" data-look="${c}">看棋盤</button></div><div class="nu">${us.map(u => `<span class="s${u.star}" style="--cc:${COST_COL[ANIMALS[u.key].cost]}">${pimg(u.key)}<i>${'★'.repeat(u.star)}</i></span>`).join('') || '<small>場上還沒有棋子</small>'}</div></div>`; }).join('');
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>下一場可能的對手</h2><p class="nethint">真正的對手是其中一隊，開打才知道。</p>${rows}`;
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('panel').querySelectorAll('[data-look]').forEach(b => b.onclick = () => { $('overlay').hidden = true; setScout(+b.dataset.look); });
 }
 // 推薦裝備（依定位）
 const REC_ITEMS = { '坦': ['hardshell', 'thornshell', 'bigacorn'], '遠程': ['galefeather', 'bigstick', 'fang'], '戰士': ['warhammer', 'bigstick', 'honeyacorn'], '法師': ['beeswax', 'morningdew', 'honeypot'], '刺客': ['fang', 'bigstick', 'fogcloak'], '控制': ['morningdew', 'pearl', 'waxshell'], '召喚': ['honeypot', 'morningdew', 'beeswax'], '坦／爆發': ['hardshell', 'warhammer', 'honeyacorn'], '控制法師': ['beeswax', 'morningdew', 'pearl'], '領袖': ['conch', 'moondew', 'bigacorn'], '坦／法師': ['waxshell', 'beeswax', 'hardshell'], '輔助': ['honeypot', 'conch', 'moondew'] };
@@ -5167,13 +5230,14 @@ function hud() {
   const standings = el => {
     const rows = G.teams.map((T, i) => ({ T, i })).sort((a, b) => (a.T.out - b.T.out) || (b.T.hp - a.T.hp) || ((a.T.place || 0) - (b.T.place || 0))), alive = rows.filter(r => !r.T.out).length;
     const maxHp = CFG.TEAM_HP, fighting = i => fight && G.battles.some(b => b.teams.includes(t) && b.teams.includes(i) && i !== t);
-    const head = `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small><button class="stx" aria-label="放大排名">${el.classList.contains('wide') ? '縮小' : '放大'}</button></div>`;
+    const cand = G.phase === 'prep' && G.nextCand ? (G.nextCand[t] || []) : [];
+    const head = `<div class="sthead"><span>排名</span><small>剩 ${alive}/${G.teams.length}</small>${cand.length ? '<button class="stx" data-nopp="1">可能對手</button>' : ''}<button class="stx" aria-label="放大排名">${el.classList.contains('wide') ? '縮小' : '放大'}</button></div>`;
     el.innerHTML = head + rows.map(({ T, i }, n) => { const sk = T.streak || 0, hp = Math.max(0, T.hp);
       const stk = T.out ? '' : sk >= 2 ? `<span class="sstk win">${flameSvg}${sk}</span>` : sk <= -2 ? `<span class="sstk lose">${-sk}</span>` : '';
-      return `<button class="srow ${i === t ? 'me' : ''} ${fighting(i) || (!fight && i === opp) ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}${i === t ? '' : (G.phase === 'prep' ? '（點一下看他們的棋盤）' : '（點一下看他們的戰場）')}">
-        <em>${T.out ? '#' + T.place : n + 1}</em><i class="dot" style="--c:${teamColor(i)}"></i><span class="sm">${nm(i)}<span class="shp"><i style="width:${Math.round(hp / maxHp * 100)}%"></i></span></span>${stk}${fighting(i) || (!fight && i === opp) ? `<span class="svs">${clashSvg('sm')}</span>` : ''}<b>${hp}</b></button>`; }).join('');
+      return `<button class="srow ${cand.includes(i) ? 'cand' : ''} ${i === t ? 'me' : ''} ${fighting(i) || (!fight && i === opp) ? 'opp' : ''} ${i === sc ? 'look' : ''} ${T.out ? 'out' : ''}" data-st="${i}" title="${esc(teamLabel(i))}${i === t ? '' : (G.phase === 'prep' ? '（點一下看他們的棋盤）' : '（點一下看他們的戰場）')}">
+        <em>${T.out ? '#' + T.place : n + 1}</em><i class="dot" style="--c:${teamColor(i)}"></i><span class="sm">${nm(i)}<span class="shp"><i style="width:${Math.round(hp / maxHp * 100)}%"></i></span></span>${stk}${fighting(i) || (!fight && i === opp && !cand.length) ? `<span class="svs">${clashSvg('sm')}</span>` : cand.includes(i) ? '<span class="scand" title="下一場可能的對手">?</span>' : ''}<b>${hp}</b></button>`; }).join('');
   };
-  const hk = G.teams.map(T => T.hp + (T.out ? 'x' : '') + 's' + (T.streak || 0)).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join() + '|' + (fight ? 'f' + G.round : 'p') + '|' + sc;
+  const hk = JSON.stringify(G.phase === 'prep' && G.nextCand ? G.nextCand[t] : 0) + G.teams.map(T => T.hp + (T.out ? 'x' : '') + 's' + (T.streak || 0)).join('|') + '|' + opp + '|' + G.players.map(p => p.level).join() + '|' + (fight ? 'f' + G.round : 'p') + '|' + sc;
   $('stage').classList.toggle('multi', G.teams.length > 2);
   if (hud.k !== hk) { hud.k = hk; team(t, $('teamA')); if (G.teams.length === 2) { $('teamB').classList.remove('stand'); team(1 - t, $('teamB')); } else { $('teamB').classList.add('stand'); standings($('teamB')); } }
   $('clock').classList.toggle('fight', G.phase === 'combat');
@@ -5188,6 +5252,7 @@ function hud() {
   if (G.phase === 'prep') { sec = Math.ceil(Math.max(0, G.timer) / 1000); ph = (isPve(R) ? '野生回合' : '準備') + '・' + ARENAS[G.arena].name; }
   else if (G.phase === 'combat' && cv) { sec = Math.ceil((CFG.COMBAT_MAX_TICK - cv.B.t) / 20); ph = cv.B.t > CFG.OVERTIME_TICK ? '加時！' : '戰鬥'; }
   else if (G.phase === 'result') { sec = Math.ceil(Math.max(0, G.timer) / 1000); ph = '結算'; }
+  if (G.tutorial && G.phase === 'prep') { sec = '教學'; ph = '慢慢來，不倒數'; }
   $('timer').textContent = sec; $('phaseTxt').textContent = ph;
   $('clock').classList.toggle('hurry', G.phase === 'prep' && sec <= 5);
   if (G.phase === 'prep' && sec <= 5 && sec >= 1 && hud.tick !== G.round * 100 + sec) { hud.tick = G.round * 100 + sec; sfx(sec === 1 ? 'tickLast' : 'tick', 200); } // 最後 5 秒滴答
@@ -5388,6 +5453,7 @@ function startCombatView() {
   sel = null; renderSheet(); WATCH = -1;
   const bt = myBattle(); cv = combatViewOf(bt, myTeam());
   MYB = { bt, B: bt.B, vt: cv.vt, mine: bt.teams.includes(myTeam()) };
+  if (MYB.mine) { REC_COMP = cv.B.units.filter(u => u.owner === ME && !u.summon).map(u => u.key); const tc = cv.B['traits' + cv.vt] || {}; questEvent('tier', { max: Math.max(-1, ...Object.values(tc).map(x => x.tier)) }); }
   s3SetTerrain(cv.B.terrain, cv.vt, cv.B.temp, cv.B.height);
   combatSync();
   unitEntrance(cv.B);
@@ -5657,6 +5723,7 @@ function onPhase() {
   const ph = G.phase;
   if (ph !== 'prep' && SCOUT >= 0) { SCOUT = -1; renderScoutBar(); $('stage').classList.remove('scouting'); }
   if (ph === 'prep') {
+    tutPrepHook();
     waitChip(0); cv = null; WATCH = -1; MYB = null; sel = null; S3.nightTarget = 0; SCOUT = -1;
     for (const k in S3.V) if (k[0] === 'b') s3Remove(k);
     processLog(); renderPrep();
@@ -5664,7 +5731,7 @@ function onPhase() {
     banner(`${st}-${G.round - first + 1}　${isPve(G.round) ? '野生回合' : '對戰回合'}`, `${ARENAS[G.arena].name}・準備 ${CFG.PREP_SEC} 秒`);
     const inc = G.players[ME].lastIncome;
     if (inc && G.round > 1) at(0.8, () => showIncome(inc));
-  } else if (ph === 'combat') { startCombatView(); banner(isPve(G.round) ? '野生動物出沒！' : '戰鬥開始！', ''); }
+  } else if (ph === 'combat') { startCombatView(); banner(isBoss(G.round) ? '魔王來襲！' : isPve(G.round) ? '野生動物出沒！' : '戰鬥開始！', isBoss(G.round) ? '野豬王出現了' : ''); }
   else if (ph === 'result') {
     waitChip(0);
     if (!(MYB && MYB.mine && !REPLAY)) roundResultBanner(); // 觀戰或回放：照舊在結算時顯示；自己的戰場由 myBattleDoneCheck 在播完時顯示
@@ -5738,11 +5805,11 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.9'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.10'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
-  $('teamB').addEventListener('click', e => { if (!G) return; if (e.target.closest('.stx')) { $('teamB').classList.toggle('wide'); hud.k = ''; return; } const r = e.target.closest('[data-st]'); const t = r ? +r.dataset.st : G.teams.length === 2 ? 1 - myTeam() : -1; if (G.phase === 'combat' || G.phase === 'result') { if (t >= 0 && !G.teams[t].out && G.battles.length > 1) watchBattle(t === WATCH ? -1 : t); else openScout(); return; } if (G.phase !== 'prep') { openScout(); return; } if (t < 0 || G.teams[t].out) return; setScout(scoutTeam() === t ? myTeam() : t); });
+  $('teamB').addEventListener('click', e => { if (!G) return; if (e.target.closest('[data-nopp]')) { openNextOpp(); return; } if (e.target.closest('.stx')) { $('teamB').classList.toggle('wide'); hud.k = ''; return; } const r = e.target.closest('[data-st]'); const t = r ? +r.dataset.st : G.teams.length === 2 ? 1 - myTeam() : -1; if (G.phase === 'combat' || G.phase === 'result') { if (t >= 0 && !G.teams[t].out && G.battles.length > 1) watchBattle(t === WATCH ? -1 : t); else openScout(); return; } if (G.phase !== 'prep') { openScout(); return; } if (t < 0 || G.teams[t].out) return; setScout(scoutTeam() === t ? myTeam() : t); });
   window.addEventListener('pointermove', e => { onMove(e); onItemMove(e); });
   window.addEventListener('pointerup', e => { onUp(e); onItemUp(e); });
   $('btnHelp').onclick = () => showDex();
@@ -5809,6 +5876,7 @@ function featuresBoot() {
   $('cmdbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (!b) return; const r = actMe({ t: 'cmd', type: b.dataset.cmd }); if (r !== 'ok') { toast(ERR[r] || '現在不能下指令'); sfx('error'); } });
   // 大廳按鈕
   $('btnLadder').onclick = () => openLadder();
+  $('btnStats').onclick = () => openStats(); $('btnQuest').onclick = () => openQuests();
   $('btnPlay').onclick = () => openModes();
   $('btnSettings').onclick = () => openSettings();
   $('btnAcc').onclick = () => openAccount();
@@ -5846,10 +5914,12 @@ function featuresPhase(ph) {
   } else if (ph === 'result') {
     $('cmdbar').hidden = true;
     const r = G.lastResult, t = myTeam();
+    if (r.pve && r.win[t] && isBoss(G.round)) questEvent('boss');
     if (r.win[t]) { sfx('win'); avatarMood('win'); } else if (!r.pve) { sfx('lose'); avatarMood('sad'); } else sfx('coin');
     renderMeter(true);
     if (r.ark) toast('最後的方舟：這次敗北不扣血', 2000);
   } else if (ph === 'over') {
+    recordMatch();
     PROFILE.games++; const win = G.winner === myTeam(); if (win) PROFILE.wins++;
     const prism = G.players[ME].augs.filter(a => AUG[a].tier === 3).length;
     saveProfile();
@@ -5866,6 +5936,7 @@ function featuresPhase(ph) {
 function featuresFrame(dt) {
   if (!G) return;
   const now = performance.now();
+  recordMatch(); tutFrame();
   // 選擇視窗：傳送門、選秀、隊長抉擇
   const P = G.players[ME];
   if (G.portalVote && !P.vote) showPortal();
@@ -5933,8 +6004,8 @@ function featuresLog(L) {
     case 'emote': showEmote(L); break;
     case 'buy': if (mine) sfx('buy'); break;
     case 'sell': if (mine) sfx('sell'); break;
-    case 'reroll': if (mine) sfx('reroll'); break;
-    case 'merge': if (mine) { sfx('star'); if (L.star >= 3) { PROFILE.three++; saveProfile(); unlockSkin('snow'); setTimeout(() => banner(`進化！${EVOLVE[L.key] || ''}`, '生命攻擊 +20%、技能 +30%', 'win'), 600); } } break;
+    case 'reroll': if (mine) { sfx('reroll'); questEvent('roll'); } break;
+    case 'merge': if (mine) { sfx('star'); if (L.star >= 3) { PROFILE.three++; saveProfile(); unlockSkin('snow'); questEvent('three'); setTimeout(() => banner(`進化！${EVOLVE[L.key] || ''}`, '生命攻擊 +20%、技能 +30%', 'win'), 600); } } break;
     case 'aug': if (mine) sfx('aug'); break;
     case 'craft': case 'equip': if (mine) sfx('coin'); break;
     case 'portal': { const p = PORTALS.find(x => x.id === L.id); banner(`傳送門：${p.name}`, p.desc); sfx('aug'); break; }
@@ -6290,11 +6361,12 @@ function openRules() {
 function openCollection(focus) {
   const keys = Object.keys(ANIMALS);
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>收藏與造型</h2>
-    <p>已玩 ${PROFILE.games} 場・勝 ${PROFILE.wins} 場・做出 3 星 ${PROFILE.three} 次</p>
+    <p>已玩 ${PROFILE.games} 場・勝 ${PROFILE.wins} 場・做出 3 星 ${PROFILE.three} 次・造型碎片 <b>${PROFILE.shards || 0}</b></p>
     ${eggPanel()}
-    <div class="skinrules">${Object.keys(SKINS).map(id => `<span class="${PROFILE.unlocked[id] ? 'ok' : ''}"><b>${SKINS[id].name}</b>${PROFILE.unlocked[id] ? '已解鎖' : SKIN_RULE[id]}</span>`).join('')}</div>
+    <div class="skinrules">${Object.keys(SKINS).map(id => `<span class="${PROFILE.unlocked[id] ? 'ok' : ''}"><b>${SKINS[id].name}</b>${PROFILE.unlocked[id] ? '已解鎖' : SKIN_RULE[id] + `<button class="btn shardbtn" data-shard="${id}">碎片 ${QUEST_CFG.SKIN_COST} 解鎖</button>`}</span>`).join('')}</div>
     <div class="coll">${keys.map(k => { const cur = skinOf(k) || 'base'; return `<div class="citem"><img src="${PORT[k]}" alt="" style="filter:${SKIN_CSS[cur]}"><b>${ANIMALS[k].name}</b><div class="cskins">${Object.keys(SKINS).map(id => `<button data-skin="${k}:${id}" class="${cur === id ? 'on' : ''}" ${PROFILE.unlocked[id] ? '' : 'disabled'} title="${SKINS[id].name}" style="background:${SKINS[id].tint}"></button>`).join('')}</div></div>`; }).join('')}</div>`;
   $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('panel').querySelectorAll('[data-shard]').forEach(b => b.onclick = () => shardUnlock(b.dataset.shard));
   $('panel').querySelector('.coll').onclick = e => { const b = e.target.closest('[data-skin]'); if (!b || b.disabled) return; const [k, id] = b.dataset.skin.split(':'); PROFILE.skinSel[k] = id === 'base' ? undefined : id; saveProfile(); sfx('click'); openCollection(); };
 }
 
@@ -6304,7 +6376,9 @@ let INSTALL_SHOW = false, INSTALL_FN = null;
 // ---- 大廳：模式選單與設定 ----
 function openModes() {
   const online = !netBlocked();
+  let tutDone = false; try { tutDone = !!localStorage.getItem('zoo_tutmatch'); } catch (e) {}
   $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>選擇模式</h2><div class="modes">
+    <button class="btn ${tutDone ? '' : 'primary'} tutbtn" data-mode="tutorial"><b>新手教學局</b><small>${tutDone ? '再練一次：升星、羈絆、裝備（3 回合）' : '第一次玩推薦！3 回合學會升星、羈絆、裝備'}</small></button>
     <div><h3>練習 <small>跟電腦打，不計分</small></h3>
     <div class="ltabs ailv"><span>電腦強度</span>${[['easy', '簡單'], ['normal', '普通'], ['hard', '困難']].map(([k, n]) => `<button class="btn ${(loadRules().aiLevel || 'normal') === k ? 'on' : ''}" data-ailv="${k}">${n}</button>`).join('')}</div>
     <div class="mgrid">
@@ -6327,7 +6401,8 @@ function openModes() {
   $('panel').querySelectorAll('[data-ailv]').forEach(b => b.onclick = () => { const r = loadRules(); r.aiLevel = b.dataset.ailv; saveRules(r); $('panel').querySelectorAll('[data-ailv]').forEach(x => x.classList.toggle('on', x === b)); });
   $('panel').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
     const m = b.dataset.mode; $('overlay').hidden = true;
-    if (m === 'p-solo') { ME = 0; netReset(); newGame(8, true); }
+    if (m === 'tutorial') startTutorialMatch();
+    else if (m === 'p-solo') { ME = 0; netReset(); newGame(8, true); }
     else if (m === 'p-duel') { ME = 0; netReset(); newGame(2, true); }
     else if (m === 'p-duo') { ME = 0; netReset(); newGame(2); }
     else if (m === 'p-duo8') { ME = 0; netReset(); newGame(4); }
@@ -6624,7 +6699,7 @@ function netSnapshot() {
   // 不送：亂數函式、戰鬥模擬物件（客人自己跑）、整串紀錄（只送新的部分）
   const log = G.log.slice(NET.logSent);
   G._ra = G.rng && G.rng.get ? G.rng.get() : 0; // 亂數狀態一起送，房主斷線時接手的人才能接著算
-  const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input') ? undefined : v);
+  const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input' || k === 'nextPairs') ? undefined : v); // nextPairs 不能讓客人看到
   return { s, log, logFrom: NET.logSent };
 }
 function netHostTick(dt, fromTimer) {
@@ -7595,6 +7670,159 @@ function eggsFrame(dt) {
     EGG_STATE.snowAcc += dt * 14 * (S3.quality || 1);
     while (EGG_STATE.snowAcc > 1) { EGG_STATE.snowAcc--; sprite('puff', V3((Math.random() - .5) * 10, 4 + Math.random() * 2, -0.5 + (Math.random() - .5) * 9), { scale: 0.09, scale1: 0.07, life: 3.5, vel: V3((Math.random() - .5) * 0.3, -1.4, 0), g: 0, color: 0xffffff, opacity: 0.9 }); }
   }
+}
+
+// ===== 個人戰績、每日任務、造型碎片、新手教學局（全部存在這台裝置）=====
+
+// ---------- 戰績 ----------
+// 每場（自己被淘汰或整場結束時）記一筆：模式、名次、隊伍數、回合、最後陣容
+const STATS_CFG = { KEEP: 200 }; // 最多保留幾場
+function statsLoad() { try { return JSON.parse(localStorage.getItem('zoo_stats') || '[]'); } catch (e) { return []; } }
+function statsSave(a) { try { localStorage.setItem('zoo_stats', JSON.stringify(a.slice(-STATS_CFG.KEEP))); } catch (e) {} }
+let REC_SEED = null, REC_COMP = []; // REC_COMP：最近一場戰鬥我上場的動物
+function recordMatch() {
+  if (!G || G.tutorial || REC_SEED === G.seed) return;
+  const T = G.teams[myTeam()]; if (!T || !T.place || !(T.out || G.phase === 'over')) return;
+  if (G.phase !== 'over' && G.phase === 'combat' && T.dieRound === G.round) return; // 同回合名次可能還會往前調
+  REC_SEED = G.seed;
+  const P = G.players[ME], n = G.teams.length;
+  const mode = G.solo ? (n === 2 ? 'duel' : 'solo') : (n > 2 ? 'duo8' : 'duo');
+  let comp = (P.lastComp || []).map(u => Array.isArray(u) ? u[0] : u.key).filter(Boolean); if (!comp.length) comp = REC_COMP.slice();
+  const dmg = MVP.seed === G.seed ? Object.values(MVP.dmg).reduce((s, v) => s + v, 0) : 0;
+  const a = statsLoad(); a.push({ t: Date.now(), mode, online: !!G.online, place: T.place, n, round: G.round, comp, dmg: Math.round(dmg) }); statsSave(a);
+  questEvent('game', { place: T.place, n, dmg });
+}
+const MODE_NAME = { solo: '單人混戰', duel: '1 對 1', duo: '雙人對戰', duo8: '雙人混戰' };
+function openStats() {
+  const a = statsLoad();
+  if (!a.length) { $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>個人戰績</h2><p>還沒有紀錄，打完一場就會出現。</p>`; $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; }; return; }
+  const top = g => g.place <= Math.max(1, Math.floor(g.n / 2)); // 前半名次
+  const avg = (g) => (g.place - 1) / Math.max(1, g.n - 1); // 0＝第一、1＝最後
+  const byMode = {}; for (const g of a) (byMode[g.mode] = byMode[g.mode] || []).push(g);
+  const modeRows = Object.keys(byMode).map(m => { const L = byMode[m]; return `<tr><td>${MODE_NAME[m] || m}</td><td>${L.length}</td><td>${L.filter(g => g.place === 1).length}</td><td>${Math.round(L.filter(top).length / L.length * 100)}%</td><td>${(L.reduce((s, g) => s + g.place, 0) / L.length).toFixed(1)}</td></tr>`; }).join('');
+  // 動物：出場次數、用了之後的平均表現
+  const U = {}; for (const g of a) for (const k of new Set(g.comp)) { U[k] = U[k] || { n: 0, s: 0, top: 0 }; U[k].n++; U[k].s += avg(g); if (top(g)) U[k].top++; }
+  const used = Object.entries(U).filter(([k]) => ANIMALS[k]).sort((x, y) => y[1].n - x[1].n).slice(0, 6);
+  const best = Object.entries(U).filter(([k, v]) => ANIMALS[k] && v.n >= 3).sort((x, y) => (x[1].s / x[1].n) - (y[1].s / y[1].n)).slice(0, 3);
+  // 常用陣容：以最後陣容的主要羈絆（前兩名）分類
+  const C = {}; for (const g of a) { const tc = {}; for (const k of new Set(g.comp)) for (const t of (ANIMALS[k] || { traits: [] }).traits) tc[t] = (tc[t] || 0) + 1; const main = Object.entries(tc).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([t]) => TRAITS[t].name).join('＋') || '—'; C[main] = C[main] || { n: 0, top: 0 }; C[main].n++; if (top(g)) C[main].top++; }
+  const comps = Object.entries(C).sort((x, y) => y[1].n - x[1].n).slice(0, 4);
+  const recent = a.slice(-8).reverse().map(g => `<tr><td>${new Date(g.t).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}</td><td>${MODE_NAME[g.mode] || g.mode}${g.online ? '・連線' : ''}</td><td><b>第 ${g.place} 名</b>／${g.n}</td><td>${g.comp.slice(0, 5).map(k => ANIMALS[k] ? pimg(k, 'mini') : '').join('')}</td></tr>`).join('');
+  const ani = (k, v, txt) => `<div class="sani">${pimg(k)}<b>${ANIMALS[k].name}</b><small>${txt}</small></div>`;
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>個人戰績</h2>
+    <div class="stsum"><span><b>${a.length}</b>場</span><span><b>${a.filter(g => g.place === 1).length}</b>第一</span><span><b>${Math.round(a.filter(top).length / a.length * 100)}%</b>前半</span><span><b>${(a.reduce((s, g) => s + g.place, 0) / a.length).toFixed(1)}</b>平均名次</span></div>
+    <table class="sttab"><tr><th>模式</th><th>場</th><th>第一</th><th>前半</th><th>平均</th></tr>${modeRows}</table>
+    <h3>最常用的動物</h3><div class="sanis">${used.map(([k, v]) => ani(k, v, `${v.n} 場`)).join('')}</div>
+    ${best.length ? `<h3>勝率最高的動物 <small>（至少 3 場）</small></h3><div class="sanis">${best.map(([k, v]) => ani(k, v, `前半 ${Math.round(v.top / v.n * 100)}%`)).join('')}</div>` : ''}
+    <h3>常用陣容</h3><table class="sttab">${comps.map(([m, v]) => `<tr><td>${m}</td><td>${v.n} 場</td><td>前半 ${Math.round(v.top / v.n * 100)}%</td></tr>`).join('')}</table>
+    <h3>最近幾場</h3><table class="sttab">${recent}</table>`;
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+}
+
+// ---------- 每日任務與造型碎片 ----------
+// 每天從任務池抽 3 個，完成自動領碎片；碎片可以在「收藏與造型」解鎖造型
+const QUEST_CFG = { PER_DAY: 3, SKIN_COST: 10 };
+const QUESTS = [
+  { id: 'play2', name: '玩 2 場', need: 2, shard: 2, ev: 'game' },
+  { id: 'top', name: '拿到前半名次 1 次', need: 1, shard: 3, ev: 'game', ok: d => d.place <= Math.max(1, Math.floor(d.n / 2)) },
+  { id: 'win', name: '拿到第一名 1 次', need: 1, shard: 4, ev: 'game', ok: d => d.place === 1 },
+  { id: 'three', name: '做出 1 隻 3 星動物', need: 1, shard: 4, ev: 'three' },
+  { id: 'tier2', name: '開戰時啟動 1 個第 2 階羈絆', need: 1, shard: 2, ev: 'tier', ok: d => d.max >= 1 },
+  { id: 'tier3', name: '開戰時啟動 1 個第 3 階羈絆', need: 1, shard: 4, ev: 'tier', ok: d => d.max >= 2 },
+  { id: 'dmg', name: '一場累計輸出 8000', need: 1, shard: 3, ev: 'game', ok: d => d.dmg >= 8000 },
+  { id: 'roll', name: '刷新商店 15 次', need: 15, shard: 2, ev: 'roll' },
+  { id: 'boss', name: '打贏 1 次魔王', need: 1, shard: 3, ev: 'boss' },
+];
+function questDay() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function questState() {
+  let s; try { s = JSON.parse(localStorage.getItem('zoo_quest') || 'null'); } catch (e) { s = null; }
+  const day = questDay();
+  if (!s || s.day !== day) {
+    let h = 0; for (const c of day) h = (h * 31 + c.charCodeAt(0)) >>> 0; // 用日期當種子，同一天固定
+    const pool = QUESTS.slice(), pick = [];
+    while (pick.length < QUEST_CFG.PER_DAY && pool.length) { h = (h * 1103515245 + 12345) >>> 0; pick.push(pool.splice(h % pool.length, 1)[0].id); }
+    s = { day, ids: pick, prog: {}, done: {} };
+  }
+  return s;
+}
+function questSave(s) { try { localStorage.setItem('zoo_quest', JSON.stringify(s)); } catch (e) {} }
+function questEvent(ev, d) {
+  if (G && G.tutorial) return;
+  const s = questState(); let changed = false;
+  for (const id of s.ids) {
+    const Q = QUESTS.find(q => q.id === id); if (!Q || Q.ev !== ev || s.done[id]) continue;
+    if (Q.ok && !Q.ok(d || {})) continue;
+    s.prog[id] = (s.prog[id] || 0) + 1; changed = true;
+    if (s.prog[id] >= Q.need) { s.done[id] = 1; PROFILE.shards = (PROFILE.shards || 0) + Q.shard; saveProfile(); toast(`每日任務完成：${Q.name}（碎片 +${Q.shard}）`, 2600); sfx('chime'); }
+  }
+  if (changed) questSave(s);
+}
+function openQuests() {
+  const s = questState(); questSave(s);
+  const rows = s.ids.map(id => { const Q = QUESTS.find(q => q.id === id); if (!Q) return ''; const p = Math.min(Q.need, s.prog[id] || 0); return `<div class="quest ${s.done[id] ? 'ok' : ''}"><div><b>${Q.name}</b><small>獎勵 造型碎片 ×${Q.shard}</small></div><div class="qbar"><i style="width:${p / Q.need * 100}%"></i></div><span>${s.done[id] ? '完成' : p + ' / ' + Q.need}</span></div>`; }).join('');
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>每日任務</h2><p class="nethint">每天換一批，完成自動領獎。碎片 ${QUEST_CFG.SKIN_COST} 個可以在「收藏與造型」解鎖一個造型。</p>${rows}<p>目前碎片：<b>${PROFILE.shards || 0}</b></p><button class="btn" id="qColl">收藏與造型</button>`;
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+  $('qColl').onclick = () => openCollection();
+}
+function shardUnlock(id) {
+  if (PROFILE.unlocked[id]) return;
+  if ((PROFILE.shards || 0) < QUEST_CFG.SKIN_COST) { toast(`碎片不夠（需要 ${QUEST_CFG.SKIN_COST} 個）`); return; }
+  PROFILE.shards -= QUEST_CFG.SKIN_COST; saveProfile(); unlockSkin(id); openCollection();
+}
+
+// ---------- 新手教學局（第一次玩：3 回合，固定商店，教升星、上場、羈絆、裝備）----------
+const TUTMATCH = {
+  shops: { 1: ['wolf', 'wolf', 'frog', 'squirrel', 'bat'], 2: ['squirrel', 'frog', 'hedgehog', 'koala', 'bee'], 3: ['frog', 'squirrel', 'redpanda', 'skunk', 'croc'] },
+  steps: [
+    { r: 1, txt: '歡迎！先在下方商店點兩次「野狼」把牠們買下來。三隻一樣的動物會自動合成 2 星！', done: () => ownUnits(G, ME).some(o => o.u.key === 'wolf' && o.u.star >= 2) },
+    { r: 1, txt: '升星了！把 2 星野狼從備戰席拖到棋盤上（靠近你的那幾排）。', done: () => ownUnits(G, ME).some(o => o.u.key === 'wolf' && o.zone === 'board') },
+    { r: 1, txt: '很好。按右下「準備好了」開打，戰鬥是自動的，看牠表現！', done: () => G.phase !== 'prep' },
+    { r: 2, txt: '左側是「羈絆」。野狼、青蛙、松鼠都是「群居」，湊到 2 種群居動物就會啟動。買一隻青蛙或松鼠放上場試試。', done: () => { const ks = new Set(Object.values(G.board).filter(u => u.owner === ME).map(u => u.key)); return ['wolf', 'frog', 'squirrel', 'bee'].filter(k => ks.has(k) && ANIMALS[k].traits.includes('pack')).length >= 2; } },
+    { r: 2, txt: '羈絆亮起來了！按「準備好了」開打。', done: () => G.phase !== 'prep' },
+    { r: 3, txt: '打野怪掉了兩個材料（在商店上方）。把材料拖到野狼身上，兩個材料會合成一件裝備！', done: () => ownUnits(G, ME).some(o => o.u.items.some(i => ITEMS[i])) },
+    { r: 3, txt: '合成成功！血條下面的小圖示就是裝備。按「準備好了」打完最後一場。', done: () => G.phase !== 'prep' },
+  ],
+};
+function startTutorialMatch() {
+  try { localStorage.setItem('zoo_tut', '1'); } catch (e) {} // 介面導覽不再自動跳出
+  ME = 0; netReset(); newGame(2, true);
+  G.tutorial = true; G.tutStep = 0; G.rules.prepSec = 999; G.timer = 999000; G.portalVote = null; G.portal = null; G.rules.encounters = false; G.rules.augments = false; G.rules.carousel = false; G.encounter = null;
+  const P = G.players[ME]; P.gold = 4; for (let i = 0; i < P.bench.length; i++) P.bench[i] = null;
+  const u = newUnit(G, 'wolf', 1, ME); G.pool.wolf--; P.bench[0] = u;
+  P.shop = TUTMATCH.shops[1].slice();
+  const A = G.players[1]; A.ai = true;
+  refresh(); tutCoach();
+}
+// 每幀檢查教學進度
+function tutFrame() {
+  if (!G || !G.tutorial) return;
+  if (G.phase === 'prep' && G.timer < 900000) { G.timer = 999000; } // 教學時不倒數
+  const S = TUTMATCH.steps[G.tutStep];
+  if (!S) { if (G.round > 3 || G.phase === 'over') tutFinish(); return; }
+  if (G.round < S.r) return;
+  if (S.done()) { G.tutStep++; sfx('chime'); tutCoach(); }
+}
+function tutCoach() {
+  let el = $('coach'); if (!el) { el = document.createElement('div'); el.id = 'coach'; $('stage').appendChild(el); }
+  const S = TUTMATCH.steps[G.tutStep];
+  el.hidden = !S || G.round < S.r; if (el.hidden) return; // 下一回合的說明等到那回合才出現
+  el.innerHTML = `<b>教學 ${G.tutStep + 1}/${TUTMATCH.steps.length}</b><p>${S.txt}</p><button class="btn" id="coachSkip">跳過教學</button>`;
+  $('coachSkip').onclick = () => tutFinish(true);
+}
+function tutPrepHook() { // startPrep 之後：換成教學用的商店與材料
+  if (!G || !G.tutorial) return;
+  const P = G.players[ME], sh = TUTMATCH.shops[G.round]; if (sh) P.shop = sh.slice();
+  if (G.round === 3 && !G.tutMats) { G.tutMats = true; P.items.push('twig', 'feather'); }
+  if (G.round === 2) P.gold = Math.max(P.gold, 5);
+  G.timer = 999000; tutCoach();
+}
+function tutFinish(skipped) {
+  if (!G || !G.tutorial) return;
+  try { localStorage.setItem('zoo_tutmatch', '1'); } catch (e) {}
+  const el = $('coach'); if (el) el.hidden = true;
+  G.tutorial = false;
+  $('panel').innerHTML = `<div class="over"><h2>${skipped ? '已跳過教學' : '教學完成！'}</h2><p>你學會了升星、上場、羈絆和裝備。接下來去打一場真的吧！</p>${pimg('wolf')}<div><button class="btn primary" id="tutGo">選擇模式</button></div></div>`;
+  $('overlay').hidden = false; $('tutGo').onclick = () => leaveToLobby(true);
 }
 
 // 先讓瀏覽器把大廳畫出來，再做比較重的初始化（3D 場景、頭像），避免開啟時黑屏

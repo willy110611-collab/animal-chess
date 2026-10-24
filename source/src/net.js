@@ -248,7 +248,7 @@ function netSnapshot() {
   // 不送：亂數函式、戰鬥模擬物件（客人自己跑）、整串紀錄（只送新的部分）
   const log = G.log.slice(NET.logSent);
   G._ra = G.rng && G.rng.get ? G.rng.get() : 0; // 亂數狀態一起送，房主斷線時接手的人才能接著算
-  const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input') ? undefined : v);
+  const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input' || k === 'nextPairs') ? undefined : v); // nextPairs 不能讓客人看到
   return { s, log, logFrom: NET.logSent };
 }
 function netHostTick(dt, fromTimer) {

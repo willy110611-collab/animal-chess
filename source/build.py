@@ -3,7 +3,7 @@
 import os, re, sys
 H = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(H); S = os.path.join(H, 'src')
 rd = lambda p: open(p, encoding='utf-8').read()
-CLIENT = ['data','sheet','engine','game','models','scene3d','units3d','icons','audio','ui','features','net','account','ladder','eggs','main']
+CLIENT = ['data','sheet','engine','game','models','scene3d','units3d','icons','audio','ui','features','net','account','ladder','eggs','progress','main']
 js = '\n'.join(rd(os.path.join(S, f + '.js')) for f in CLIENT)
 page = rd(os.path.join(S, 'template.html')).replace('/*__JS__*/', '(function(){\n' + js + '\n})();')
 three_p = os.path.join(H, 'node_modules/three/build/three.min.js')

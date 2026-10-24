@@ -129,6 +129,10 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team.stand .sstk.win { background: #ff7a1a; color: #fff; } .team.stand .sstk.lose { background: #5a7fb0; color: #fff; }
 .team.stand .svs svg { width: 14px; height: 14px; display: block; }
 .team.stand .srow.opp { box-shadow: inset 0 0 0 1px rgba(255,138,106,.7); }
+.team.stand .srow.cand { box-shadow: inset 0 0 0 1px rgba(255,211,77,.55); } .team.stand .scand { font-size: 10px; font-weight: 900; width: 14px; height: 14px; border-radius: 50%; display: grid; place-items: center; background: #f2c14e; color: #5a3010; }
+.nopp { background: #fff8ec; border-radius: 12px; padding: 8px 10px; margin: 8px 0; } .nopp .nh { display: flex; align-items: center; gap: 6px; } .nopp .nh small { color: var(--ink-soft); } .nopp .nh .btn { margin-left: auto; padding: 4px 10px; font-size: 12px; }
+.nopp .nu { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; } .nopp .nu span { position: relative; width: 40px; height: 40px; border-radius: 8px; background: #efe2cc; box-shadow: inset 0 0 0 2px var(--cc); overflow: hidden; } .nopp .nu img { width: 100%; height: 100%; }
+.nopp .nu i { position: absolute; left: 0; right: 0; bottom: 0; font-style: normal; font-size: 8px; text-align: center; color: #ffd34d; background: rgba(43,28,22,.7); line-height: 10px; }
 .team.stand .srow:hover { background: rgba(255,255,255,.08); }
 .team.stand .srow em { font-style: normal; font-size: 9px; opacity: .65; text-align: right; }
 .team.stand .srow b, .team.stand .spair b { font-size: 12px; font-family: var(--f-display); font-variant-numeric: tabular-nums; }
@@ -493,6 +497,16 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team.onfire::after { padding-left: 16px; background: #ff7a1a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M6 0C6.6 2.6 10 4.2 10 8.2A4 4 0 0 1 2 8.2C2 6.4 3 5.4 3.6 4.6 3.8 6 4.6 6.8 5.4 7 5 4.6 5.4 2.2 6 0Z' fill='%23ffe08a'/%3E%3Cpath d='M6 6.4C6.4 7.8 8 8.6 8 10.2A2 2 0 0 1 4 10.2C4 9.2 4.6 8.6 5 8.2 5.2 8.8 5.6 9.2 6 9.2 5.8 8.2 5.8 7.2 6 6.4Z' fill='%23fff7d6'/%3E%3C/svg%3E") no-repeat 5px 50% / 9px 11px; }
 .team.cold::after { background: #5a7fb0; }
 .lobby-btns .btn.big { font-size: 20px; padding: 16px; }
+.lobby-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modes .tutbtn { width: 100%; display: grid; gap: 2px; padding: 10px 12px; margin-bottom: 10px; text-align: left; } .modes .tutbtn small { font-size: 12px; opacity: .85; }
+.stsum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; margin: 6px 0 10px; } .stsum span { background: #fff8ec; border-radius: 10px; padding: 6px 2px; font-size: 11px; } .stsum b { display: block; font-size: 20px; font-family: var(--f-display); }
+.sttab { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6px; } .sttab th, .sttab td { padding: 4px 6px; border-bottom: 1px solid #eadcc4; text-align: left; } .sttab img.mini { width: 22px; height: 22px; vertical-align: middle; }
+.sanis { display: flex; flex-wrap: wrap; gap: 8px; } .sani { display: grid; justify-items: center; width: 64px; font-size: 12px; } .sani img { width: 48px; height: 48px; } .sani small { font-size: 10px; color: var(--ink-soft); }
+.quest { display: grid; grid-template-columns: 1fr 90px 50px; gap: 8px; align-items: center; background: #fff8ec; border-radius: 10px; padding: 8px 10px; margin: 6px 0; } .quest small { display: block; font-size: 11px; color: var(--ink-soft); } .quest.ok { background: #e8f8dc; }
+.qbar { height: 6px; border-radius: 3px; background: #e6d8c2; overflow: hidden; } .qbar i { display: block; height: 100%; background: linear-gradient(90deg, #f2c14e, #e08a2c); } .quest span { font-size: 12px; font-weight: 800; text-align: right; }
+.shardbtn { display: block; margin-top: 4px; padding: 2px 8px; font-size: 11px; }
+#coach { position: absolute; left: 50%; top: 84px; transform: translateX(-50%); z-index: 9; width: min(360px, calc(100% - 24px)); background: rgba(255,248,230,.97); color: var(--ink); border-radius: 14px; padding: 10px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.35); border: 2px solid var(--gold-2); }
+#coach b { font-size: 12px; color: #a86a10; } #coach p { margin: 4px 0 6px; font-size: 14px; line-height: 1.5; } #coach .btn { padding: 3px 10px; font-size: 11px; }
 .acchip { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); background: rgba(43,28,22,.55); color: var(--paper); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: 13px; display: flex; gap: 6px; align-items: center; }
 #lobby { position: relative; }
 .modes { display: grid; gap: 14px; }
@@ -639,6 +653,7 @@ var m='載入中';window.LD={set:function(p,msg){t=Math.max(t,p);if(msg)m=msg;},
     <div class="lobby-btns">
       <button class="btn primary big" id="btnPlay">開始遊戲</button>
       <button class="btn" id="btnLadder">天梯排行</button>
+      <div class="lobby-two"><button class="btn" id="btnStats">個人戰績</button><button class="btn" id="btnQuest">每日任務</button></div>
       <button class="btn moss" id="btnSettings">設定</button>
       <span class="note" id="loadNote"></span>
     </div>

@@ -307,7 +307,7 @@ export class Room extends DurableObject {
     if (this.snapAcc >= SV.SNAP_MS) {
       this.snapAcc = 0;
       const log = G.log.slice(this.logSent || 0);
-      const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input') ? undefined : v);
+      const s = JSON.stringify(G, (k, v) => (k === 'rng' || k === 'B' || k === 'log' || k === 'battles' || k === 'input' || k === 'nextPairs') ? undefined : v); // nextPairs：下一場真正的配對，不能讓玩家看到
       // 只有內容真的變了才送（倒數計時與戰鬥進度每格都在變，比對時不算；客人自己會倒數），另外每隔一段時間保底送一次校正
       const cmp = s.replace(/"(timer|acc)":-?[0-9.e+-]+/g, '');
       if (cmp !== this.lastSnap || log.length || now - (this.snapAt || 0) >= SV.SNAP_KEEPALIVE_MS) { this.lastSnap = cmp; this.snapAt = now; this.bcast({ k: 'snap', s, log, logFrom: this.logSent || 0 }); this.logSent = G.log.length; }

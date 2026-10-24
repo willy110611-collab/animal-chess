@@ -69,7 +69,7 @@ const ANIMALS = {
     hp: 1080, atk: 72, ai: 22, rng: 1, arm: 40, mr: 40, mana: 100, sm: 0, mv: 10,
     skill: '起床氣', desc: '開場睡覺，每秒回 5% 生命、能量 +10。被打掉 15% 生命或能量滿時醒來，攻擊 +80% 持續 5 秒。樹格回血加倍。' },
   cheetah: { name: '獵豹', cost: 3, traits: ['savanna'], role: '刺客',
-    hp: 720, atk: 74, ai: 14, rng: 1, arm: 25, mr: 20, mana: 80, sm: 0, mv: 4,
+    hp: 720, atk: 67, ai: 14, rng: 1, arm: 25, mr: 20, mana: 80, sm: 0, mv: 4,
     skill: '疾馳撲殺', desc: '移動極快。連續攻擊同一目標每次攻速 +8%（最多 5 層）。技能：衝向血最少的敵人 300 物理傷害。' },
   octopus: { name: '章魚', cost: 4, traits: ['water', 'night'], role: '控制法師',
     hp: 920, atk: 58, ai: 20, rng: 3, arm: 25, mr: 40, mana: 80, sm: 20, mv: 8,
@@ -106,13 +106,13 @@ const ANIMALS = {
     hp: 1280, atk: 76, ai: 24, rng: 1, arm: 45, mr: 40, mana: 100, sm: 40, mv: 9,
     skill: '捶胸震地', desc: '捶胸嘲諷 2 格內敵人 2.5 秒，獲得 18% 生命護盾，再雙拳砸地，周圍 1 格 200 魔法傷害。' },
   whale: { name: '鯨魚', cost: 5, traits: ['water', 'armor'], role: '坦／法師',
-    hp: 2000, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
+    hp: 1850, atk: 85, ai: 26, rng: 2, arm: 45, mr: 50, mana: 120, sm: 40, mv: 11,
     skill: '潮汐巨浪', desc: '噴出巨浪，沿自己左右各 1 格寬的直線橫掃全場：敵人 260 魔法傷害並暈 1 秒，友軍回復 15% 生命。' },
   peacock: { name: '孔雀', cost: 5, traits: ['sky', 'forest'], role: '輔助',
     hp: 1350, atk: 95, ai: 20, rng: 3, arm: 30, mr: 40, mana: 100, sm: 30, mv: 8,
     skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
   komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor'], role: '戰士',
-    hp: 1520, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
+    hp: 1440, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
     skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 20% 生命。' },
 };
 
@@ -121,6 +121,7 @@ const EXTRA = {
   minibee: { name: '小蜂', cost: 0, traits: [], hp: 160, atk: 22, ai: 14, rng: 1, arm: 10, mr: 10, mana: 999, sm: 0, mv: 5 },
   hare: { name: '野兔', cost: 0, traits: [], hp: 300, atk: 22, ai: 20, rng: 1, arm: 10, mr: 10, mana: 999, sm: 0, mv: 6 },
   boar: { name: '野豬', cost: 0, traits: [], hp: 900, atk: 45, ai: 24, rng: 1, arm: 35, mr: 25, mana: 999, sm: 0, mv: 8 },
+  kingboar: { name: '野豬王', cost: 0, traits: [], hp: 8000, atk: 240, ai: 21, rng: 1, arm: 95, mr: 85, mana: 100, sm: 30, mv: 9, skill: '震地', desc: '用力踏地，2 格內的敵人受到魔法傷害並暈眩。' }, // 魔王（第 3 階段起的野生回合）
 };
 
 const TRAITS = {
@@ -211,9 +212,10 @@ const PVE = {
   2: [['hare', 1, 3], ['hare', 3, 3], ['hare', 5, 3]],
   3: [['boar', 2, 3], ['boar', 4, 3]],
   8: [['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3], ['hare', 2, 1], ['hare', 4, 1]],
-  13: [['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3], ['boar', 2, 2], ['boar', 4, 2], ['hare', 3, 0]],
-  18: [['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3], ['boar', 1, 2], ['boar', 3, 2], ['boar', 5, 2]],
-  23: [['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3], ['boar', 1, 2], ['boar', 3, 2], ['boar', 5, 2], ['boar', 3, 1]],
+  // 第 3 階段起：魔王回合（野豬王＋小弟）
+  13: [['kingboar', 3, 2], ['boar', 1, 3], ['boar', 5, 3], ['hare', 3, 3]],
+  18: [['kingboar', 3, 2], ['boar', 0, 3], ['boar', 2, 3], ['boar', 4, 3], ['boar', 6, 3]],
+  23: [['kingboar', 2, 2], ['kingboar', 4, 2], ['boar', 1, 3], ['boar', 3, 3], ['boar', 5, 3]],
 };
 const PVE_STAR = { 1: 1, 2: 1, 3: 1, 8: 2, 13: 2, 18: 3, 23: 3 };
 

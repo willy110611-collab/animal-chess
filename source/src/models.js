@@ -342,6 +342,15 @@ const BUILD = {
     for (let i = 0; i < 6; i++) R.head.add(mesh(GEO.cone, R.M('#4e3628'), [0, 0.43 - i * 0.03, -0.05 - i * 0.06], [0.03, 0.09, 0.03], [-0.5 - i * 0.2, 0, 0]));
   },
 };
+// 魔王：野豬王（野豬加金冠、大獠牙）
+BUILD.kingboar = function (R) {
+  BUILD.boar(R);
+  const crown = grp(R.head); crown.position.set(0, 0.42, 0);
+  crown.add(mesh(GEO.cyl, R.M('#f2c14e'), [0, 0, 0], [0.16, 0.05, 0.16]));
+  for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; crown.add(mesh(GEO.cone, R.M('#ffd34d'), [Math.cos(a) * 0.14, 0.07, Math.sin(a) * 0.14], [0.035, 0.08, 0.035])); }
+  crown.add(mesh(GEO.sph, R.M('#d9483a'), [0, 0.03, 0.16], 0.03));
+  for (const s of [-1, 1]) R.head.add(mesh(GEO.cone, R.M('#fff6e0'), [s * 0.13, 0.1, 0.27], [0.035, 0.16, 0.035], [0.3, 0, -s * 0.6]));
+};
 // ---- v0.5 新動物 ----
 Object.assign(BUILD, {
   penguin(R) {
@@ -659,6 +668,7 @@ const ACT = {
   },
   hare: { atk: { dur: 0.45, hit: 0.55, fx: 'kick', fn(R, p) { hopUp(R, p, 0.25); R.legL.rotation.x -= 1.5 * bell(p, 0.35, 0.8); R.legR.rotation.x -= 1.5 * bell(p, 0.35, 0.8); R.body.position.z += 0.25 * bell(p, 0.2, 0.9); } } },
   boar: { atk: { dur: 0.5, hit: 0.6, fx: 'bump', fn(R, p) { R.body.position.z -= 0.12 * bell(p, 0, 0.45); lunge(R, p, 0.45, 0.4); R.head.rotation.x += 0.4 * bell(p, 0.45, 0.85); } } },
+  kingboar: { atk: { dur: 0.55, hit: 0.6, fx: 'headbutt', fn(R, p) { R.body.position.z -= 0.15 * bell(p, 0, 0.45); lunge(R, p, 0.5, 0.45); R.head.rotation.x += 0.5 * bell(p, 0.45, 0.85); } }, skill: { dur: 1.1, hit: 0.55, fx: 'stomp', fn(R, p) { const up = bell(p, 0, 0.55); R.body.rotation.x -= 0.6 * up; R.body.position.y += 0.35 * up; R.head.rotation.x -= 0.4 * up; } } },
 };
 
 // ---- v0.5 新動物動作 ----
@@ -766,7 +776,7 @@ const ART_SCALE = { 0: 1.0, 1: 1.0, 2: 1.07, 3: 1.14, 4: 1.22, 5: 1.32 };
 function animalScale(key, star) {
   const A = ANIMALS[key] || EXTRA[key];
   let s = ART_SCALE[A.cost] || 0.95;
-  if (key === 'boar') s = 1.15; if (key === 'minibee') s = 1.1;
+  if (key === 'boar') s = 1.15; if (key === 'minibee') s = 1.1; if (key === 'kingboar') s = 1.85;
   return s * (1 + (star - 1) * 0.08);
 }
 
