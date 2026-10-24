@@ -1,6 +1,6 @@
 // ===== 進階功能：統計、卡池、偵察、快捷鍵、陣容、代打投降、回放慢動作、技能預覽、
 //      傳送門、遭遇、選秀、天氣、指令、金庫隊長、標記、小小英雄、教學、收藏造型、自訂規則 =====
-let REPLAY = null, MENU_OPEN = false, METER = { on: window.innerWidth > 700 && window.innerHeight > 520, tab: 'dmg', last: 0 }, AVATARS = null, PRESS = null;
+let REPLAY = null, MENU_OPEN = false, METER = { on: window.innerWidth >= 1100 && window.innerHeight > 520, /* 只有電腦版預設打開傷害統計（手機、平板按「統計」打開） */ tab: 'dmg', last: 0 }, AVATARS = null, PRESS = null;
 const $$ = sel => document.querySelector(sel);
 
 // ---- 玩家檔案（本機）----

@@ -118,12 +118,12 @@ function eggHat(R, force) {
     g.add(mesh(GEO.sph, T('#f7f2ea'), [0.06, 0.22, 0], 0.04));
     g.rotation.z = -0.35;
   } else {
-    g.add(mesh(GEO.cyl, T('#3a2a4a'), [0, 0, 0], [0.2, 0.012, 0.2]));
-    g.add(mesh(GEO.cone, T('#3a2a4a'), [0, 0.13, 0], [0.1, 0.26, 0.1]));
-    g.add(mesh(GEO.torus, T('#f2a03a'), [0, 0.03, 0], [0.095, 0.095, 0.1], [Math.PI / 2, 0, 0]));
-    g.rotation.z = 0.2;
+    g.add(mesh(GEO.cyl, T('#3a2a4a'), [0, 0, 0], [0.14, 0.012, 0.14]));
+    g.add(mesh(GEO.cone, T('#3a2a4a'), [0, 0.13, 0], [0.085, 0.26, 0.085]));
+    g.add(mesh(GEO.torus, T('#f2a03a'), [0, 0.03, 0], [0.08, 0.08, 0.1], [Math.PI / 2, 0, 0]));
+    g.rotation.z = 0.2; g.rotation.x = -0.25; // v0.13.4：帽沿縮小並往後戴，從上往下看不會擋住臉
   }
-  g.position.set(0, y, 0); g.scale.setScalar(1.45); R.head.add(g); R.hat = g; // 帽子大小（可調）
+  g.position.set(0, y + 0.03, -0.1); g.scale.setScalar(0.9); R.head.add(g); R.hat = g; // 帽子大小（可調）
 }
 
 // ---- 4. 陣容彩蛋：開戰時檢查我的棋子 ----

@@ -678,6 +678,11 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   .sheet > div { width: min(640px, 60vw); }
 }
 
+/* v0.13.4：平板（561～1099px 寬）：羈絆只留名稱與數量，成員小圖收起；傷害統計放右下，不壓在羈絆上 */
+@media (min-width: 561px) and (max-width: 1099px) {
+  .tr .tms { display: none; }
+  .meter { left: auto; right: max(56px, env(safe-area-inset-right, 0px)); bottom: 56px; width: 200px; max-height: 42%; }
+}
 /* v0.13.4：手機橫放（矮螢幕）：商店與經濟移到右邊一欄，棋盤佔左邊整個高度 */
 @media (orientation: landscape) and (max-height: 520px) {
   #app { max-width: none; }

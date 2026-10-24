@@ -678,6 +678,11 @@ body:has(#game:not([hidden])) { overflow: hidden; }
   .sheet > div { width: min(640px, 60vw); }
 }
 
+/* v0.13.4：平板（561～1099px 寬）：羈絆只留名稱與數量，成員小圖收起；傷害統計放右下，不壓在羈絆上 */
+@media (min-width: 561px) and (max-width: 1099px) {
+  .tr .tms { display: none; }
+  .meter { left: auto; right: max(56px, env(safe-area-inset-right, 0px)); bottom: 56px; width: 200px; max-height: 42%; }
+}
 /* v0.13.4：手機橫放（矮螢幕）：商店與經濟移到右邊一欄，棋盤佔左邊整個高度 */
 @media (orientation: landscape) and (max-height: 520px) {
   #app { max-width: none; }
@@ -6576,7 +6581,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.4'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.5'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -6601,7 +6606,7 @@ window.__zoo = { get G() { return G; }, S3 }; window.__upd = update; window.__s3
 
 // ===== 進階功能：統計、卡池、偵察、快捷鍵、陣容、代打投降、回放慢動作、技能預覽、
 //      傳送門、遭遇、選秀、天氣、指令、金庫隊長、標記、小小英雄、教學、收藏造型、自訂規則 =====
-let REPLAY = null, MENU_OPEN = false, METER = { on: window.innerWidth > 700 && window.innerHeight > 520, tab: 'dmg', last: 0 }, AVATARS = null, PRESS = null;
+let REPLAY = null, MENU_OPEN = false, METER = { on: window.innerWidth >= 1100 && window.innerHeight > 520, /* 只有電腦版預設打開傷害統計（手機、平板按「統計」打開） */ tab: 'dmg', last: 0 }, AVATARS = null, PRESS = null;
 const $$ = sel => document.querySelector(sel);
 
 // ---- 玩家檔案（本機）----
@@ -8499,12 +8504,12 @@ function eggHat(R, force) {
     g.add(mesh(GEO.sph, T('#f7f2ea'), [0.06, 0.22, 0], 0.04));
     g.rotation.z = -0.35;
   } else {
-    g.add(mesh(GEO.cyl, T('#3a2a4a'), [0, 0, 0], [0.2, 0.012, 0.2]));
-    g.add(mesh(GEO.cone, T('#3a2a4a'), [0, 0.13, 0], [0.1, 0.26, 0.1]));
-    g.add(mesh(GEO.torus, T('#f2a03a'), [0, 0.03, 0], [0.095, 0.095, 0.1], [Math.PI / 2, 0, 0]));
-    g.rotation.z = 0.2;
+    g.add(mesh(GEO.cyl, T('#3a2a4a'), [0, 0, 0], [0.14, 0.012, 0.14]));
+    g.add(mesh(GEO.cone, T('#3a2a4a'), [0, 0.13, 0], [0.085, 0.26, 0.085]));
+    g.add(mesh(GEO.torus, T('#f2a03a'), [0, 0.03, 0], [0.08, 0.08, 0.1], [Math.PI / 2, 0, 0]));
+    g.rotation.z = 0.2; g.rotation.x = -0.25; // v0.13.4：帽沿縮小並往後戴，從上往下看不會擋住臉
   }
-  g.position.set(0, y, 0); g.scale.setScalar(1.45); R.head.add(g); R.hat = g; // 帽子大小（可調）
+  g.position.set(0, y + 0.03, -0.1); g.scale.setScalar(0.9); R.head.add(g); R.hat = g; // 帽子大小（可調）
 }
 
 // ---- 4. 陣容彩蛋：開戰時檢查我的棋子 ----
