@@ -16,12 +16,12 @@ const CFG = {
   BASE_INCOME: 5, WIN_GOLD: 1, MAX_INTEREST: 5,
   INCOME_BY_STAGE: [0, 4, 5, 5, 6, 6, 6, 6], // 基本收入依階段提升（索引＝階段）
   XP_COST: 4, XP_BUY: 4, XP_ROUND: 2,
-  XP_NEED: { 1: 2, 2: 6, 3: 10, 4: 20, 5: 36, 6: 56, 7: 80, 8: 100 }, // 從該等級升到下一級所需經驗
+  XP_NEED: { 1: 2, 2: 2, 3: 6, 4: 10, 5: 20, 6: 36, 7: 48, 8: 76 }, // 從該等級升到下一級所需經驗（v0.12.6 起照聯盟戰棋）
   MAX_LEVEL: 9,
   SHOP_SIZE: 5, REROLL_COST: 2,
   // 商店機率（%）：等級 → [1費, 2費, 3費, 4費, 5費]
-  SHOP_ODDS: { 1: [100, 0, 0, 0, 0], 2: [75, 25, 0, 0, 0], 3: [55, 30, 15, 0, 0], 4: [45, 33, 20, 2, 0], 5: [30, 40, 25, 5, 0], 6: [19, 30, 35, 15, 1], 7: [15, 20, 35, 25, 5], 8: [10, 15, 30, 30, 15], 9: [5, 10, 25, 35, 25] },
-  POOL: { 1: 18, 2: 15, 3: 12, 4: 10, 5: 8 },           // 全場共用卡池
+  SHOP_ODDS: { 1: [100, 0, 0, 0, 0], 2: [100, 0, 0, 0, 0], 3: [75, 25, 0, 0, 0], 4: [55, 30, 15, 0, 0], 5: [45, 33, 20, 2, 0], 6: [30, 40, 25, 5, 0], 7: [19, 30, 35, 15, 1], 8: [18, 25, 32, 22, 3], 9: [10, 20, 25, 35, 10] }, // v0.12.6 起照聯盟戰棋
+  POOL: { 1: 12, 2: 12, 3: 11, 4: 10, 5: 8 },           // 全場共用卡池（每隻幾張）；每費只有 5 種動物（聯盟戰棋約 13 種），所以張數比較少，3 星難度才接近
   POOL_8P_PCT: 150,                                     // 8 人局（4 隊）卡池數量 %
   CAROUSEL_ROUNDS: [6, 11, 16, 21],                     // 選秀回合
   ENCOUNTER_ROUNDS: [2, 7, 12, 18],                     // 遭遇事件回合
@@ -29,7 +29,10 @@ const CFG = {
   AUG_ROUNDS: [4, 9, 14],                               // 海克斯三選一的回合（每場三次）
   AUG_TIER_ODDS: [[55, 35, 10], [30, 50, 20], [10, 45, 45]], // 第 1、2、3 次海克斯的 銀／金／彩 機率（%）；太強的彩色另有「最早回合」限制
   STAR_MUL: [0, 100, 180, 320],                         // 星級生命與攻擊倍率（%）
-  GIFT_GOLD_MAX: 5,
+  GIFT_GOLD_MAX: 5,       // （舊版每回合上限，v0.12.7 起改用下面依階段的上限）
+  GIFT_GOLD_STAGE: [0, 3, 5, 8, 10, 12, 15, 15],  // 每個大回合（階段）最多送隊友幾金（索引＝階段）
+  GIFT_UNIT_STAGE: 1,                              // 每個大回合最多送隊友幾隻動物
+  GIFT_UNIT_STAR: [0, 1, 1, 2, 2, 2, 2, 2],        // 每個階段能送的最高星數（3 星不能送）
   MAX_ROUND: 0,           // 0 = 不限回合，打到一隊血量歸零為止
   DMG_BASE: 2, DMG_STAR_PCT: 34, DMG_STAGE: 2, // 輸掉扣血 = 基本 + 存活星數×% + (階段−1)×DMG_STAGE
 };
@@ -1268,6 +1271,12 @@ function checkMerge(G, pid) {
 }
 
 function canAfford(P, key) { return P.gold >= ANIMALS[key].cost; }
+// 送隊友的上限：每個大回合（階段）重算
+function giftReset(G, P) { const st = stageOf(Math.max(1, G.round)); if (P.giftStage !== st) { P.giftStage = st; P.giftedGold = 0; P.giftedUnits = 0; } }
+const stageArr = (arr, st) => arr[Math.min(st, arr.length - 1)];
+function giftGoldLeft(G, P) { giftReset(G, P); return Math.max(0, stageArr(CFG.GIFT_GOLD_STAGE, stageOf(Math.max(1, G.round))) - (P.giftedGold || 0)); }
+function giftUnitLeft(G, P) { giftReset(G, P); return Math.max(0, CFG.GIFT_UNIT_STAGE - (P.giftedUnits || 0)); }
+function giftMaxStar(G) { return Math.min(2, stageArr(CFG.GIFT_UNIT_STAR, stageOf(Math.max(1, G.round)))); }
 function rollShop(G, P) {
   const odds = CFG.SHOP_ODDS[P.level];
   P.shop = [];
@@ -1294,7 +1303,7 @@ function act(G, pid, a) {
     // 戰鬥中：可以買賣、刷新、升級、整理備戰席；場上的棋子不能動
     const onBoard = uid => ownUnits(G, pid).some(o => o.u.uid === uid && o.zone === 'board');
     if (a.t === 'move' && (a.to.zone !== 'bench' || onBoard(a.uid))) return 'board_locked';
-    if ((a.t === 'sell' || a.t === 'equip' || (a.t === 'gift' && a.uid)) && onBoard(a.uid)) return 'board_locked';
+    if ((a.t === 'sell' || (a.t === 'gift' && a.uid)) && onBoard(a.uid)) return 'board_locked'; // 裝備可以在戰鬥中放（場上的棋子下一場生效，跟聯盟戰棋一樣）
   }
   switch (a.t) {
     case 'reroll': {
@@ -1384,13 +1393,17 @@ function act(G, pid, a) {
     }
     case 'gift': {
       const T = teammate(G, pid); if (!T) return 'bad';
+      giftReset(G, P);
       if (a.gold) {
-        const g = Math.min(a.gold, P.gold, CFG.GIFT_GOLD_MAX - P.giftedGold); if (g <= 0) return 'limit';
+        const g = Math.min(a.gold, P.gold, giftGoldLeft(G, P)); if (g <= 0) return P.gold <= 0 ? 'no_gold' : 'gift_gold_limit';
         P.gold -= g; T.gold += g; P.giftedGold += g; G.log.push({ k: 'gift', pid, to: T.id, s: g + ' 金' }); return 'ok';
       }
       if (a.uid) {
         const o = ownUnits(G, pid).find(o => o.u.uid === a.uid); if (!o) return 'bad';
+        if ((P.giftedUnits || 0) >= CFG.GIFT_UNIT_STAGE) return 'gift_unit_limit';
+        if (o.u.star > giftMaxStar(G)) return 'gift_star';
         const slot = T.bench.indexOf(null); if (slot < 0) return 'their_bench_full';
+        P.giftedUnits = (P.giftedUnits || 0) + 1;
         if (o.zone === 'board') delete G.board[o.cell]; else P.bench[o.i] = null;
         o.u.owner = T.id; T.bench[slot] = o.u; checkMerge(G, T.id);
         G.log.push({ k: 'gift', pid, to: T.id, s: ANIMALS[o.u.key].name }); return 'ok';
@@ -1531,7 +1544,7 @@ function startPrep(G) {
   const R = G.round;
   if (stageStart(R)) rollTerrain(G);
   for (const P of G.players) {
-    P.ready = false; P.giftedGold = 0;
+    P.ready = false; giftReset(G, P);
     if (P.out) { P.ready = true; P.augChoice = null; continue; }
     if (R === 1) {
       const keys = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost === 1);
@@ -1789,7 +1802,7 @@ function aiHelpMate(G, pid) {
     if (b && act(G, pid, { t: 'gift', uid: b.u.uid }) === 'ok') { aiSay(G, pid, H.id, `商店剛好有${ANIMALS[k].name}，幫你買了`); gave++; }
   }
   // 3. 玩家快沒錢、我很有錢 → 送金幣
-  if (H.gold < 4 && P.gold >= 16 && P.giftedGold < CFG.GIFT_GOLD_MAX) { const g = Math.min(CFG.GIFT_GOLD_MAX - P.giftedGold, 5); if (act(G, pid, { t: 'gift', gold: g }) === 'ok') aiSay(G, pid, H.id, `你錢不多，先拿 ${g} 金去用`); }
+  if (H.gold < 4 && P.gold >= 16 && giftGoldLeft(G, P) > 0) { const g = Math.min(giftGoldLeft(G, P), 5); if (act(G, pid, { t: 'gift', gold: g }) === 'ok') aiSay(G, pid, H.id, `你錢不多，先拿 ${g} 金去用`); }
   // 4. 玩家主力羈絆（場上最多的那個）→ 我買棋子時加分
   const tr = {}; for (const k in G.board) { const u = G.board[k]; if (u.owner === H.id) for (const t of ANIMALS[u.key].traits) tr[t] = (tr[t] || 0) + 1; }
   return tr;
@@ -2190,7 +2203,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'http://localhost:8123', 'http://127.0.0.1:8123'],
-  VERSION: '0.12.5',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.12.7',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）

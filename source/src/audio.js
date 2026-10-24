@@ -69,12 +69,62 @@ const SFX = {
   zap: () => { noise(0.15, { f: 5000, q: 3, vol: 0.2 }); tone(1200, 0.1, { to: 200, type: 'square', vol: 0.06 }); },
   ping: () => { tone(1320, 0.12, { vol: 0.15 }); tone(1760, 0.18, { vol: 0.12, at: 0.08 }); },
   draft: () => [659, 784, 988].forEach((f, i) => tone(f, 0.2, { type: 'triangle', vol: 0.15, at: i * 0.05 })),
+  // v0.12.7：更細的攻擊／技能音效
+  whoosh: () => noise(0.18, { f: 700, fto: 2400, q: 0.9, vol: 0.14, att: 0.03 }),
+  tok: () => { tone(820, 0.05, { type: 'triangle', to: 500, vol: 0.14 }); noise(0.03, { f: 3000, q: 2, vol: 0.06 }); },
+  bloop: () => { tone(300, 0.12, { to: 700, vol: 0.12 }); tone(700, 0.08, { to: 420, vol: 0.06, at: 0.1 }); },
+  hiss: () => noise(0.35, { ft: 'highpass', f: 3500, vol: 0.09, att: 0.05 }),
+  crunch: () => { noise(0.06, { f: 1800, q: 1.2, vol: 0.2 }); noise(0.05, { f: 900, q: 1.2, vol: 0.15, at: 0.05 }); tone(160, 0.08, { type: 'square', to: 90, vol: 0.06, lp: 900 }); },
+  slam: () => { tone(80, 0.25, { to: 40, vol: 0.45 }); noise(0.2, { ft: 'lowpass', f: 900, fto: 150, vol: 0.3 }); },
+  chime: () => [1319, 1760, 2093].forEach((f, i) => tone(f, 0.35, { vol: 0.07, at: i * 0.04 })),
+  sparkle: () => { for (let i = 0; i < 5; i++) tone(2000 + Math.random() * 1500, 0.08, { vol: 0.04, at: i * 0.04 }); },
+  splashBig: () => { noise(0.5, { f: 1200, fto: 250, q: 0.5, vol: 0.28 }); tone(140, 0.3, { to: 60, vol: 0.2 }); },
+  hitTick: () => noise(0.035, { f: 2400, q: 1.5, vol: 0.07 }),
+  sting: () => { tone(2400, 0.05, { to: 3200, vol: 0.06 }); noise(0.04, { f: 5000, q: 2, vol: 0.05 }); },
 };
+// 每個攻擊／技能特效配的音效（沒列到的用預設）
+const FX_SOUND = {
+  bump: ['thud'], acorn: ['tok'], acornVolley: ['whoosh', 'tok'], bite: ['bite'], biteDrain: ['bite', 'sparkle'], bigBite: ['crunch', 'sparkle'], claw1: ['claw'], claw3: ['claw', 'whoosh'], claw3big: ['claw', 'thud'],
+  tongue: ['bloop'], tongueGrab: ['bloop', 'whoosh'], howl: [], taunt: ['roar'], stinkBall: ['bloop'], gasSpray: ['hiss', 'bloop'], deathRoll: ['splashBig', 'crunch'], sting: ['sting'], swarm: ['sparkle', 'hiss'],
+  slam: ['thud'], bodySlam: ['slam'], crossSlash: ['whoosh', 'claw'], inkBall: ['bloop'], inkCloud: ['bloop', 'splash'], feather: ['whoosh'], swoop: ['whoosh', 'claw'], trunkSlap: ['thud', 'whoosh'], stomp: ['boom'],
+  roar: [], spikeBurst: ['crunch', 'sparkle'], flipper: ['splash'], slideHit: ['splashBig'], headbutt: ['thud'], rhinoCharge: ['slam', 'whoosh'], chamStrike: ['bloop', 'claw'], pounce: ['whoosh', 'claw'],
+  talonShot: ['whoosh'], grabLift: ['whoosh', 'claw'], zap: ['zap'], chainZap: ['zap', 'sparkle'], fistSlam: ['thud'], chestBeat: ['slam', 'roar'], spout: ['splash'], tidal: ['splashBig'], fanOpen: ['chime', 'whoosh'], venomBite: ['crunch', 'hiss'],
+};
+function fxSound(fx, gap) { const L = FX_SOUND[fx]; if (!L) return false; L.forEach((n, i) => i ? setTimeout(() => sfx(n, gap), 60 * i) : sfx(n, gap)); return true; }
 function sfx(name, minGap) {
   if (!AUD.ctx || AUD.set.mute) return;
   const now = performance.now(); if (now - (AUD.last[name] || 0) < (minGap || 45)) return; AUD.last[name] = now;
   try { (SFX[name] || SFX.click)(); } catch (e) {}
 }
+// ---- 動物叫聲（備戰時偶爾叫一兩聲用；全部即時合成）----
+const VOICE = {
+  hedgehog: () => { noise(0.05, { f: 4000, q: 2, vol: 0.08 }); noise(0.05, { f: 4200, q: 2, vol: 0.08, at: 0.09 }); tone(2400, 0.08, { to: 2900, vol: 0.06, at: 0.2 }); },
+  squirrel: () => { for (let i = 0; i < 4; i++) tone(1900 + (i % 2) * 300, 0.04, { type: 'triangle', vol: 0.07, at: i * 0.055 }); },
+  wolf: () => { tone(460, 0.55, { to: 700, vol: 0.08, att: 0.08 }); tone(700, 0.35, { to: 560, vol: 0.07, at: 0.45 }); },
+  frog: () => { tone(240, 0.09, { type: 'square', to: 300, vol: 0.07, lp: 900 }); tone(260, 0.12, { type: 'square', to: 200, vol: 0.07, lp: 900, at: 0.13 }); },
+  bat: () => { for (let i = 0; i < 3; i++) tone(3200 - i * 200, 0.035, { vol: 0.05, at: i * 0.07 }); },
+  redpanda: () => { tone(1150, 0.1, { to: 1500, vol: 0.07 }); tone(1300, 0.12, { to: 1650, vol: 0.06, at: 0.14 }); },
+  skunk: () => { noise(0.18, { ft: 'lowpass', f: 900, vol: 0.1 }); tone(140, 0.15, { type: 'sawtooth', to: 110, vol: 0.05, lp: 600, at: 0.08 }); },
+  croc: () => { tone(80, 0.45, { type: 'sawtooth', to: 65, vol: 0.09, lp: 400 }); noise(0.35, { f: 2500, q: 0.6, vol: 0.05, at: 0.05 }); },
+  bee: () => { tone(220, 0.5, { type: 'sawtooth', vol: 0.05, lp: 1600, det: 20 }); tone(226, 0.5, { type: 'sawtooth', vol: 0.04, lp: 1600 }); },
+  koala: () => { tone(95, 0.35, { type: 'sawtooth', to: 75, vol: 0.08, lp: 500 }); tone(90, 0.3, { type: 'sawtooth', to: 70, vol: 0.07, lp: 500, at: 0.4 }); },
+  cheetah: () => { tone(1500, 0.07, { to: 1850, vol: 0.07 }); tone(1500, 0.07, { to: 1850, vol: 0.06, at: 0.12 }); },
+  octopus: () => { for (let i = 0; i < 3; i++) tone(500 + i * 220, 0.06, { to: 1100 + i * 220, vol: 0.06, at: i * 0.09 }); },
+  owl: () => { tone(420, 0.22, { vol: 0.09, att: 0.04 }); tone(400, 0.3, { vol: 0.08, att: 0.04, at: 0.3 }); },
+  elephant: () => { tone(380, 0.5, { type: 'sawtooth', to: 620, vol: 0.07, lp: 2400, att: 0.05 }); tone(760, 0.4, { type: 'sawtooth', to: 900, vol: 0.03, lp: 3000, at: 0.05 }); },
+  lion: () => { tone(120, 0.5, { type: 'sawtooth', to: 85, vol: 0.09, lp: 700 }); noise(0.4, { f: 320, q: 0.7, vol: 0.07 }); },
+  penguin: () => { for (let i = 0; i < 3; i++) tone(520 - i * 30, 0.1, { type: 'square', vol: 0.05, lp: 1700, at: i * 0.13 }); },
+  rhino: () => { noise(0.2, { ft: 'lowpass', f: 600, fto: 200, vol: 0.12 }); tone(100, 0.2, { to: 70, vol: 0.08, at: 0.03 }); },
+  chameleon: () => { tone(2100, 0.08, { to: 300, vol: 0.06 }); tone(300, 0.06, { to: 1800, vol: 0.05, at: 0.12 }); },
+  fox: () => { tone(900, 0.08, { to: 1350, vol: 0.07 }); tone(950, 0.09, { to: 1400, vol: 0.06, at: 0.14 }); },
+  eagle: () => { tone(1900, 0.4, { type: 'sawtooth', to: 1300, vol: 0.05, lp: 4200, att: 0.02 }); },
+  eel: () => { noise(0.12, { f: 5000, q: 3, vol: 0.08 }); noise(0.08, { f: 6000, q: 3, vol: 0.06, at: 0.15 }); },
+  gorilla: () => { for (let i = 0; i < 4; i++) tone(90, 0.07, { to: 60, vol: 0.14, at: i * 0.09 }); tone(330, 0.25, { to: 280, vol: 0.05, at: 0.42 }); },
+  whale: () => { tone(300, 0.9, { to: 500, vol: 0.07, att: 0.2 }); tone(500, 0.6, { to: 260, vol: 0.06, at: 0.7 }); },
+  peacock: () => { tone(900, 0.18, { type: 'triangle', to: 1400, vol: 0.07 }); tone(1400, 0.25, { type: 'triangle', to: 1000, vol: 0.06, at: 0.18 }); },
+  komodo: () => { noise(0.4, { ft: 'highpass', f: 3000, vol: 0.06, att: 0.05 }); },
+};
+function voice(key) { if (!AUD.ctx || AUD.set.mute) return; try { (VOICE[key] || VOICE.squirrel)(); } catch (e) {} }
 // ---- 配樂：依場地生成的循環 ----
 const SONGS = {
   jungle: { bpm: 96, root: 60, scale: [0, 2, 4, 7, 9], lead: 'sine', bass: 'triangle', perc: 'shaker', chords: [[0, 4, 7], [9, 0, 4], [5, 9, 0], [7, 11, 2]] },

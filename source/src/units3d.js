@@ -16,7 +16,7 @@ function s3Unit(k, info) {
     for (const m of R.mats) if (m.emissive) m.emissive = new THREE.Color(0, 0, 0);
     S3.unitRoot.add(R.root);
     const hb = document.createElement('div'); hb.className = 'hb';
-    hb.innerHTML = '<div class="hb-st"></div><div class="hb-bar"><i class="hb-lag"></i><i class="hb-hp"></i><i class="hb-sh"></i><b class="hb-tk"></b></div><div class="hb-mp"><i></i></div>';
+    hb.innerHTML = '<div class="hb-st"></div><div class="hb-bar"><i class="hb-lag"></i><i class="hb-hp"></i><i class="hb-sh"></i><b class="hb-tk"></b></div><div class="hb-mp"><i></i></div><div class="hb-it"></div>';
     S3.ov.appendChild(hb);
     const blob = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: 0x2a140a, transparent: true, opacity: 0.25, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); blob.renderOrder = 3;
     blob.rotation.x = -Math.PI / 2; S3.unitRoot.add(blob);
@@ -26,7 +26,7 @@ function s3Unit(k, info) {
     v = S3.V[k] = { k, R, hb, blob, ring, unitKey: info.key, pos: V3(info.x, 0, info.z), tgt: V3(info.x, 0, info.z), yaw: 0, tyaw: 0, act: null, hitT: -9, deadT: null,
       hpShow: 1, lag: 1, star: 0, stunG: null, icon: null, seen: 0, born: nowS(), moving: false, lift: 0 };
     hb.querySelector('.hb-mp');
-    v.el = { st: hb.querySelector('.hb-st'), hp: hb.querySelector('.hb-hp'), lag: hb.querySelector('.hb-lag'), sh: hb.querySelector('.hb-sh'), tk: hb.querySelector('.hb-tk'), mp: hb.querySelector('.hb-mp i') };
+    v.el = { st: hb.querySelector('.hb-st'), hp: hb.querySelector('.hb-hp'), lag: hb.querySelector('.hb-lag'), sh: hb.querySelector('.hb-sh'), tk: hb.querySelector('.hb-tk'), mp: hb.querySelector('.hb-mp i'), mpb: hb.querySelector('.hb-mp'), it: hb.querySelector('.hb-it') };
   }
   return v;
 }
@@ -138,7 +138,8 @@ function s3Frame(dt, ctx) {
     let dy = ty - v.yaw; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
     v.yaw += dy * Math.min(1, dt * (v.act ? 22 : 10));
     v.R.root.position.copy(v.pos); v.R.root.position.y += v.lift + groundH(v.pos.x, v.pos.z);
-    if (v.pop) { const k = Math.max(0, Math.min(1, (t - v.pop) / 0.4)); v.R.root.scale.setScalar((v.scale || 1) * Math.max(0.01, ease.back(k))); if (k >= 1) v.pop = 0; }
+    if (v.enter) entranceFrame(v, t);
+    else if (v.pop) { const k = Math.max(0, Math.min(1, (t - v.pop) / 0.4)); v.R.root.scale.setScalar((v.scale || 1) * Math.max(0.01, ease.back(k))); if (k >= 1) v.pop = 0; }
     v.R.yaw.rotation.y = v.yaw;
     // 動作
     let act = null;
@@ -196,7 +197,14 @@ function s3Frame(dt, ctx) {
       setS(v.el.hp, 'hpw', (v.hpShow * 100).toFixed(0) + '%');
       setS(v.el.lag, 'lagw', (v.lag * 100).toFixed(0) + '%');
       setS(v.el.sh, 'shw', Math.min(100, (it.shield || 0) / mh * 100).toFixed(0) + '%');
-      setS(v.el.mp, 'mpw', it.manaMax && it.manaMax < 999 ? Math.min(100, it.mana / it.manaMax * 100).toFixed(0) + '%' : '0%');
+      // 技能條（照聯盟戰棋：血條正下方的藍條，滿了發亮、放技能時閃一下）；沒有技能的不顯示
+      const hasMp = it.manaMax && it.manaMax < 999, mpf = hasMp ? Math.min(1, (it.mana || 0) / it.manaMax) : 0;
+      setS(v.el.mp, 'mpw', (mpf * 100).toFixed(0) + '%');
+      const mcls = !hasMp ? 'nomp' : mpf >= 1 ? 'full' : '';
+      if (v.mcls !== mcls) { if (v.mcls === 'full' && mcls === '' && v.mode === 'combat') { v.el.mpb.classList.remove('cast'); void v.el.mpb.offsetWidth; v.el.mpb.classList.add('cast'); } v.mcls = mcls; v.el.mpb.classList.toggle('nomp', mcls === 'nomp'); v.el.mpb.classList.toggle('full', mcls === 'full'); }
+      // 裝備小圖示（血條下方，不用點進去看）
+      const ik = (it.items || []).join(',');
+      if (v.ik !== ik) { v.ik = ik; v.el.it.innerHTML = (it.items || []).map(x => `<span>${iconItem(x)}</span>`).join(''); }
       if (v.tkMax !== mh) { v.tkMax = mh; v.el.tk.style.backgroundSize = `${Math.max(4, 300 / mh * 100)}% 100%`; }
     }
     // 死亡後移除（戰鬥中）
@@ -231,6 +239,47 @@ function groundRing(pos, color, size, life, delay) {
   m.rotation.x = -Math.PI / 2; m.position.set(pos.x, 0.03 + groundH(pos.x, pos.z), pos.z);
   return meshFx(m, { life: life || 0.6, ring: size || 1.5, delay });
 }
+// ---- 戰鬥開場登場特效（依第一個羈絆分 7 種；ENTRANCE 可調每種時間）----
+const ENTRANCE = { STAGGER: 0.05, SPAN: 0.8, DUR: { forest: 0.45, savanna: 0.5, water: 0.45, sky: 0.5, pack: 0.55, armor: 0.42, night: 0.55, pop: 0.35 } };
+function entranceFrame(v, t) {
+  const e = v.enter, k = (t - e.t0) / e.dur, R = v.R.root, base = v.scale || 1;
+  if (k >= 1) { v.enter = null; R.scale.setScalar(base); return; }
+  const p = V3(v.pos.x, groundH(v.pos.x, v.pos.z), v.pos.z);
+  const fire = (name, fn) => { if (!e[name]) { e[name] = true; try { fn(); } catch (x) {} } };
+  if (k < 0) { R.scale.setScalar(0.001); return; }
+  let dy = 0, sm = 1;
+  switch (e.kind) {
+    case 'forest': // 葉子旋風裡冒出來
+      fire('a', () => { groundRing(p, 0x6fae4a, 1.1, 0.5); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; sprite('leaf', p.clone().add(V3(Math.cos(a) * 0.45, 0.15, Math.sin(a) * 0.45)), { color: i % 2 ? 0x8cc85a : 0x5f9e3c, scale: 0.16, scale1: 0.05, life: 0.7, vel: V3(-Math.sin(a) * 1.6, 1.6, Math.cos(a) * 1.6), spin: 6 }); } sfx('place', 70); });
+      sm = ease.back(Math.min(1, k * 1.2)); break;
+    case 'savanna': // 跳進場、落地揚塵
+      dy = Math.sin(k * Math.PI) * 1.1; sm = 0.5 + 0.5 * Math.min(1, k * 2);
+      if (k > 0.85) fire('a', () => { burst(p.clone().add(V3(0, 0.1, 0)), 8, { tex: 'puff', color: 0xd9b77a, scale: 0.22, scale1: 0.4, speed: 1.4, up: 0.6, g: 0, life: 0.5 }); groundRing(p, 0xe6c88a, 0.9, 0.4); sfx('place', 70); });
+      break;
+    case 'water': // 水花裡蹦出來
+      fire('a', () => { burst(p.clone().add(V3(0, 0.1, 0)), 12, { tex: 'drop', scale: 0.11, speed: 1.8, up: 3, g: -7, life: 0.6 }); groundRing(p, 0x6fb6e0, 1.0, 0.55); groundRing(p, 0xd6eef7, 0.6, 0.45, 0.1); sfx('splash', 90); });
+      dy = -0.8 * (1 - ease.out(k)) + Math.sin(k * Math.PI) * 0.4; sm = Math.min(1, 0.3 + k * 1.4); break;
+    case 'sky': // 從空中俯衝下來，羽毛散開
+      dy = 4.2 * Math.pow(1 - k, 2); sm = 1;
+      if (k > 0.9) fire('a', () => { burst(p.clone().add(V3(0, 0.4, 0)), 7, { tex: 'feather', scale: 0.15, speed: 1.4, up: 1.4, g: -1.5, life: 0.9, spin: 4 }); groundRing(p, 0xffffff, 0.8, 0.35); sfx('place', 70); });
+      break;
+    case 'pack': // 小土堆裡彈出來
+      fire('a', () => { burst(p.clone().add(V3(0, 0.08, 0)), 7, { tex: 'puff', color: 0x9a7350, scale: 0.2, scale1: 0.32, speed: 0.9, up: 0.9, g: -1, life: 0.45 }); });
+      if (k < 0.25) { R.scale.setScalar(0.001); return; }
+      { const q = (k - 0.25) / 0.75; dy = Math.sin(q * Math.PI) * 1.4; sm = ease.back(Math.min(1, q * 1.6)); }
+      fire('b', () => sfx('place', 70)); break;
+    case 'armor': // 從高處重重砸下，震波
+      dy = 3.4 * (1 - k * k); sm = 1;
+      if (k > 0.92) fire('a', () => { groundRing(p, 0xb0a89a, 1.3, 0.5); groundRing(p, 0xe8e0d0, 0.8, 0.4, 0.08); burst(p.clone().add(V3(0, 0.1, 0)), 10, { tex: 'puff', color: 0xbfb4a0, scale: 0.24, scale1: 0.4, speed: 1.8, up: 0.5, g: 0, life: 0.5 }); S3.shake = Math.min(0.14, Math.max(S3.shake, 0.06)); sfx('thud', 90); });
+      break;
+    case 'night': // 紫色煙霧中現身
+      fire('a', () => { for (let i = 0; i < 6; i++) sprite('cloud', p.clone().add(V3((Math.random() - .5) * 0.7, 0.2 + Math.random() * 0.5, (Math.random() - .5) * 0.7)), { color: i % 2 ? 0x7a5ab8 : 0x4a3a78, scale: 0.35, scale1: 0.8, life: 0.8, opacity: 0.75, vel: V3(0, 0.4, 0) }); sprite('star', p.clone().add(V3(0, 0.8, 0)), { color: 0xd8c8ff, scale: 0.3, scale1: 0.05, life: 0.5, add: true }); sfx('magic', 90); });
+      if (k < 0.3) { R.scale.setScalar(0.001); return; }
+      sm = ease.back(Math.min(1, (k - 0.3) / 0.7 * 1.3)); break;
+    default: sm = ease.back(k); // 中立寶箱、召喚物
+  }
+  R.position.y += dy; R.scale.setScalar(base * Math.max(0.01, sm));
+}
 function burst(pos, n, o) {
   n = Math.max(1, Math.round(n * (S3.quality || 1)));
   for (let i = 0; i < n; i++) {
@@ -238,6 +287,7 @@ function burst(pos, n, o) {
     sprite(o.tex || 'puff', pos.clone(), { color: o.color, scale: (o.scale || 0.2) * (0.7 + Math.random() * 0.6), scale1: o.scale1 !== undefined ? o.scale1 : 0.02, life: (o.life || 0.5) * (0.7 + Math.random() * 0.6), vel: V3(Math.cos(a) * sp, (o.up || 1.5) * Math.random() + (o.up0 || 0), Math.sin(a) * sp), g: o.g === undefined ? -4 : o.g, add: o.add, delay: o.delay, spin: (Math.random() - .5) * (o.spin || 0) });
   }
 }
+const kind_trail_ok = () => (S3.quality || 1) > 0.5 && S3.fx.length < FX_MAX * 0.7; // 特效太多或畫質降低時不拖尾
 function projectile(from, to, kind, dur, o) {
   o = o || {};
   let obj;
@@ -248,7 +298,10 @@ function projectile(from, to, kind, dur, o) {
   else if (kind === 'squirrel') obj = buildAnimal('squirrel').root;
   else obj = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('spark'), color: o.color || 0xffffff, transparent: true, depthWrite: false }));
   if (obj.isSprite) obj.scale.setScalar(o.scale || 0.3);
-  return meshFx(obj, { proj: { from: from.clone(), to: to.clone(), arc: o.arc === undefined ? 0.6 : o.arc, spin: o.spin || 0, toV: o.toV }, life: dur, delay: o.delay, onEnd: o.onEnd });
+  const trail = o.trail !== undefined ? o.trail : ({ acorn: 0xc89a6a, ink: 0x4a3a5a, stink: 0x9bc24a, feather: 0xffffff }[kind] || (o.color !== undefined ? o.color : 0xffffff));
+  const end = o.onEnd, land = to.clone();
+  return meshFx(obj, { proj: { from: from.clone(), to: to.clone(), arc: o.arc === undefined ? 0.6 : o.arc, spin: o.spin || 0, toV: o.toV, trail: o.noTrail ? 0 : trail }, life: dur, delay: o.delay,
+    onEnd: () => { sprite('puff', land, { color: 0xffffff, scale: 0.3, scale1: 0.04, life: 0.14, add: true, opacity: 0.8 }); if (end) end(); } }); // 命中一閃
 }
 function s3FxFrame(dt, t) {
   // 先換成新陣列再跑：onEnd／custom 裡新增的特效會進新陣列，不會變成永遠留在場上的孤兒
@@ -262,6 +315,7 @@ function s3FxFrame(dt, t) {
       const P = f.proj, to = P.toV && S3.V[P.toV] ? S3.V[P.toV].pos.clone().add(V3(0, 0.45, 0)) : P.to;
       f.o.position.lerpVectors(P.from, to, p); f.o.position.y += Math.sin(p * Math.PI) * P.arc;
       if (P.spin) f.o.rotation.x += dt * P.spin;
+      if (P.trail && kind_trail_ok()) { P.ta = (P.ta || 0) + dt; if (P.ta > 0.035) { P.ta = 0; sprite('puff', f.o.position.clone(), { color: P.trail, scale: 0.13, scale1: 0.02, life: 0.28, opacity: 0.55 }); } } // 投射物拖尾
       return true;
     }
     if (f.ring) { const s = 0.3 + f.ring * ease.out(p); f.o.scale.setScalar(s); f.o.material.opacity = 0.85 * (1 - p); return true; }
@@ -282,11 +336,29 @@ const posOf = (k, h) => { const v = S3.V[k]; return v ? v.pos.clone().add(V3(0, 
 function slash(texName, at, o) { o = o || {}; return sprite(texName, at, { scale: o.scale || 0.7, scale1: (o.scale || 0.7) * 1.25, life: o.life || 0.28, rot: o.rot || 0, color: o.color, add: false, delay: o.delay, fadeIn: 0.15 }); }
 
 // 特效播放：name 由 ACT 定義
+// v0.12.7：所有攻擊／技能共用的細節層（打擊閃光、方向火花、施法光環與光柱）
+const FX_THEME = { forest: 0x8fd35a, savanna: 0xffc15a, water: 0x7fc8ff, sky: 0xf2f6ff, pack: 0xffa060, armor: 0xd8d0c0, night: 0xb08cff };
+let SKILL_FX = null;
+function fxDetail(name, sv, A, sp, tp, tv) {
+  if (!SKILL_FX) { SKILL_FX = new Set(); for (const k in ACT) if (ACT[k].skill && ACT[k].skill.fx) SKILL_FX.add(ACT[k].skill.fx); }
+  const tr = ((ANIMALS[sv.unitKey] || {}).traits || [])[0], col = FX_THEME[tr] || 0xffffff, q = S3.quality || 1;
+  if (SKILL_FX.has(name)) { // 施法：腳下光環＋往上飄的光點＋頭上一顆星
+    groundRing(A, col, 1.5, 0.55); groundRing(A, 0xffffff, 0.9, 0.4, 0.06);
+    for (let i = 0; i < Math.round(6 * q); i++) sprite('spark', A.clone().add(V3((Math.random() - .5) * 0.6, 0.1, (Math.random() - .5) * 0.6)), { color: col, scale: 0.12, scale1: 0.03, life: 0.7, vel: V3(0, 1.6 + Math.random(), 0), g: 0, add: true, delay: i * 0.03 });
+    sprite('star', sp.clone().add(V3(0, 0.55, 0)), { color: col, scale: 0.15, scale1: 0.45, life: 0.45, add: true, opacity: 0.9 });
+    if (tv) sprite('puff', tp.clone(), { color: 0xffffff, scale: 0.6, scale1: 0.05, life: 0.22, add: true, delay: 0.12 });
+  } else if (tv) { // 普攻命中：一閃＋順著攻擊方向噴的小火花
+    sprite('puff', tp.clone(), { color: 0xffffff, scale: 0.38, scale1: 0.05, life: 0.14, add: true, opacity: 0.85 });
+    const dir = tp.clone().sub(sp).setY(0); if (dir.lengthSq() > 1e-4) dir.normalize();
+    for (let i = 0; i < Math.round(3 * q); i++) sprite('spark', tp.clone(), { color: col, scale: 0.08, scale1: 0.02, life: 0.25, vel: dir.clone().multiplyScalar(1.8 + Math.random()).add(V3((Math.random() - .5) * 1.2, 0.6 + Math.random(), (Math.random() - .5) * 1.2)), g: -4, add: true });
+  }
+}
 function playFx(name, sk, tk, ex) {
   const sv = S3.V[sk], tv = tk !== undefined ? S3.V[tk] : null;
   if (!sv) return;
   const A = sv.pos.clone().setY(sv.pos.y + groundH(sv.pos.x, sv.pos.z)), sp = posOf(sk), tp = tv ? posOf(tk) : sp.clone().add(V3(0, 0, -0.6));
   const hand = A.clone().add(V3(0, 0.5 * (sv.scale || 1), 0));
+  if (!['acorn', 'stinkBall', 'inkBall'].includes(name)) try { fxDetail(name, sv, A, sp, tp, tv); } catch (e) {} // 遠程普攻由投射物命中時處理
   switch (name) {
     case 'bump': case 'kick': slash('burst', tp, { scale: 0.35, color: 0xffd9a0 }); burst(tp, 5, { color: 0xf2e6cf, scale: 0.12, speed: 1.6 }); break;
     case 'acorn': break; // 由 proj 事件處理

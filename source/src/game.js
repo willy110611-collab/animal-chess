@@ -80,6 +80,12 @@ function checkMerge(G, pid) {
 }
 
 function canAfford(P, key) { return P.gold >= ANIMALS[key].cost; }
+// 送隊友的上限：每個大回合（階段）重算
+function giftReset(G, P) { const st = stageOf(Math.max(1, G.round)); if (P.giftStage !== st) { P.giftStage = st; P.giftedGold = 0; P.giftedUnits = 0; } }
+const stageArr = (arr, st) => arr[Math.min(st, arr.length - 1)];
+function giftGoldLeft(G, P) { giftReset(G, P); return Math.max(0, stageArr(CFG.GIFT_GOLD_STAGE, stageOf(Math.max(1, G.round))) - (P.giftedGold || 0)); }
+function giftUnitLeft(G, P) { giftReset(G, P); return Math.max(0, CFG.GIFT_UNIT_STAGE - (P.giftedUnits || 0)); }
+function giftMaxStar(G) { return Math.min(2, stageArr(CFG.GIFT_UNIT_STAR, stageOf(Math.max(1, G.round)))); }
 function rollShop(G, P) {
   const odds = CFG.SHOP_ODDS[P.level];
   P.shop = [];
@@ -106,7 +112,7 @@ function act(G, pid, a) {
     // 戰鬥中：可以買賣、刷新、升級、整理備戰席；場上的棋子不能動
     const onBoard = uid => ownUnits(G, pid).some(o => o.u.uid === uid && o.zone === 'board');
     if (a.t === 'move' && (a.to.zone !== 'bench' || onBoard(a.uid))) return 'board_locked';
-    if ((a.t === 'sell' || a.t === 'equip' || (a.t === 'gift' && a.uid)) && onBoard(a.uid)) return 'board_locked';
+    if ((a.t === 'sell' || (a.t === 'gift' && a.uid)) && onBoard(a.uid)) return 'board_locked'; // 裝備可以在戰鬥中放（場上的棋子下一場生效，跟聯盟戰棋一樣）
   }
   switch (a.t) {
     case 'reroll': {
@@ -196,13 +202,17 @@ function act(G, pid, a) {
     }
     case 'gift': {
       const T = teammate(G, pid); if (!T) return 'bad';
+      giftReset(G, P);
       if (a.gold) {
-        const g = Math.min(a.gold, P.gold, CFG.GIFT_GOLD_MAX - P.giftedGold); if (g <= 0) return 'limit';
+        const g = Math.min(a.gold, P.gold, giftGoldLeft(G, P)); if (g <= 0) return P.gold <= 0 ? 'no_gold' : 'gift_gold_limit';
         P.gold -= g; T.gold += g; P.giftedGold += g; G.log.push({ k: 'gift', pid, to: T.id, s: g + ' 金' }); return 'ok';
       }
       if (a.uid) {
         const o = ownUnits(G, pid).find(o => o.u.uid === a.uid); if (!o) return 'bad';
+        if ((P.giftedUnits || 0) >= CFG.GIFT_UNIT_STAGE) return 'gift_unit_limit';
+        if (o.u.star > giftMaxStar(G)) return 'gift_star';
         const slot = T.bench.indexOf(null); if (slot < 0) return 'their_bench_full';
+        P.giftedUnits = (P.giftedUnits || 0) + 1;
         if (o.zone === 'board') delete G.board[o.cell]; else P.bench[o.i] = null;
         o.u.owner = T.id; T.bench[slot] = o.u; checkMerge(G, T.id);
         G.log.push({ k: 'gift', pid, to: T.id, s: ANIMALS[o.u.key].name }); return 'ok';
@@ -343,7 +353,7 @@ function startPrep(G) {
   const R = G.round;
   if (stageStart(R)) rollTerrain(G);
   for (const P of G.players) {
-    P.ready = false; P.giftedGold = 0;
+    P.ready = false; giftReset(G, P);
     if (P.out) { P.ready = true; P.augChoice = null; continue; }
     if (R === 1) {
       const keys = Object.keys(ANIMALS).filter(k => ANIMALS[k].cost === 1);
@@ -601,7 +611,7 @@ function aiHelpMate(G, pid) {
     if (b && act(G, pid, { t: 'gift', uid: b.u.uid }) === 'ok') { aiSay(G, pid, H.id, `商店剛好有${ANIMALS[k].name}，幫你買了`); gave++; }
   }
   // 3. 玩家快沒錢、我很有錢 → 送金幣
-  if (H.gold < 4 && P.gold >= 16 && P.giftedGold < CFG.GIFT_GOLD_MAX) { const g = Math.min(CFG.GIFT_GOLD_MAX - P.giftedGold, 5); if (act(G, pid, { t: 'gift', gold: g }) === 'ok') aiSay(G, pid, H.id, `你錢不多，先拿 ${g} 金去用`); }
+  if (H.gold < 4 && P.gold >= 16 && giftGoldLeft(G, P) > 0) { const g = Math.min(giftGoldLeft(G, P), 5); if (act(G, pid, { t: 'gift', gold: g }) === 'ok') aiSay(G, pid, H.id, `你錢不多，先拿 ${g} 金去用`); }
   // 4. 玩家主力羈絆（場上最多的那個）→ 我買棋子時加分
   const tr = {}; for (const k in G.board) { const u = G.board[k]; if (u.owner === H.id) for (const t of ANIMALS[u.key].traits) tr[t] = (tr[t] || 0) + 1; }
   return tr;

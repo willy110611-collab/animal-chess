@@ -121,9 +121,11 @@ function featuresFrame(dt) {
 // ---- 事件音效 ----
 function featuresEvent(B, ev) {
   switch (ev.k) {
-    case 'atk': { const u = B.units[ev.id]; if (!u) break; const fx = ((ACT[u.key] || {}).atk || {}).fx || ''; sfx(ev.rg ? 'pew' : /claw|bite/.test(fx) ? (fx.indexOf('bite') >= 0 ? 'bite' : 'claw') : 'thud', 60); break; }
-    case 'skill': { const u = B.units[ev.id]; sfx(u && u.key === 'lion' ? 'roar' : u && u.key === 'wolf' ? 'howl' : u && u.key === 'elephant' ? 'boom' : 'skill', 80); break; }
-    case 'dmg': if (ev.c) sfx('crit', 70); else if (ev.ty === 'magic' && ev.sk) sfx('magic', 90); break;
+    case 'atk': { const u = B.units[ev.id]; if (!u) break; const fx = ((ACT[u.key] || {}).atk || {}).fx || ''; if (!fxSound(fx, 60)) sfx(ev.rg ? 'pew' : /claw|bite/.test(fx) ? (fx.indexOf('bite') >= 0 ? 'bite' : 'claw') : 'thud', 60); break; }
+    case 'skill': { const u = B.units[ev.id]; if (!u) break; const fx = ((ACT[u.key] || {}).skill || {}).fx || ''; // 放技能：動物自己的叫聲＋技能音效
+      if (u.key === 'lion') sfx('roar', 80); else if (u.key === 'wolf') sfx('howl', 80); else if (u.key === 'elephant') sfx('boom', 80); else { voice(u.key); sfx('skill', 80); }
+      setTimeout(() => fxSound(fx, 80), 120); break; }
+    case 'dmg': if (ev.c) sfx('crit', 70); else if (ev.ty === 'magic' && ev.sk) sfx('magic', 90); else sfx('hitTick', 90); break;
     case 'die': sfx('death', 60); break;
     case 'combo': sfx('combo'); break;
     case 'zone': if (ev.kind === 'meteor') sfx('boom'); else if (ev.kind === 'water') sfx('splash'); break;
@@ -204,7 +206,7 @@ function openMenu(sub) {
       <div class="mrow"><span>上一場戰鬥</span><button class="btn" data-m="replay" ${G.battles.length && G.phase === 'prep' ? '' : 'disabled'}>回放</button></div>
       <div class="mrow"><span>資訊</span><button class="btn" data-m="pool">卡池與機率</button><button class="btn" data-m="scout">偵察敵隊</button><button class="btn" data-m="dex">圖鑑</button></div>
       ${slots}
-      <div class="mrow"><span>隊伍</span><button class="btn" data-m="captain" ${T.captain === ME ? '' : 'disabled'}>把隊長交給隊友</button></div>
+      ${G.solo ? '' : `<div class="mrow"><span>隊伍</span><button class="btn" data-m="captain" ${T.captain === ME ? '' : 'disabled'}>把隊長交給隊友</button></div>`}
       <div class="mrow"><span>AI 代打</span><button class="btn ${P.ai ? 'primary' : ''}" data-m="ai">${P.ai ? '代打中（點一下取回）' : '讓 AI 幫我打'}</button></div>
       <div class="mrow"><span>音效</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.sfx}" id="volS" aria-label="音效音量"><span>配樂</span><input type="range" min="0" max="1" step="0.05" value="${AUD.set.mus}" id="volM" aria-label="配樂音量"><button class="btn" data-m="mute">${AUD.set.mute ? '取消靜音' : '靜音'}</button></div>
       <div class="mrow"><span>其他</span><button class="btn" data-m="tut">新手教學</button><button class="btn" data-m="surrender" id="btnSur">投降</button></div>
@@ -368,7 +370,7 @@ function weatherFx(dt) {
 
 // ---- 標記（長按或右鍵）----
 function startPress(e, where, slot, instant) {
-  if (!G || G.phase === 'over') return;
+  if (!G || G.phase === 'over' || G.solo) return; // 單人模式沒有隊友，不需要標記
   const x = e.clientX, y = e.clientY;
   const fire = () => {
     PRESS = null;
