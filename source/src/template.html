@@ -186,6 +186,9 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .avpick { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border-radius: 10px; font-size: 12px; font-weight: 800; }
 .avpick .tav { width: 54px; height: 54px; --tc: #3d7fc4; }
 .avpick.on { background: rgba(242,193,78,.25); outline: 2px solid var(--gold-2); }
+/* 圖鑑技能展示 */
+.dex .demo { margin-top: 5px; padding: 3px 12px; font-size: 12px; min-height: 0; }
+#game.demo #dock, #game.demo .hud, #game.demo #traits, #game.demo .helpbtn, #game.demo .menubtn, #game.demo #incomePill, #game.demo .cmdbar { display: none !important; }
 @property --p { syntax: '<percentage>'; inherits: true; initial-value: 100%; }
 .team.av { display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 6px; justify-self: start; }
 .team.av.r { flex-direction: row-reverse; justify-self: end; padding: 5px 6px 5px 10px; text-align: right; }

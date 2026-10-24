@@ -325,6 +325,27 @@ function loadFormation(i) {
   toast(n ? `依陣容 ${i} 擺好 ${n} 隻` : '沒有符合陣容的棋子');
 }
 
+// ---- 圖鑑：技能展示（在大廳開一個小戰場，讓這隻動物連放幾次技能）----
+// 可調：DEMO_CFG.STAR 星級、SEC 展示秒數、MANA 放技能需要的怒氣（越小放越多次）、FOES 假人數量與血量
+const DEMO_CFG = { STAR: 2, SEC: 9, MANA: 25, FOES: 3, FOE_HP: 9000 };
+function skillDemo(key) {
+  if (G && !$('game').hidden && !(REPLAY && REPLAY.demo)) { toast('比賽中不能播放，回大廳再看', 1800); return; }
+  if (REPLAY) endReplay();
+  ME = 0; netReset(); newGame(2, true);
+  G.rules.augments = false; G.rules.encounters = false; G.rules.carousel = false; G.encounter = null; G.portal = null; G.portalVote = null; G.demo = true; G.timer = 999000;
+  $('overlay').hidden = true;
+  const units = [{ key, star: DEMO_CFG.STAR, owner: 0, team: 0, c: toGlobal(0, 4, 2)[0], r: toGlobal(0, 4, 2)[1], items: [] }];
+  for (let i = 0; i < DEMO_CFG.FOES; i++) { const [c, r] = toGlobal(1, 3 + i, i === 1 ? 3 : 4); units.push({ key: 'boar', star: 1, owner: -1, team: 1, c, r, items: [] }); }
+  const B = createBattle({ seed: 7, terrain: {}, height: {}, units, pve: true, weather: 'sunny' });
+  for (const u of B.units) { if (u.team === 1) { u.maxhp = u.hp = DEMO_CFG.FOE_HP; u.atk = 1; } else { u.manaMax = DEMO_CFG.MANA; u.mana = DEMO_CFG.MANA; } }
+  for (const k in S3.V) if (k[0] === 'b') s3Remove(k);
+  REPLAY = { B, acc: 0, end: 0, demo: key, t: 0 }; S3.demoK = 'b' + B.units.find(u => u.team === 0).id;
+  cv = { bt: { B, teams: [0, 1] }, B, vt: 0, zonePos: {}, lastCell: {}, replay: true };
+  G.paused = true; G.speed = 1; sel = null; $('game').classList.add('demo'); lastPhase = G.phase; lastRound = G.round; // 不要觸發換階段的處理（會清掉展示戰場）
+  s3SetArena(G.arena); $('stage').dataset.arena = G.arena; s3SetTerrain(B.terrain, 0, B.temp, B.height); refresh();
+  $('stage').insertAdjacentHTML('beforeend', `<div class="replaybar" id="replaybar">${ANIMALS[key].name}・${ANIMALS[key].skill}<button class="btn" id="rpSlow">慢動作</button><button class="btn" id="rpNorm">1×</button><button class="btn primary" id="rpEnd">回圖鑑</button></div>`);
+  $('rpSlow').onclick = () => { G.speed = 0.4; }; $('rpNorm').onclick = () => { G.speed = 1; }; $('rpEnd').onclick = () => endReplay();
+}
 // ---- 回放 ----
 function startReplay() {
   const bt = G.battles.find(b => b.teams.includes(myTeam())); if (!bt || !bt.input) return;
@@ -340,15 +361,20 @@ function startReplay() {
 }
 function replayFrame(dt) {
   const R = REPLAY;
+  if (R.demo) { R.t += dt * (G.speed || 1); if (R.t > DEMO_CFG.SEC) { endReplay(); return; } for (const u of R.B.units) if (u.team === 1) u.hp = Math.max(u.hp, u.maxhp * 0.3); } // 假人不會死
   if (!R.B.over) { R.acc += dt * 1000 * (G.speed || 1); while (R.acc >= CFG.TICK_MS && !R.B.over) { R.acc -= CFG.TICK_MS; step(R.B); } }
   else { R.end += dt; if (R.end > 2.5) { endReplay(); return; } }
   combatSync(); handleBattleEvents(cv.bt);
 }
 function endReplay() {
   if (!REPLAY) return;
+  const demo = REPLAY.demo; S3.demoK = null;
   REPLAY = null; G.paused = false; const b = $('replaybar'); if (b) b.remove();
   for (const k in S3.V) if (k[0] === 'b') s3Remove(k);
-  cv = null; S3.nightTarget = 0; renderPrep();
+  cv = null; S3.nightTarget = 0;
+  $('game').classList.remove('demo');
+  if (demo) { leaveToLobby(); showDex('animals'); return; }
+  renderPrep();
 }
 
 // ---- 技能預覽 ----

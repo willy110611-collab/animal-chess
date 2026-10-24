@@ -707,7 +707,7 @@ function handleBattleEvents(bt) {
           const dur = actDur(B, u, 'atk'); v.act = { kind: 'atk', t0: nowS(), dur }; v.faceK = tk; v.faceUntil = nowS() + dur + 0.15;
           const A = (ACT[u.key] || {}).atk || { hit: 0.5, fx: 'bump' }, hd = dur * A.hit;
           if (RANGED_PROJ[u.key]) at(hd, () => { const a = posOf(k, 0.7), b = posOf(tk); if (a && b) projectile(a, b, RANGED_PROJ[u.key], 0.22, { toV: tk, arc: 0.4, spin: 14, scale: 0.35, onEnd: () => { const bb = posOf(tk); if (bb) { if (u.key === 'octopus') slash('splat', bb, { scale: 0.4, color: 0x2d2438 }); else if (u.key === 'skunk') burst(bb, 5, { tex: 'cloud', color: 0x9bc24a, scale: 0.25, speed: 0.6, up: 0.4, g: 0 }); else slash('burst', bb, { scale: 0.3 }); } } }); });
-          else at(hd, () => playFx(A.fx, k, tk));
+          else at(hd, () => { playFx(A.fx, k, tk); atkNudge(S3.V[k], S3.V[tk], (ANIMALS[u.key] || {}).cost >= 4 || ['rhino', 'gorilla', 'elephant', 'kingboar', 'boar'].includes(u.key)); });
           break; }
         case 'skill': {
           if (!v) break;
@@ -717,6 +717,7 @@ function handleBattleEvents(bt) {
           const tu = ev.tg >= 0 ? B.units[ev.tg] : null; let tk = tu ? kOf(tu) : undefined;
           if (u.target >= 0 && B.units[u.target] && B.units[u.target].alive) tk = kOf(B.units[u.target]); // 技能實際打的對象（獵豹、老鷹等會換目標）
           if (tk) { v.faceK = tk; v.faceUntil = nowS() + A.dur; }
+          if (kind === 'skill') airStart(v, u.key, tk, A.dur, A.hit);
           s3Num(k, ev.s, 'skill', 0, 15);
           sprite('ring', posOf(k, 0.5), { scale: 0.2, scale1: 1.2, life: 0.4, color: 0xfff3c8, add: true });
           { const zp = cv.zonePos; at(A.dur * A.hit, () => playFx(A.fx, k, tk, { zone: zp[ev.id] })); }
@@ -952,7 +953,7 @@ function showDex(tab) {
   tab = tab || 'animals';
   const tabs = [['animals', '動物'], ['traits', '羈絆'], ['combos', '合體技'], ['items', '裝備'], ['augs', '海克斯'], ['arena', '場地'], ['rules', '規則']];
   let body = '';
-  if (tab === 'animals') body = Object.keys(ANIMALS).map(k => { const A = ANIMALS[k]; return `<div class="row">${pimg(k)}<div><b>${A.name}</b>　<span style="color:${COST_COL[A.cost]};font-weight:900">${A.cost} 費</span>・${A.role}・${A.traits.map(TNAME).join('・')}<br>生命 ${A.hp}・攻擊 ${A.atk}・射程 ${A.rng}<br><b>${A.skill}</b>：${A.desc}</div></div>`; }).join('');
+  if (tab === 'animals') body = Object.keys(ANIMALS).map(k => { const A = ANIMALS[k]; return `<div class="row">${pimg(k)}<div><b>${A.name}</b>　<span style="color:${COST_COL[A.cost]};font-weight:900">${A.cost} 費</span>・${A.role}・${A.traits.map(TNAME).join('・')}<br>生命 ${A.hp}・攻擊 ${A.atk}・射程 ${A.rng}<br><b>${A.skill}</b>：${A.desc}<br><button class="btn sm demo" data-demo="${k}">▶ 技能展示</button></div></div>`; }).join('');
   if (tab === 'traits') body = Object.keys(TRAITS).map(t => { const T = TRAITS[t]; return `<div class="plain">${iconTrait(t)}<div><b>${T.name}</b>（${Object.keys(ANIMALS).filter(k => ANIMALS[k].traits.includes(t)).map(k => ANIMALS[k].name).join('、')}）<br>${T.tiers.map((n, i) => `(${n}) ${T.desc[i]}`).join('<br>')}</div></div>`; }).join('') + `<div class="plain"><div>羈絆以「不同種類」計算，兩位隊友的棋子合併計。兩人都有出同一羈絆時效果 +${SYNERGY_BONUS}%（默契）。</div></div>`;
   if (tab === 'combos') body = COMBOS.map(c => `<div class="row">${pimg(c.a)}<div><b>${c.name}</b>　${ANIMALS[c.a].name}＋${ANIMALS[c.b].name}<br>${c.desc}</div></div>`).join('') + '<div class="plain"><div>兩隻需分屬兩位隊友、開場相鄰。兩隻都放過一次技能後自動發動一次。</div></div>';
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
@@ -963,6 +964,7 @@ function showDex(tab) {
   $('overlay').hidden = false;
   $('dexX').onclick = () => { $('overlay').hidden = true; };
   $('panel').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => showDex(b.dataset.tab));
+  $('panel').querySelectorAll('[data-demo]').forEach(b => b.onclick = () => skillDemo(b.dataset.demo));
 }
 
 // ---- 啟動 ----
@@ -970,7 +972,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.13'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.12.14'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });

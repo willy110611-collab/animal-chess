@@ -64,7 +64,7 @@ function s3Sync(list, mode) {
   }
   for (const k in S3.V) if (!seen[k]) s3Remove(k);
 }
-function v3top(v) { return v.pos.clone().add(V3(0, (v.R.headTop || 1) * (v.scale || 1) + 0.12 + v.lift + groundH(v.pos.x, v.pos.z), 0)); }
+function v3top(v) { const p = v.pos.clone().add(V3(0, (v.R.headTop || 1) * (v.scale || 1) + 0.12 + v.lift + groundH(v.pos.x, v.pos.z), 0)); if (v.airOff) p.add(v.airOff); return p; }
 function toScreen(p) { const q = p.clone().project(S3.cam); return [(q.x + 1) / 2 * S3.W, (1 - q.y) / 2 * S3.H, q.z]; }
 
 // ---- 每幀更新 ----
@@ -92,6 +92,10 @@ function s3Frame(dt, ctx) {
   const t = nowS();
   // 相機與晃動
   S3.cam.position.copy(S3.camBase);
+  if (S3.demoK && S3.V[S3.demoK]) { // 圖鑑技能展示：鏡頭拉近跟著主角（可調：DEMO_CAM 距離與高度）
+    const dv = S3.V[S3.demoK], f = S3.demoF || (S3.demoF = dv.pos.clone()); f.lerp(V3(dv.pos.x, 0, dv.pos.z - 0.5), Math.min(1, dt * 3));
+    S3.cam.position.set(f.x + DEMO_CAM.x, DEMO_CAM.y, f.z + DEMO_CAM.z); S3.camLook.set(f.x, 0.5, f.z);
+  } else if (S3.demoF) { S3.demoF = null; S3.camLook.set(0, 0, S3.W / S3.H < 1 ? 0.15 : 0.2); }
   if (S3.shake > 0) { S3.cam.position.x += (Math.random() - .5) * S3.shake; S3.cam.position.y += (Math.random() - .5) * S3.shake; S3.shake = Math.max(0, S3.shake - dt * 1.6); }
   S3.cam.lookAt(S3.camLook);
   // 夜晚
@@ -149,6 +153,7 @@ function s3Frame(dt, ctx) {
     if (!act && it.jumpP !== undefined && it.jumpP !== null && v.R.melee && ACT[v.unitKey] && ACT[v.unitKey].atk) act = { kind: 'atk', p: it.jumpP };
     const landP = v.land ? (t - v.land) / 0.28 : 1;
     poseRig(v.R, { t, moving: v.moving, moveP, land: landP < 1 ? landP : null, sleep: it.sleep, stun: it.stun, act, hit: hitP < 1 ? hitP : 0, dead, victory: it.victory });
+    if (v.air || v.toss || v.airOff || v.nudge) { airFrame(v, t); nudgeFrame(v, t); }
     // 選取時浮起
     const liftT = v.dragging ? 0.45 : (S3.selK === k && v.mode === 'prep') ? 0.2 : 0;
     v.lift += (liftT - v.lift) * Math.min(1, dt * 12);
@@ -360,7 +365,7 @@ function s3FxFrame(dt, t) {
   });
   S3.fx = keep.concat(S3.fx);
 }
-const posOf = (k, h) => { const v = S3.V[k]; return v ? v.pos.clone().add(V3(0, (h === undefined ? 0.45 : h) * (v.scale || 1) + (v.R.fly || 0) * 0.6 + groundH(v.pos.x, v.pos.z), 0)) : null; };
+const posOf = (k, h) => { const v = S3.V[k]; if (!v) return null; const p = v.pos.clone().add(V3(0, (h === undefined ? 0.45 : h) * (v.scale || 1) + (v.R.fly || 0) * 0.6 + groundH(v.pos.x, v.pos.z), 0)); if (v.airOff) p.add(v.airOff); return p; };
 function slash(texName, at, o) { o = o || {}; return sprite(texName, at, { scale: o.scale || 0.7, scale1: (o.scale || 0.7) * 1.25, life: o.life || 0.28, rot: o.rot || 0, color: o.color, add: false, delay: o.delay, fadeIn: 0.15 }); }
 
 // 特效播放：name 由 ACT 定義
@@ -382,6 +387,129 @@ function fxDetail(name, sv, A, sp, tp, tv) {
   }
 }
 // v0.12.11：每隻動物獨有的大招演出（疊在原本特效上）；五費大招另外整個畫面閃一下
+// ---- 技能的立體動作（純畫面，不影響戰鬥結果） ----
+// kind：leap＝跳到目標砸下、jump＝原地跳起砸地、dive＝飛高再俯衝、breach＝鑽進地底從目標腳下竄出、blink＝瞬移連斬、float＝浮空施法、flip＝空翻
+// 可調：h＝高度（格）、spin＝空中轉幾圈、flip＝翻幾圈、toss＝把目標打飛的高度（0＝不打飛）、shake＝落地震動
+const AIR_CFG = {
+  hedgehog: { kind: 'jump', h: 2.2, spin: 3, toss: 0, shake: 0.12 },
+  squirrel: { kind: 'jump', h: 2.6, spin: 1, toss: 0, shake: 0.04 },
+  wolf: { kind: 'jump', h: 1.6, flip: 1, toss: 0, shake: 0.08 },
+  frog: { kind: 'leap', h: 2.4, toss: 0.8, shake: 0.1 },
+  bat: { kind: 'dive', h: 2.4, toss: 0, shake: 0.06 },
+  redpanda: { kind: 'jump', h: 1.8, spin: 1, toss: 0, shake: 0.14 },
+  skunk: { kind: 'flip', h: 1.6, flip: -1, toss: 0, shake: 0 },
+  croc: { kind: 'breach', h: 1.6, spin: 2, toss: 1.4, shake: 0.12 },
+  bee: { kind: 'dive', h: 2.8, spin: 2, toss: 0, shake: 0.04 },
+  koala: { kind: 'leap', h: 3.0, flip: 1, toss: 1.0, shake: 0.2 },
+  cheetah: { kind: 'blink', h: 0.4, toss: 0, shake: 0.1 },
+  octopus: { kind: 'float', h: 2.0, spin: 1, toss: 0, shake: 0 },
+  owl: { kind: 'dive', h: 3.0, toss: 0.6, shake: 0.08 },
+  elephant: { kind: 'jump', h: 1.8, toss: 1.6, shake: 0.32 },
+  lion: { kind: 'leap', h: 3.4, toss: 1.2, shake: 0.26 },
+  penguin: { kind: 'leap', h: 1.2, flip: 1, toss: 1.4, shake: 0.1 },
+  rhino: { kind: 'leap', h: 0.8, toss: 2.2, shake: 0.2 },
+  chameleon: { kind: 'blink', h: 0.6, toss: 0, shake: 0.06 },
+  fox: { kind: 'leap', h: 3.0, flip: 1, toss: 0.6, shake: 0.1 },
+  eagle: { kind: 'dive', h: 3.6, toss: 0, shake: 0.12 },
+  eel: { kind: 'breach', h: 2.2, spin: 1, toss: 1.0, shake: 0.1 },
+  gorilla: { kind: 'jump', h: 3.0, toss: 1.4, shake: 0.34 },
+  whale: { kind: 'breach', h: 3.6, flip: 0.5, toss: 1.8, shake: 0.36 },
+  peacock: { kind: 'float', h: 2.4, spin: 1, toss: 0, shake: 0 },
+  komodo: { kind: 'leap', h: 2.2, toss: 1.0, shake: 0.16 },
+  kingboar: { kind: 'jump', h: 2.4, toss: 1.6, shake: 0.36 },
+};
+const AIR_ON = { on: true };
+const DEMO_CAM = { x: 0, y: 8.6, z: 9.6 }; // 設成 false 可整個關掉立體技能動作
+function airStart(v, key, tk, dur, hit) {
+  const C = AIR_CFG[key]; if (!C || !AIR_ON.on || !v) return;
+  const tv = tk !== undefined ? S3.V[tk] : null;
+  const to = tv ? V3(tv.pos.x - v.pos.x, 0, tv.pos.z - v.pos.z) : V3(0, 0, 0), d = to.length();
+  if (d > 0.01) to.multiplyScalar(Math.max(0, d - (C.kind === 'breach' ? 0.1 : 0.55)) / d); // 停在目標前面
+  v.air = { C, t0: nowS(), dur, hit, to, tk, fx: {} };
+}
+function airToss(v, h) { if (!v || !h || !AIR_ON.on) return; v.toss = { t0: nowS(), h, dur: 0.5 + h * 0.18, sp: (Math.random() < .5 ? -1 : 1) }; }
+const tri = q => 4 * q * (1 - q);
+function airFrame(v, t) {
+  const R = v.R; v.airOff = v.airOff || V3(0, 0, 0); v.airOff.set(0, 0, 0);
+  let pitch = 0, roll = 0;
+  if (v.air) {
+    const a = v.air, C = a.C, p = (t - a.t0) / a.dur, h = Math.max(0.15, Math.min(0.85, a.hit)), H = C.h;
+    if (p >= 1 || v.deadT !== null) v.air = null;
+    else {
+      { const tv = S3.V[a.tk]; if (tv && tv.deadT === null) { a.to.set(tv.pos.x - v.pos.x, 0, tv.pos.z - v.pos.z); const d = a.to.length(); if (d > 0.01) a.to.multiplyScalar(Math.max(0, d - (C.kind === 'breach' ? 0.1 : 0.55)) / d); } } // 目標或自己移動（衝刺技）時跟著更新，避免重複位移
+      let fwd = 0, y = 0, spin = 0; const once = (n, f) => { if (!a.fx[n]) { a.fx[n] = 1; try { f(); } catch (e) {} } };
+      const back = q => { if (q < 0.25) return; const q2 = (q - 0.25) / 0.75; fwd = 1 - ease.inOut(q2); y = 0.5 * tri(q2); };
+      const here = () => v.pos.clone().add(V3(a.to.x * fwd, groundH(v.pos.x, v.pos.z), a.to.z * fwd));
+      if (C.kind === 'leap') {
+        if (p < h) { const q = p / h; fwd = ease.inOut(q); y = H * tri(q); pitch = -0.5 + 1.3 * q; pitch += -Math.PI * 2 * (C.flip || 0) * ease.inOut(q); }
+        else { fwd = 1; back((p - h) / (1 - h)); }
+      } else if (C.kind === 'jump') {
+        if (p < h) { const q = p / h; y = q < 0.62 ? H * ease.out(q / 0.62) : H * (1 - Math.pow((q - 0.62) / 0.38, 2)); spin = (C.spin || 0) * ease.inOut(q); pitch = -Math.PI * 2 * (C.flip || 0) * ease.inOut(q); }
+      } else if (C.kind === 'dive') {
+        const r = 0.55 * h;
+        if (p < r) { const q = p / r; y = H * ease.out(q); fwd = -0.18 * Math.sin(q * Math.PI); spin = (C.spin || 0) * q; pitch = -0.6 * q; }
+        else if (p < h) { const q = (p - r) / (h - r); y = H * (1 - q * q); fwd = q * q; pitch = -0.6 + 1.8 * q; spin = C.spin || 0; }
+        else { fwd = 1; back((p - h) / (1 - h)); }
+      } else if (C.kind === 'breach') {
+        const s1 = 0.3 * h, s2 = 0.62 * h, D = -1.8;
+        if (p < s1) { const q = p / s1; y = D * ease.inOut(q); pitch = 0.8 * q; once('dig', () => { const P = here(); burst(P.clone().add(V3(0, 0.1, 0)), 10, { color: 0xbfa880, scale: 0.22, speed: 1.6, up: 1.4, g: -5, life: 0.5 }); groundRing(P, 0x9a8a6a, 0.9, 0.4); }); }
+        else if (p < s2) { const q = (p - s1) / (s2 - s1); y = D; fwd = ease.inOut(q); once('trail', () => { for (let i = 0; i < 6; i++) at(i * 0.05, () => { const P = v.pos.clone().add(V3(a.to.x * i / 5, groundH(v.pos.x, v.pos.z) + 0.05, a.to.z * i / 5)); burst(P, 3, { color: 0xbfa880, scale: 0.16, speed: 0.8, up: 1, g: -4, life: 0.4 }); }); }); }
+        else if (p < h) { const q = (p - s2) / (h - s2); fwd = 1; y = D + (H - D) * ease.out(q); pitch = -0.9 + 0.6 * q; spin = (C.spin || 0) * q; pitch += -Math.PI * 2 * (C.flip || 0) * q;
+          once('erupt', () => { const P = here(); groundRing(P, 0x8fd0ff, 1.8, 0.6); groundRing(P, 0xe8f6ff, 1.1, 0.5, 0.06); burst(P.clone().add(V3(0, 0.2, 0)), 22, { tex: 'drop', scale: 0.16, speed: 2.6, up: 4.2, g: -9, life: 0.9 }); burst(P.clone().add(V3(0, 0.1, 0)), 10, { color: 0xbfa880, scale: 0.3, speed: 2.2, up: 2, g: -6, life: 0.7 }); S3.shake = Math.max(S3.shake, C.shake || 0.1); airToss(S3.V[a.tk], C.toss); sfx('splashBig', 80); }); }
+        else { const q = (p - h) / (1 - h); fwd = 1; if (q < 0.4) { y = H * (1 - Math.pow(q / 0.4, 2)); pitch = 0.9 * q / 0.4; } else { pitch = 0; back((q - 0.4) / 0.6 * 1 + 0); } if (q >= 0.4) once('land', () => { const P = here(); groundRing(P, 0xd8c8a8, 1.4, 0.5); burst(P.clone().add(V3(0, 0.1, 0)), 10, { tex: 'drop', scale: 0.12, speed: 2, up: 2, g: -7, life: 0.6 }); }); }
+      } else if (C.kind === 'blink') {
+        const side = V3(-a.to.z, 0, a.to.x).normalize().multiplyScalar(0.9), pts = [side.clone().add(a.to.clone().multiplyScalar(0.7)), side.clone().multiplyScalar(-1).add(a.to.clone().multiplyScalar(1.1)), a.to.clone().multiplyScalar(1.25)];
+        const n = p < h ? Math.min(2, Math.floor(p / h * 3)) : p < 0.85 ? 2 : 3;
+        if (n < 3) { const P = pts[n]; v.airOff.x = P.x; v.airOff.z = P.z; y = H * Math.abs(Math.sin((p / h) * 3 * Math.PI)); }
+        if (a.n !== n) { a.n = n; const P = v.pos.clone().add(n < 3 ? pts[n] : V3(0, 0, 0)).add(V3(0, 0.45 + groundH(v.pos.x, v.pos.z), 0)); sprite('puff', P, { color: 0xffe2a0, scale: 0.6, scale1: 0.05, life: 0.3, add: true }); burst(P, 6, { tex: 'spark', color: 0xffd060, scale: 0.1, add: true, speed: 2.2 }); if (n < 3) slash('cross', S3.V[a.tk] ? posOf(a.tk) : P, { scale: 0.7, life: 0.25, rot: n }); sfx('whoosh', 40); }
+        if (n < 3) { R.root.position.x += v.airOff.x; R.root.position.z += v.airOff.z; }
+        v.airOff.y = y; R.root.position.y += y; fwd = 0; y = 0;
+      } else if (C.kind === 'float') {
+        y = p < h ? H * ease.out(p / h) : p < 0.8 ? H + 0.1 * Math.sin((p - h) * 20) : H * (1 - ease.inOut((p - 0.8) / 0.2)); spin = (C.spin || 0) * ease.inOut(Math.min(1, p / h)); roll = 0.15 * Math.sin(p * 12);
+      } else if (C.kind === 'flip') {
+        y = H * tri(p); pitch = -Math.PI * 2 * (C.flip || 0) * ease.inOut(p);
+      }
+      // 落地衝擊
+      if ((C.kind === 'leap' || C.kind === 'jump' || C.kind === 'dive') && p >= h) once('land', () => {
+        const P = here(); groundRing(P, 0xf2e6cf, 1.6 + H * 0.3, 0.6); groundRing(P, 0xffd9a0, 0.9, 0.4, 0.05);
+        burst(P.clone().add(V3(0, 0.1, 0)), 12 + Math.round(H * 3), { color: 0xe8d8b8, scale: 0.28, speed: 2.4, up: 1, g: -4, life: 0.6 });
+        sprite('ring', P.clone().add(V3(0, 0.08, 0)), { color: 0xfff3c8, scale: 0.3, scale1: 2 + H * 0.4, life: 0.35, add: true, opacity: 0.8 });
+        S3.shake = Math.max(S3.shake, C.shake || 0); airToss(S3.V[a.tk], C.toss); sfx('thud', 60);
+      });
+      if (C.kind !== 'blink') { v.airOff.set(a.to.x * fwd, y, a.to.z * fwd); R.root.position.add(v.airOff); }
+      if (spin) R.yaw.rotation.y += spin * Math.PI * 2;
+      // 空中殘影
+      if (y > 0.5 && (!a.lt || t - a.lt > 0.05)) { a.lt = t; sprite('puff', R.root.position.clone().add(V3(0, 0.4 * (v.scale || 1), 0)), { color: 0xffffff, scale: 0.35 * (v.scale || 1), scale1: 0.05, life: 0.25, opacity: 0.35, add: true }); }
+    }
+  }
+  if (v.toss) { // 被打飛
+    const q = (t - v.toss.t0) / v.toss.dur;
+    if (q >= 1 || v.deadT !== null && q > 0.6) { v.toss = null; const P = v.pos.clone().add(V3(0, groundH(v.pos.x, v.pos.z) + 0.05, 0)); burst(P, 6, { color: 0xe8d8b8, scale: 0.2, speed: 1.4, up: 0.6, g: -3, life: 0.4 }); }
+    else { const y = v.toss.h * tri(q); v.airOff.y += y; R.root.position.y += y; roll += v.toss.sp * Math.PI * 2 * ease.out(q) * Math.min(1, v.toss.h / 1.2); }
+  }
+  // 翻滾：繞身體中心轉（不是繞腳）
+  if (pitch || roll || R.yaw.rotation.x || R.yaw.rotation.z) {
+    R.yaw.rotation.order = 'YXZ'; R.yaw.rotation.x = pitch; R.yaw.rotation.z = roll;
+    const c = 0.45 * (v.scale || 1), yw = R.yaw.rotation.y, f = V3(Math.sin(yw), 0, Math.cos(yw));
+    R.root.position.y += c - c * Math.cos(pitch) * Math.cos(roll);
+    R.root.position.addScaledVector(f, -c * Math.sin(pitch));
+    R.root.position.x += c * Math.sin(roll) * Math.cos(yw); R.root.position.z += -c * Math.sin(roll) * Math.sin(yw);
+  }
+}
+// 普通攻擊：出手前衝、命中時對方被擊退（純畫面）
+function atkNudge(v, tv, heavy) {
+  if (!v || !tv || !AIR_ON.on) return;
+  const d = V3(tv.pos.x - v.pos.x, 0, tv.pos.z - v.pos.z); if (d.lengthSq() < 1e-4) return; d.normalize();
+  v.nudge = { t0: nowS(), d, amt: heavy ? 0.42 : 0.28, dur: 0.22 };
+  tv.nudge = { t0: nowS() + 0.04, d, amt: heavy ? 0.24 : 0.14, dur: 0.26, kb: true };
+}
+function nudgeFrame(v, t) {
+  const n = v.nudge; if (!n) return; const q = (t - n.t0) / n.dur; if (q < 0) return; if (q >= 1) { v.nudge = null; return; }
+  const k = n.kb ? n.amt * Math.sin(q * Math.PI) * (1 - q * 0.5) : n.amt * Math.sin(q * Math.PI);
+  R0.copy(n.d).multiplyScalar(k); v.R.root.position.add(R0); if (v.airOff) v.airOff.add(R0);
+}
+const R0 = new THREE.Vector3();
+
 const ULT_FLASH = { elephant: '#ffe6b0', lion: '#ffd34d', whale: '#9fd8ff', peacock: '#b8ffd8', komodo: '#c8ff9a' };
 function screenFlash(col) { const st = document.getElementById('stage'); if (!st) return; const d = document.createElement('div'); d.className = 'sflash'; d.style.background = col; st.appendChild(d); setTimeout(() => d.remove(), 450); }
 function radial(p, n, f) { for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; f(a, Math.cos(a), Math.sin(a), i); } }
