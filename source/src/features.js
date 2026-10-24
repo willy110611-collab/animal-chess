@@ -35,9 +35,12 @@ function featuresBoot() {
   const stage = $('stage');
   stage.insertAdjacentHTML('beforeend', `<button class="menubtn" id="btnMenu" aria-label="選單"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
     <button class="meterbtn" id="btnMeter">統計</button><div class="meter" id="meter" hidden></div>
+    <button class="emobtn" id="btnEmote" aria-label="表情">${EMOTES[0][0]}</button><div class="emopick" id="emopick" hidden>${EMOTES.map((e, i) => `<button data-emo="${i}" title="${e[1]}">${e[0]}</button>`).join('')}</div><div id="emoBubbles"></div>
     <div class="cmdbar" id="cmdbar" hidden>${Object.keys(COMMANDS).map(k => `<button class="cmd" data-cmd="${k}" title="${COMMANDS[k].desc}">${COMMANDS[k].name}</button>`).join('')}</div>
     <div class="wchip" id="wchip"></div><div class="pingmenu" id="pingmenu" hidden></div><div id="pingLabels"></div>`);
   $('btnMenu').onclick = () => openMenu();
+  $('btnEmote').onclick = () => { $('emopick').hidden = !$('emopick').hidden; };
+  $('emopick').addEventListener('click', e => { const b = e.target.closest('[data-emo]'); if (!b) return; $('emopick').hidden = true; const r = doAct({ t: 'emote', id: +b.dataset.emo }, true); if (r === 'bad') toast('表情按太多次了，等下一階段'); });
   $('btnMeter').onclick = () => { METER.on = !METER.on; $('meter').hidden = !METER.on; renderMeter(true); };
   $('meter').addEventListener('click', e => { const t = e.target.closest('[data-mt]'); if (t) { METER.tab = t.dataset.mt; renderMeter(true); } });
   $('cmdbar').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (!b) return; const r = actMe({ t: 'cmd', type: b.dataset.cmd }); if (r !== 'ok') { toast(ERR[r] || '現在不能下指令'); sfx('error'); } });
@@ -137,9 +140,34 @@ function featuresEvent(B, ev) {
 }
 
 // ---- 日誌 ----
+// ---- 快捷表情 ----
+const EMOTES = [['👍', '讚'], ['😂', '哈哈'], ['😱', '嚇死'], ['💪', '加油'], ['🙏', '拜託'], ['🤝', 'GG'], ['😤', '不服'], ['❤️', '愛你']];
+function showEmote(L) {
+  const box = $('emoBubbles'); if (!box || !EMOTES[L.id]) return;
+  const P = G.players[L.pid]; if (!P) return;
+  const d = document.createElement('div'); d.className = 'emob' + (L.pid === ME ? ' me' : P.team === myTeam() ? ' mate' : '');
+  d.innerHTML = `<i>${EMOTES[L.id][0]}</i><span>${esc(L.pid === ME ? '你' : P.name)}</span>`; box.appendChild(d); sfx('emote', 150);
+  while (box.children.length > 4) box.firstChild.remove();
+  setTimeout(() => d.remove(), 3200);
+  if (L.pid === ME && AVATARS) { const a = AVATARS[0]; a.mood = 'win'; a.moodUntil = nowS() + 1.2; } // 小小英雄跟著做動作
+}
+// ---- 血量走勢圖 ----
+function openHpChart() {
+  const H = (G.hpHist || []).slice(); H.unshift(G.teams.map(() => CFG.TEAM_HP));
+  const W = 320, Ht = 170, pad = 24, n = Math.max(2, H.length), max = CFG.TEAM_HP;
+  const X = i => pad + (W - pad - 8) * i / (n - 1), Y = v => 8 + (Ht - 8 - pad) * (1 - Math.max(0, v) / max);
+  const lines = G.teams.map((T, t) => `<polyline fill="none" stroke="${teamColor(t)}" stroke-width="${t === myTeam() ? 3 : 2}" stroke-linejoin="round" points="${H.map((r, i) => X(i).toFixed(1) + ',' + Y(r[t]).toFixed(1)).join(' ')}"/>`).join('');
+  const grid = [0, 25, 50, 75, 100].map(v => `<line x1="${pad}" x2="${W - 8}" y1="${Y(v)}" y2="${Y(v)}" stroke="#d9cbb8" stroke-width="1"/><text x="2" y="${Y(v) + 4}" font-size="10" fill="#8a7a6a">${v}</text>`).join('');
+  const legend = G.teams.map((T, t) => `<span><i style="background:${teamColor(t)}"></i>${esc(teamLabel(t))} ${Math.max(0, T.hp)}</span>`).join('');
+  $('panel').innerHTML = `<button class="x" id="mX" aria-label="關閉">✕</button><h2>血量走勢</h2><svg viewBox="0 0 ${W} ${Ht}" class="hpchart">${grid}${lines}<text x="${W / 2}" y="${Ht - 4}" font-size="10" fill="#8a7a6a" text-anchor="middle">回合</text></svg><div class="hplegend">${legend}</div>`;
+  $('overlay').hidden = false; $('mX').onclick = () => { $('overlay').hidden = true; };
+}
+// ---- 小小英雄：場邊走動、我隊受傷時有反應 ----
+function avatarHurt() { if (!AVATARS) return; const a = AVATARS[0]; a.hurtT = nowS(); a.mood = 'sad'; a.moodUntil = nowS() + 2; }
 function featuresLog(L) {
   const mine = L.pid === ME;
   switch (L.k) {
+    case 'emote': showEmote(L); break;
     case 'buy': if (mine) sfx('buy'); break;
     case 'sell': if (mine) sfx('sell'); break;
     case 'reroll': if (mine) sfx('reroll'); break;
@@ -204,7 +232,7 @@ function openMenu(sub) {
     <div class="menu">
       <div class="mrow"><span>戰鬥速度</span>${[0.5, 1, 2].map(s => `<button class="btn ${G.speed === s ? 'primary' : ''}" data-m="spd${s}">${s}×</button>`).join('')}</div>
       <div class="mrow"><span>上一場戰鬥</span><button class="btn" data-m="replay" ${G.battles.length && G.phase === 'prep' ? '' : 'disabled'}>回放</button></div>
-      <div class="mrow"><span>資訊</span><button class="btn" data-m="pool">卡池與機率</button><button class="btn" data-m="scout">偵察敵隊</button><button class="btn" data-m="dex">圖鑑</button></div>
+      <div class="mrow"><span>資訊</span><button class="btn" data-m="hp">血量走勢</button><button class="btn" data-m="pool">卡池與機率</button><button class="btn" data-m="scout">偵察敵隊</button><button class="btn" data-m="dex">圖鑑</button></div>
       ${slots}
       ${G.solo ? '' : `<div class="mrow"><span>隊伍</span><button class="btn" data-m="captain" ${T.captain === ME ? '' : 'disabled'}>把隊長交給隊友</button></div>`}
       <div class="mrow"><span>AI 代打</span><button class="btn ${P.ai ? 'primary' : ''}" data-m="ai">${P.ai ? '代打中（點一下取回）' : '讓 AI 幫我打'}</button></div>
@@ -221,6 +249,7 @@ function openMenu(sub) {
     else if (m.startsWith('spd')) { G.speed = +m.slice(3); toast(`戰鬥速度 ${G.speed}×`); openMenu(); }
     else if (m === 'replay') { $('overlay').hidden = true; startReplay(); }
     else if (m === 'pool') openPool();
+    else if (m === 'hp') openHpChart();
     else if (m === 'scout') openScout();
     else if (m === 'dex') showDex();
     else if (m.startsWith('save')) { saveFormation(+m.slice(4)); openMenu(); }
@@ -429,10 +458,11 @@ function avatarFrame(dt) {
     const mood = a.moodUntil > t ? a.mood : null;
     let moving = false;
     if (a.target) { const d = a.target.clone().sub(R.root.position); d.y = 0; const L = d.length(); if (L > 0.05) { d.normalize(); R.root.position.addScaledVector(d, Math.min(L, dt * 2.5)); moving = true; R.yaw.rotation.y = Math.atan2(d.x, d.z); } else { a.target = null; } }
-    else if (R.root.position.distanceTo(a.home) > 0.05) a.target = a.home.clone();
+    else if (!a.wanderAt || t > a.wanderAt) { a.wanderAt = t + 4 + Math.random() * 6; a.target = V3(Math.max(-4.6, Math.min(4.6, a.home.x + (Math.random() - .5) * 3)), 0, a.home.z + (Math.random() - .5) * 0.4); } // 場邊閒晃
     poseRig(R, { t, moving, moveP: moving ? (t * 3) % 1 : null, victory: mood === 'win' });
     if (!moving) R.yaw.rotation.y = mood === 'sad' ? 0 : Math.sin(t * 0.5) * 0.4;
     if (mood === 'sad') { R.head.rotation.x += 0.5; R.body.scale.y *= 0.95; }
+    if (a.hurtT && t - a.hurtT < 0.5) { const k = (t - a.hurtT) / 0.5; R.root.position.y = Math.sin(k * Math.PI) * 0.35; R.root.rotation.z = Math.sin(k * Math.PI * 6) * 0.25 * (1 - k); } else { R.root.position.y = 0; R.root.rotation.z = 0; } // 被扣血：彈一下、搖頭
   }
 }
 

@@ -80,6 +80,9 @@ const SFX = {
   sparkle: () => { for (let i = 0; i < 5; i++) tone(2000 + Math.random() * 1500, 0.08, { vol: 0.04, at: i * 0.04 }); },
   splashBig: () => { noise(0.5, { f: 1200, fto: 250, q: 0.5, vol: 0.28 }); tone(140, 0.3, { to: 60, vol: 0.2 }); },
   hitTick: () => noise(0.035, { f: 2400, q: 1.5, vol: 0.07 }),
+  tick: () => { tone(1500, 0.04, { type: 'square', vol: 0.05, lp: 3000 }); },
+  tickLast: () => { tone(1900, 0.06, { type: 'square', vol: 0.07, lp: 3500 }); tone(950, 0.1, { vol: 0.06, at: 0.02 }); },
+  emote: () => { tone(1100, 0.06, { type: 'triangle', vol: 0.1 }); tone(1650, 0.1, { type: 'triangle', vol: 0.08, at: 0.05 }); },
   sting: () => { tone(2400, 0.05, { to: 3200, vol: 0.06 }); noise(0.04, { f: 5000, q: 2, vol: 0.05 }); },
 };
 // 每個攻擊／技能特效配的音效（沒列到的用預設）
@@ -136,13 +139,16 @@ function musicStart(arena) {
   if (!AUD.ctx) return;
   if (AUD.music && AUD.music.arena === arena) return;
   musicStop();
-  const S = SONGS[arena] || SONGS.jungle, beat = 60 / S.bpm / 2; // 八分音符
-  const M = { arena, step: 0, next: AUD.ctx.currentTime + 0.1, seed: 7, deg: 2 };
+  const S = SONGS[arena] || SONGS.jungle, beat0 = 60 / S.bpm / 2; // 八分音符
+  const M = { arena, step: 0, next: AUD.ctx.currentTime + 0.1, seed: 7, deg: 2, mood: AUD.mood || 'calm' };
   const rnd = () => { M.seed = (M.seed * 16807) % 2147483647; return M.seed / 2147483647; };
   M.timer = setInterval(() => {
     const C = AUD.ctx; if (!C) return;
     while (M.next < C.currentTime + 0.25) {
+      const mood = AUD.mood || 'calm', beat = beat0 / (MOOD_CFG[mood] || MOOD_CFG.calm).tempo; // 戰況：快輸＝緊張（加快＋心跳），連勝＝激昂（加快＋鼓點）
       const st = M.step, bar = Math.floor(st / 8) % S.chords.length, ch = S.chords[bar], at = M.next - C.currentTime, b = { bus: AUD.musG };
+      if (mood === 'tense' && st % 4 === 0) { tone(55, 0.12, Object.assign({ to: 40, vol: 0.22, at }, b)); tone(55, 0.1, Object.assign({ to: 40, vol: 0.14, at: at + beat * 0.5 }, b)); }
+      if (mood === 'hype') { if (st % 2 === 0) tone(80, 0.12, Object.assign({ to: 45, vol: 0.18, at }, b)); if (st % 4 === 2) noise(0.08, Object.assign({ f: 2200, q: 0.8, vol: 0.06, at }, b)); }
       // 和弦／低音
       if (st % 8 === 0) { ch.forEach((n, i) => tone(midi(S.root - 12 + n), beat * 7.5, Object.assign({ type: 'sine', vol: 0.05, at, att: 0.05, det: i * 3 }, b))); tone(midi(S.root - 24 + ch[0]), beat * 3.5, Object.assign({ type: S.bass, vol: 0.12, at }, b)); }
       if (st % 8 === 4) tone(midi(S.root - 24 + ch[0] + 7), beat * 3, Object.assign({ type: S.bass, vol: 0.09, at }, b));
@@ -158,4 +164,6 @@ function musicStart(arena) {
   }, 80);
   AUD.music = M;
 }
+const MOOD_CFG = { calm: { tempo: 1 }, tense: { tempo: 1.12 }, hype: { tempo: 1.15 } }; // 配樂依戰況：速度倍率
+function musicMood(m) { AUD.mood = m; }
 function musicStop() { if (AUD.music) { clearInterval(AUD.music.timer); AUD.music = null; } }

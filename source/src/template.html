@@ -101,6 +101,24 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .team.stand { gap: 0; padding: 4px 6px 5px; pointer-events: auto; min-width: 0; }
 .team.stand .sthead { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; opacity: .75; padding: 0 2px 2px; }
 .team.stand .sthead small { font-size: 10px; }
+.team.stand .stx { all: unset; font-size: 9px; padding: 0 5px; border-radius: 999px; background: rgba(255,255,255,.16); cursor: pointer; margin-left: 4px; }
+.team.stand.wide { position: absolute; right: max(8px, env(safe-area-inset-right, 0px)); width: min(260px, calc(100vw - 24px)); z-index: 9; background: rgba(43,28,22,.94); }
+.team.stand.wide .srow { font-size: 13px; line-height: 18px; padding: 4px 6px; } .team.stand.wide .srow .nm { white-space: normal; }
+#itemTip { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; background: rgba(43,28,22,.95); color: var(--paper); border-radius: 10px; padding: 6px 10px; font-size: 12px; max-width: 220px; display: grid; gap: 2px; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+#itemTip b { color: #ffd34d; } #itemTip small { font-size: 11px; opacity: .85; }
+.sellzone b { color: #ffd34d; } .sellzone .szit { margin-left: 8px; display: inline-flex; gap: 3px; align-items: center; font-size: 12px; } .sellzone .szit svg { width: 16px; height: 16px; }
+.emobtn { position: absolute; left: max(8px, env(safe-area-inset-left, 0px)); bottom: 52px; z-index: 6; width: 34px; height: 34px; border-radius: 50%; background: rgba(43,28,22,.72); font-size: 18px; display: grid; place-items: center; pointer-events: auto; }
+.emopick { position: absolute; left: max(8px, env(safe-area-inset-left, 0px)); bottom: 92px; z-index: 8; display: grid; grid-template-columns: repeat(4, 38px); gap: 4px; padding: 6px; border-radius: 12px; background: rgba(43,28,22,.9); pointer-events: auto; }
+.emopick button { font-size: 22px; height: 38px; border-radius: 8px; background: rgba(255,255,255,.08); }
+#emoBubbles { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); z-index: 6; display: grid; gap: 4px; justify-items: center; pointer-events: none; }
+.emob { display: flex; align-items: center; gap: 6px; background: rgba(255,248,230,.95); color: var(--ink); border-radius: 999px; padding: 2px 10px 2px 4px; font-size: 12px; font-weight: 800; animation: emoin .25s ease-out, emoout .4s ease-in 2.8s forwards; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+.emob i { font-style: normal; font-size: 22px; } .emob.me { background: #dff0ff; } .emob.mate { background: #e8f8dc; }
+@keyframes emoin { from { transform: scale(.4); opacity: 0; } } @keyframes emoout { to { transform: translateY(-10px); opacity: 0; } }
+.hpchart { width: 100%; height: auto; background: #fff8ec; border-radius: 10px; }
+.hplegend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; margin-top: 6px; } .hplegend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.sheet .rec { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; } .sheet .rec span { display: inline-flex; align-items: center; gap: 3px; background: #f1e4cc; border-radius: 999px; padding: 1px 8px 1px 3px; } .sheet .rec svg { width: 16px; height: 16px; }
+.mvp { display: flex; gap: 10px; align-items: center; justify-content: center; margin: 8px auto; padding: 8px 12px; border-radius: 12px; background: linear-gradient(135deg, #fff2c8, #ffe08a); color: var(--ink); max-width: 300px; text-align: left; }
+.mvp img { width: 56px; height: 56px; } .mvp small { display: block; font-size: 11px; color: #a86a10; font-weight: 900; } .mvp b { display: block; font-size: 18px; font-family: var(--f-display); } .mvp span { font-size: 12px; }
 .team.stand .srow { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 14px 10px minmax(0,1fr) auto auto auto; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 7px; font-size: 11px; line-height: 14px; cursor: pointer; opacity: .92; min-width: 0; }
 .team.stand .srow .dot { width: 10px; height: 10px; }
 .team.stand .srow .sm { display: grid; gap: 2px; min-width: 0; }
@@ -160,7 +178,7 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .clock .stg i.done { background: var(--gold-2); } .clock .stg i.now { background: #fff; box-shadow: 0 0 0 2px var(--gold-2); }
 .clock b { font-family: var(--f-display); font-size: 24px; line-height: 1.05; display: block; font-variant-numeric: tabular-nums; }
 .clock small { font-size: 11px; opacity: .85; }
-.clock.hurry b { color: #ff8a6a; animation: pulse .5s ease-in-out infinite alternate; }
+.clock.hurry { box-shadow: 0 0 0 2px #ff5a3c, 0 0 14px rgba(255,80,50,.7); } .clock.hurry b { color: #ff6a4a; animation: pulse .5s ease-in-out infinite alternate; } /* 最後 5 秒：計時器變紅 */
 @keyframes pulse { to { transform: scale(1.15); } }
 
 /* 羈絆欄（左側） */

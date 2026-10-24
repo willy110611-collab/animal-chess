@@ -1436,6 +1436,11 @@ function act(G, pid, a) {
       if (!pool.length) return 'bad';
       P.augChoice[a.i] = pool[G.rng(pool.length)]; P.augRolled[a.i] = true; return 'ok';
     }
+    case 'emote': { // 快捷表情：每個階段（準備／戰鬥）最多 4 次，避免洗頻
+      const key = G.round + G.phase; if (P.emoteKey !== key) { P.emoteKey = key; P.emoteN = 0; }
+      if ((P.emoteN || 0) >= 4 || !(+a.id >= 0 && +a.id < 8)) return 'bad';
+      P.emoteN = (P.emoteN || 0) + 1; G.log.push({ k: 'emote', pid, id: +a.id }); return 'ok';
+    }
     case 'ping': {
       const T = teammate(G, pid) || { ai: false };
       G.pings.push({ pid, kind: a.kind, cell: a.cell, key: a.key, t: G.round });
@@ -1743,6 +1748,7 @@ function endCombat(G) {
   for (const bt of G.battles) if (bt.B.over) settleBattle(G, bt); // 只剩一隊提早結束時，沒打完的不算
   const res = roundRes(G);
   G.lastResult = res;
+  G.hpHist = (G.hpHist || []).concat([G.teams.map(T => Math.max(0, T.hp))]).slice(-60); // 血量走勢圖用
   if (!eliminate(G, G.rules.maxRound > 0 && R >= G.rules.maxRound)) { G.phase = 'result'; G.timer = CFG.RESULT_MS || 3000; }
 }
 
@@ -2205,7 +2211,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'http://localhost:8123', 'http://127.0.0.1:8123'],
-  VERSION: '0.12.8',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.12.9',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）
