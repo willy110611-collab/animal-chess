@@ -899,14 +899,14 @@ const SKILL_V2 = {
     R.armL.rotation.z -= 1.4 * lay; R.armR.rotation.z += 1.4 * lay; R.armL.rotation.x += 0.8 * lay; R.armR.rotation.x += 0.8 * lay;
     if (R.legL) { R.legL.rotation.x -= 1.2 * lay; R.legR.rotation.x -= 1.2 * lay; }
     hopUp(R, ramp(p, 0.8, 1), 0.25); } },
-  hippo: { dur: 1.3, hit: 0.55, desc: '轉身、跳起來，用大屁股重重坐下去', fn(R, p) {
+  hippo: { dur: 1.3, hit: 0.55, beats: [0.6], beatFx: 'beatSlam', desc: '轉身、跳起來，用大屁股重重坐下去', fn(R, p) {
     const turn = ease.inOut(ramp(p, 0, 0.25)) * (1 - ease.inOut(ramp(p, 0.8, 1)));
     R.body.rotation.y += Math.PI * turn;
     const sit = bell(p, 0.5, 0.85); R.body.rotation.x -= 0.55 * sit; R.body.scale.y *= 1 - 0.25 * bell(p, 0.52, 0.66); R.body.scale.x *= 1 + 0.15 * bell(p, 0.52, 0.66);
     if (R.legL) { R.legL.rotation.x -= 1.3 * sit; R.legR.rotation.x -= 1.3 * sit; }
     R.armL.rotation.z -= 1.0 * bell(p, 0.25, 0.6); R.armR.rotation.z += 1.0 * bell(p, 0.25, 0.6);
     if (R.jaw) R.jaw.rotation.x += 0.9 * bell(p, 0.5, 0.9); } },
-  rhino: { dur: 1.3, hit: 0.3, desc: '低頭連撞三下，一下比一下用力', fn(R, p) {
+  rhino: { dur: 1.3, hit: 0.3, beats: [0.48, 0.76], beatFx: 'beatImpact', desc: '低頭連撞三下，一下比一下用力', fn(R, p) {
     R.head.rotation.x += 0.75 * Math.min(1, bell(p, 0, 1) * 2);
     for (let i = 0; i < 3; i++) { const a = 0.08 + i * 0.28, k = bell(p, a, a + 0.24), s = 0.45 + i * 0.2; R.body.position.z += s * k; R.body.rotation.x += 0.3 * k; R.body.scale.z *= 1 - 0.18 * bell(p, a + 0.1, a + 0.2); R.body.scale.y *= 1 + 0.1 * bell(p, a + 0.1, a + 0.2); R.body.position.y += 0.05 * Math.abs(Math.sin(k * Math.PI * 2)); }
     const run = Math.sin(p * 45) * bell(p, 0, 1);
@@ -921,7 +921,7 @@ const SKILL_V2 = {
     if (R.legL) { R.legL.rotation.x += 0.5 * hs; R.legR.rotation.x += 0.5 * hs; }
     const puff = bell(p, 0.4, 0.75); R.tail.rotation.x += 0.9 * hs + 0.25 * Math.sin(p * 50) * puff; R.tail.scale.setScalar(1 + 0.25 * puff);
     R.body.rotation.z += 0.08 * Math.sin(p * 30) * puff; } },
-  gorilla: { dur: 1.5, hit: 0.38, desc: '先捶胸，再左右拳輪流捶地四下', fn(R, p) {
+  gorilla: { dur: 1.5, hit: 0.38, beats: [0.58, 0.74, 0.9], beatFx: 'beatPound', desc: '先捶胸，再左右拳輪流捶地四下', fn(R, p) {
     const chest = bell(p, 0, 0.3);
     R.armL.rotation.x -= 1.3 * chest * (0.6 + 0.4 * Math.sin(p * 60)); R.armR.rotation.x -= 1.3 * chest * (0.6 - 0.4 * Math.sin(p * 60));
     R.body.position.y += 0.1 * chest; R.head.rotation.x -= 0.3 * chest;
@@ -1015,7 +1015,7 @@ const SKILL_V2 = {
     R.body.rotation.x += 0.75 * shoot; R.body.position.z += 0.25 * shoot; R.body.position.y += 0.08 * shoot; R.mouth.scale.y *= 1 + 2.2 * shoot;
     R.body.rotation.x -= 0.7 * pull; R.body.position.z -= 0.15 * pull; R.armL.rotation.x -= 1.0 * pull; R.armR.rotation.x -= 1.0 * pull;
     R.legL.rotation.x += 0.6 * pull; R.legR.rotation.x += 0.6 * pull; } },
-  redpanda: { dur: 1.4, hit: 0.35, desc: '站起來雙手舉高變大隻，左右搖擺再用力跺腳', fn(R, p) {
+  redpanda: { dur: 1.4, hit: 0.35, beats: [0.58, 0.78], beatFx: 'beatPound', desc: '站起來雙手舉高變大隻，左右搖擺再用力跺腳', fn(R, p) {
     const up = Math.min(1, bell(p, 0, 1) * 1.8);
     R.body.position.y += 0.18 * up; R.body.scale.y *= 1 + 0.22 * up; R.body.rotation.x -= 0.15 * up;
     R.armL.rotation.z -= 2.6 * up; R.armR.rotation.z += 2.6 * up; R.armL.rotation.x -= 0.3 * up; R.armR.rotation.x -= 0.3 * up;
@@ -1098,20 +1098,20 @@ const SKILL_V2 = {
     R.head.scale.setScalar(1 - 0.8 * ball); R.armL.scale.setScalar(1 - 0.8 * ball); R.armR.scale.setScalar(1 - 0.8 * ball);
     R.spikes.scale.setScalar(1 + 0.35 * ball + 0.5 * burst);
     R.body.rotation.y += Math.PI * 4 * ease.inOut(ramp(p, 0.2, 0.85)); R.body.position.y += 0.1 * ball; } },
-  croc: { dur: 1.3, hit: 0.3, desc: '張大嘴撲上去咬住，整隻翻滾兩圈', fn(R, p) {
+  croc: { dur: 1.3, hit: 0.3, beats: [0.5, 0.72], beatFx: 'beatDust', desc: '張大嘴撲上去咬住，整隻翻滾兩圈', fn(R, p) {
     const open = bell(p, 0, 0.3), lunge = bell(p, 0.15, 0.95);
     if (R.jawU) R.jawU.rotation.x -= 1.1 * open; if (R.jaw) R.jaw.rotation.x += 0.4 * open;
     R.body.position.z += 0.45 * lunge; R.body.position.y += 0.12 * lunge;
     R.body.rotation.z += ease.inOut(ramp(p, 0.25, 0.9)) * Math.PI * 4; // 死亡翻滾
     if (R.tail) R.tail.rotation.y += 0.8 * Math.sin(p * 25) * lunge; } },
-  panda: { dur: 1.3, hit: 0.5, desc: '抱住膝蓋縮成球往前滾三圈，滾完張開雙手', fn(R, p) {
+  panda: { dur: 1.3, hit: 0.5, beats: [0.25, 0.4, 0.62, 0.75], beatFx: 'beatDust', desc: '抱住膝蓋縮成球往前滾三圈，滾完張開雙手', fn(R, p) {
     const curl = Math.min(1, bell(p, 0.05, 0.85) * 2), open = bell(p, 0.8, 1);
     R.head.scale.setScalar(1 - 0.25 * curl); R.armL.rotation.x -= 1.5 * curl; R.armR.rotation.x -= 1.5 * curl; R.legL.rotation.x -= 1.2 * curl; R.legR.rotation.x -= 1.2 * curl;
     R.body.rotation.x += ease.inOut(ramp(p, 0.1, 0.8)) * Math.PI * 6; R.body.position.y += 0.25 * curl; R.body.position.z += 0.3 * curl;
     R.armL.rotation.z -= 2.2 * open; R.armR.rotation.z += 2.2 * open;
     if (R.prop) R.prop.visible = p > 0.8 || p < 0.05; } },
 };
-for (const k in SKILL_V2) { const A = SKILL_V2[k]; if (!ACT[k] || !ACT[k].skill) continue; ACT[k].skill = { dur: A.dur, hit: A.hit, fx: ACT[k].skill.fx, fn: A.fn, desc: A.desc }; }
+for (const k in SKILL_V2) { const A = SKILL_V2[k]; if (!ACT[k] || !ACT[k].skill) continue; ACT[k].skill = { dur: A.dur, hit: A.hit, fx: ACT[k].skill.fx, fn: A.fn, desc: A.desc, beats: A.beats, beatFx: A.beatFx }; }
 function poseRig(R, st) {
   for (const g of R.groups) resetG(g);
   const t = st.t + R.phase;

@@ -571,6 +571,11 @@ function playFx(name, sk, tk, ex) {
   if (!['acorn', 'stinkBall', 'inkBall'].includes(name)) try { fxDetail(name, sv, A, sp, tp, tv); } catch (e) {} // 遠程普攻由投射物命中時處理
   if (SKILL_FX && SKILL_FX.has(name) && ULT[sv.unitKey]) { try { ULT[sv.unitKey]({ A, sp, tp, tv, sv }); } catch (e) {} if (ULT_FLASH[sv.unitKey]) screenFlash(ULT_FLASH[sv.unitKey]); }
   switch (name) {
+    // v0.13.23 多段技能動作的每一下（SKILL_V2 的 beats）：衝撞、捶地、跺腳、落地
+    case 'beatImpact': slash('burst', tp, { scale: 0.55, color: 0xffe0b0 }); burst(tp, 7, { color: 0xe8d8b8, scale: 0.2, speed: 2, up: 0.8, g: -2, life: 0.5 }); S3.shake = Math.max(S3.shake, 0.08); break;
+    case 'beatPound': groundRing(A, 0xe8d8b8, 1.3, 0.45); burst(A.clone().add(V3(0, 0.1, 0)), 8, { color: 0xe8d8b8, scale: 0.22, speed: 2, up: 0.6, g: -1.5, life: 0.55 }); S3.shake = Math.max(S3.shake, 0.1); break;
+    case 'beatSlam': groundRing(A, 0xd8c8e0, 2.0, 0.6); groundRing(A, 0xffffff, 1.2, 0.4, 0.05); burst(A.clone().add(V3(0, 0.1, 0)), 14, { color: 0xe8d8b8, scale: 0.3, speed: 2.6, up: 0.8, g: -1.5, life: 0.7 }); S3.shake = Math.max(S3.shake, 0.18); break;
+    case 'beatDust': burst(A.clone().add(V3(0, 0.08, 0)), 5, { color: 0xe8d8b8, scale: 0.18, speed: 1.2, up: 0.5, g: -1, life: 0.45 }); break;
     case 'bump': case 'kick': slash('burst', tp, { scale: 0.35, color: 0xffd9a0 }); burst(tp, 5, { color: 0xf2e6cf, scale: 0.12, speed: 1.6 }); break;
     case 'leafShot': projectile(hand, tp, 'leaf', 0.25, { scale: 0.2, arc: 0.3, spin: 8, color: 0x7ab84a, onEnd: () => burst(tp, 4, { tex: 'leaf', color: 0x9ad86a, scale: 0.1, speed: 1.2 }) }); break;
     case 'waterShot': projectile(posOf(sk, 0.8), tp, 'drop', 0.22, { scale: 0.18, arc: 0.25, onEnd: () => burst(tp, 6, { tex: 'drop', scale: 0.08, speed: 1.4, up: 1.2, g: -5, life: 0.4 }) }); break;

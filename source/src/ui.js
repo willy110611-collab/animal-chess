@@ -760,6 +760,7 @@ function handleBattleEvents(bt) {
           s3Num(k, ev.s, 'skill', 0, 15);
           sprite('ring', posOf(k, 0.5), { scale: 0.2, scale1: 1.2, life: 0.4, color: 0xfff3c8, add: true });
           { const zp = cv.zonePos; at(A.dur * A.hit, () => playFx(A.fx, k, tk, { zone: zp[ev.id] })); }
+          if (A.beats) for (const b of A.beats) at(A.dur * b, () => playFx(A.beatFx, k, tk)); // 多段動作的每一下
           break; }
         case 'zone': { const [x, z] = bWorld(ev.c, ev.r); cv.zonePos[ev.id] = V3(x, 0.2, z);
           if (ev.kind === 'meteor') { meteorFx(V3(x, 0, z)); break; } if (ev.kind === 'water') { burst(V3(x, 0.2, z), 14, { tex: 'drop', scale: 0.14, speed: 2.4, up: 3, g: -7, life: 0.8 }); groundRing(V3(x, 0, z), 0x6fa3c8, 1.8, 0.7); } break; }
@@ -1025,7 +1026,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.22'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.23'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
