@@ -152,6 +152,7 @@ function s3Frame(dt, ctx) {
     const dead = v.deadT !== null ? (t - v.deadT) / 0.9 : undefined;
     if (!act && it.jumpP !== undefined && it.jumpP !== null && v.R.melee && ACT[v.unitKey] && ACT[v.unitKey].atk) act = { kind: 'atk', p: it.jumpP };
     const landP = v.land ? (t - v.land) / 0.28 : 1;
+    if (v.R.olMat) v.R.olMat.visible = (S3.quality || 1) >= MODEL_CFG.OUTLINE_MIN_Q; // 手機太卡時自動關描邊
     poseRig(v.R, { t, moving: v.moving, moveP, land: landP < 1 ? landP : null, sleep: it.sleep, stun: it.stun, act, hit: hitP < 1 ? hitP : 0, dead, victory: it.victory });
     if (v.air || v.toss || v.airOff || v.nudge) { airFrame(v, t); nudgeFrame(v, t); }
     // 選取時浮起

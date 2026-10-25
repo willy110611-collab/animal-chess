@@ -3250,6 +3250,33 @@ function toonGrad() {
   TOON_GRAD.minFilter = TOON_GRAD.magFilter = THREE.NearestFilter; TOON_GRAD.needsUpdate = true;
   return TOON_GRAD;
 }
+// ===== v0.14 角色精緻化（只影響動物，場景不變）=====
+// 可調：GRAD 角色的明暗色階（越大越亮）、RIM 邊緣光強度、RIM_POW 邊緣光寬窄（越大越細）、RIM_COL 邊緣光顏色
+const MODEL_CFG = { GRAD: [150, 200, 238, 255], RIM: 0.3, RIM_POW: 2.6, RIM_COL: '1.0, 0.95, 0.84',
+  OUTLINE: true, OUTLINE_W: 0.005, OUTLINE_COL: '#3a2a22', OUTLINE_MIN_Q: 0.7 }; // OUTLINE 描邊開關、OUTLINE_W 描邊粗細（畫面比例）、OUTLINE_COL 描邊顏色、OUTLINE_MIN_Q 自動畫質降到這以下就關描邊（省一半繪製）
+function outlineMat() { // 描邊：背面往外推一點、塗深色（粗細固定在畫面上，不受部位大小影響）
+  const m = new THREE.MeshBasicMaterial({ color: MODEL_CFG.OUTLINE_COL, side: THREE.BackSide });
+  const w = MODEL_CFG.OUTLINE_W.toFixed(4);
+  m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', `#include <project_vertex>
+  vec3 oN = normalize(normalMatrix * normal);
+  gl_Position.xy += normalize(oN.xy + 1e-5) * ${w} * gl_Position.w;`); };
+  m.customProgramCacheKey = () => 'charOutline'; m.userData.op = 1; return m;
+}
+let CHAR_GRAD = null;
+function charGrad() {
+  if (CHAR_GRAD) return CHAR_GRAD;
+  const g = MODEL_CFG.GRAD, d = new Uint8Array(g.length * 4); g.forEach((v, i) => d.set([v, v, v, 255], i * 4));
+  CHAR_GRAD = new THREE.DataTexture(d, g.length, 1, THREE.RGBAFormat);
+  CHAR_GRAD.minFilter = CHAR_GRAD.magFilter = THREE.NearestFilter; CHAR_GRAD.needsUpdate = true;
+  return CHAR_GRAD;
+}
+function charMat(m) { // 邊緣光：輪廓旁邊一圈淡淡的亮邊，讓動物從草地上跳出來
+  const rim = `#include <dithering_fragment>
+  float rimK = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), ${MODEL_CFG.RIM_POW.toFixed(2)});
+  gl_FragColor.rgb += rimK * ${MODEL_CFG.RIM.toFixed(2)} * vec3(${MODEL_CFG.RIM_COL});`;
+  m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <dithering_fragment>', rim); };
+  m.customProgramCacheKey = () => 'charRim'; return m;
+}
 // 每隻單位各自一套材質（受擊閃白、夜行眼睛發光）
 function Mats() {
   const cache = {}, list = [];
@@ -3257,7 +3284,7 @@ function Mats() {
     const k = hex + (opt ? JSON.stringify(opt) : '');
     if (cache[k]) return cache[k];
     const m = opt && opt.basic ? new THREE.MeshBasicMaterial({ color: hex, transparent: !!opt.op, opacity: opt.op || 1, depthWrite: !opt.op })
-      : new THREE.MeshToonMaterial({ color: hex, gradientMap: toonGrad(), transparent: !!(opt && opt.op), opacity: (opt && opt.op) || 1 });
+      : charMat(new THREE.MeshToonMaterial({ color: hex, gradientMap: charGrad(), transparent: !!(opt && opt.op), opacity: (opt && opt.op) || 1 }));
     m.userData.op = m.opacity; cache[k] = m; list.push(m); return m;
   };
   f.list = list; return f;
@@ -3283,6 +3310,7 @@ function addEyes(R, head, y, dx, z, size, glowCol) {
     head.add(e);
     const hl = mesh(GEO.sphLo, R.M('#ffffff', { basic: 1 }), [s * dx + size * 0.35, y + size * 0.4, z + size * 0.45], size * 0.32);
     head.add(hl);
+    head.add(mesh(GEO.sphLo, R.M('#ffffff', { basic: 1 }), [s * dx - size * 0.3, y - size * 0.35, z + size * 0.5], size * 0.14)); // v0.14 第二顆小反光
   }
 }
 function addBlush(R, head, y, dx, z) {
@@ -3413,7 +3441,7 @@ const BUILD = {
     const ws = new THREE.Shape(); ws.moveTo(0, 0.04); ws.lineTo(0.56, 0.14);
     ws.quadraticCurveTo(0.5, -0.02, 0.44, -0.12); ws.quadraticCurveTo(0.38, -0.02, 0.3, -0.16); ws.quadraticCurveTo(0.22, -0.04, 0.14, -0.14); ws.quadraticCurveTo(0.06, -0.06, 0, -0.08); ws.lineTo(0, 0.04);
     const wgeo = new THREE.ShapeGeometry(ws, 6);
-    const wmat = new THREE.MeshToonMaterial({ color: '#3f3149', gradientMap: toonGrad(), side: THREE.DoubleSide }); wmat.userData.op = 1; R.M.list.push(wmat);
+    const wmat = charMat(new THREE.MeshToonMaterial({ color: '#3f3149', gradientMap: charGrad(), side: THREE.DoubleSide })); wmat.userData.op = 1; R.M.list.push(wmat);
     const bmat = M('#2d2236');
     for (const s of [-1, 1]) {
       const w = saveBase(grp(R.body, [s * 0.13, 0.3, -0.04], [0, s * 0.35, 0]));
@@ -3436,13 +3464,13 @@ const BUILD = {
     for (let i = 0; i < 6; i++) t.add(mesh(GEO.sph, R.M(i % 2 ? '#e8c49a' : '#a8442c'), [Math.sin(i * 0.5) * 0.06, i * 0.035, -i * 0.07], 0.1 - i * 0.004));
   },
   skunk(R) {
-    plush(R, { fur: '#2f2b33', belly: '#4a4550', muzzle: '#4a4550', nose: '#e98a9a', headR: 0.29 });
+    plush(R, { fur: '#3d3842', belly: '#4a4550', muzzle: '#4a4550', nose: '#e98a9a', headR: 0.29 });
     R.head.add(mesh(GEO.sph, R.M('#f2efe8'), [0, 0.36, 0.12], [0.05, 0.15, 0.17], [0.4, 0, 0]));
-    roundEar(R, R.head, -0.18, 0.4, -0.02, '#211e25', '#4a4550', 0.07); roundEar(R, R.head, 0.18, 0.4, -0.02, '#211e25', '#4a4550', 0.07);
+    roundEar(R, R.head, -0.18, 0.4, -0.02, '#2e2a33', '#4a4550', 0.07); roundEar(R, R.head, 0.18, 0.4, -0.02, '#2e2a33', '#4a4550', 0.07);
     R.body.add(mesh(GEO.sph, R.M('#f2efe8'), [0, 0.42, -0.12], [0.05, 0.14, 0.12]));
     const t = saveBase(grp(R.body, [0, 0.18, -0.22])); R.tail = t;
     const pts = [[0.04, 0, 0], [0.1, 0.16, -0.1], [0.17, 0.36, -0.12], [0.22, 0.56, -0.06], [0.22, 0.72, 0.04]];
-    pts.forEach((p, i) => { t.add(mesh(GEO.sph, R.M('#2f2b33'), p, 0.16 - i * 0.01)); t.add(mesh(GEO.sph, R.M('#f2efe8'), [p[0] - 0.05, p[1] + 0.02, p[2] + 0.04], [0.06, 0.11, 0.12])); });
+    pts.forEach((p, i) => { t.add(mesh(GEO.sph, R.M('#3d3842'), p, 0.16 - i * 0.01)); t.add(mesh(GEO.sph, R.M('#f2efe8'), [p[0] - 0.05, p[1] + 0.02, p[2] + 0.04], [0.06, 0.11, 0.12])); });
   },
   croc(R) {
     plush(R, { fur: '#5e8a4a', belly: '#d8d7a0', headR: 0.28, blush: false });
@@ -3584,7 +3612,7 @@ BUILD.kingboar = function (R) {
 // ---- v0.5 新動物 ----
 Object.assign(BUILD, {
   penguin(R) {
-    plush(R, { fur: '#2f3440', belly: '#f4f1ea', headR: 0.28, limb: '#2f3440', bodyW: 0.27, bodyH: 0.29 });
+    plush(R, { fur: '#3a4152', belly: '#f4f1ea', headR: 0.28, limb: '#3a4152', bodyW: 0.27, bodyH: 0.29 });
     const M = R.M, hr = 0.28;
     R.head.add(mesh(GEO.sph, M('#f4f1ea'), [0, hr * 0.62, hr * 0.5], [0.22, 0.17, 0.14]));
     R.head.add(mesh(GEO.cone, M('#f0a030'), [0, hr * 0.55, hr * 1.02], [0.045, 0.09, 0.035], [Math.PI / 2, 0, 0]));
@@ -3672,12 +3700,12 @@ Object.assign(BUILD, {
     R.headR = 0.2; R.headTop = 0.95;
   },
   gorilla(R) {
-    plush(R, { fur: '#3a3536', belly: '#6a5e58', headR: 0.29, bodyW: 0.33, bodyH: 0.3, limb: '#2f2a2b', paw: '#5a4e48', blush: false });
+    plush(R, { fur: '#4b4547', belly: '#6a5e58', headR: 0.29, bodyW: 0.33, bodyH: 0.3, limb: '#3e3839', paw: '#5a4e48', blush: false });
     const M = R.M;
     R.head.add(mesh(GEO.sph, M('#7a6a62'), [0, 0.17, 0.17], [0.19, 0.15, 0.15]));
-    R.head.add(mesh(GEO.sph, M('#2f2a2b'), [0, 0.27, 0.19], [0.2, 0.045, 0.08]));
+    R.head.add(mesh(GEO.sph, M('#3e3839'), [0, 0.27, 0.19], [0.2, 0.045, 0.08]));
     for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#2e221d'), [s * 0.035, 0.13, 0.31], [0.018, 0.012, 0.01]));
-    roundEar(R, R.head, -0.27, 0.22, 0, '#3a3536', '#6a5e58', 0.06); roundEar(R, R.head, 0.27, 0.22, 0, '#3a3536', '#6a5e58', 0.06);
+    roundEar(R, R.head, -0.27, 0.22, 0, '#4b4547', '#6a5e58', 0.06); roundEar(R, R.head, 0.27, 0.22, 0, '#4b4547', '#6a5e58', 0.06);
     for (const a of [R.armL, R.armR]) { a.children[0].scale.set(0.1, 0.17, 0.1); a.children[0].position.y = -0.14; if (a.children[1]) { a.children[1].scale.set(0.08, 0.06, 0.08); a.children[1].position.y = -0.3; } }
     R.body.add(mesh(GEO.sph, M('#9aa0a8'), [0, 0.32, -0.22], [0.2, 0.15, 0.06]));
     R.headTop = 1.02;
@@ -3864,11 +3892,11 @@ Object.assign(BUILD, {
     R.headR = 0.2; R.headTop = 0.8;
   },
   panda(R) {
-    plush(R, { fur: '#f6f4ef', belly: '#f6f4ef', limb: '#2a2628', muzzle: '#f6f4ef', nose: '#1e1b1c', headR: 0.32, bodyW: 0.3, bodyH: 0.3 });
+    plush(R, { fur: '#f6f4ef', belly: '#f6f4ef', limb: '#353032', muzzle: '#f6f4ef', nose: '#1e1b1c', headR: 0.32, bodyW: 0.3, bodyH: 0.3 });
     const M = R.M;
-    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#2a2628'), [s * 0.12, 0.27, 0.24], [0.08, 0.1, 0.05], [0, 0, s * 0.5]));
-    roundEar(R, R.head, -0.22, 0.46, -0.02, '#2a2628', '#3a3638', 0.08); roundEar(R, R.head, 0.22, 0.46, -0.02, '#2a2628', '#3a3638', 0.08);
-    R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.42, -0.02], [0.3, 0.08, 0.27]));
+    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, M('#353032'), [s * 0.12, 0.27, 0.24], [0.08, 0.1, 0.05], [0, 0, s * 0.5]));
+    roundEar(R, R.head, -0.22, 0.46, -0.02, '#353032', '#3a3638', 0.08); roundEar(R, R.head, 0.22, 0.46, -0.02, '#353032', '#3a3638', 0.08);
+    R.body.add(mesh(GEO.sph, M('#353032'), [0, 0.42, -0.02], [0.3, 0.08, 0.27]));
     R.prop = saveBase(grp(R.armR, [0, -0.2, 0.05])); // 竹子
     R.prop.add(mesh(GEO.cyl, M('#7ab84a'), [0, 0.12, 0], [0.022, 0.42, 0.022])); for (let i = 0; i < 3; i++) R.prop.add(mesh(GEO.cyl, M('#5a983a'), [0, i * 0.13, 0], [0.026, 0.015, 0.026]));
     R.prop.add(mesh(GEO.sph, M('#9ad86a'), [0.05, 0.33, 0], [0.06, 0.02, 0.03], [0, 0, 0.6]));
@@ -3891,7 +3919,7 @@ function buildAnimal(key) {
 // 同一個骨架節點底下的靜態網格合併成一個（頂點色），每隻約 10 次繪製
 function mergeRig(R) {
   const keep = new Set([R.torso, R.mouth, R.prop, R.tongue].filter(Boolean));
-  const vmat = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: toonGrad() });
+  const vmat = charMat(new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: charGrad() }));
   vmat.userData.op = 1;
   const nodes = []; R.root.traverse(o => { if (!o.isMesh) nodes.push(o); });
   for (const n of nodes) {
@@ -3921,6 +3949,12 @@ function mergeRig(R) {
     }
   }
   R.mats = [vmat].concat(R.M.list);
+  if (MODEL_CFG.OUTLINE) { // 身體、頭、手腳等不透明的部位加描邊（眼睛、腮紅、透明的不加）
+    const om = outlineMat(), add = [];
+    R.root.traverse(o => { if (o.isMesh && o.visible && o !== R.tongue && !o.userData.outline && !o.material.transparent && o.material.isMeshToonMaterial && o.material !== R.eyeMat) add.push(o); });
+    for (const o of add) { const ol = new THREE.Mesh(o.geometry, om); ol.userData.outline = true; ol.userData.unit = true; ol.position.copy(o.position); ol.rotation.copy(o.rotation); ol.scale.copy(o.scale); ol.renderOrder = -1; o.parent.add(ol); if (o === R.torso || o === R.mouth) (R.olSync = R.olSync || []).push([o, ol]); }
+    R.mats.push(om); R.olMat = om;
+  }
 }
 
 // ===== 動作 =====
@@ -4390,6 +4424,7 @@ function poseRig(R, st) {
   if (st.dead !== undefined) { const d = Math.min(1, st.dead); R.body.rotation.z += 0.5 * ease.out(Math.min(1, d * 3)) * (R.phase > 1.5 ? 1 : -1); R.yaw.rotation.y += ease.inOut(d) * Math.PI * 4; R.body.position.y += 0.25 * ease.out(d); const sc = 1 - ramp(d, 0.35, 1); R.yaw.scale.setScalar(Math.max(0.001, sc)); }
   else R.yaw.scale.setScalar(1);
   if (st.victory) hopUp(R, (t * 1.6) % 1, 0.25);
+  if (R.olSync) for (const [o, ol] of R.olSync) { ol.position.copy(o.position); ol.scale.copy(o.scale); ol.rotation.copy(o.rotation); ol.visible = o.visible; } // 會自己縮放的部位，描邊跟著動
 }
 function setFlash(R, k) {
   for (const m of R.mats) if (m.emissive) { m.emissive.setRGB(k, k * 0.95, k * 0.9); if (m === R.mats[0] && R.skinGlow) m.emissive.add(R.skinGlow); }
@@ -5000,6 +5035,7 @@ function s3Frame(dt, ctx) {
     const dead = v.deadT !== null ? (t - v.deadT) / 0.9 : undefined;
     if (!act && it.jumpP !== undefined && it.jumpP !== null && v.R.melee && ACT[v.unitKey] && ACT[v.unitKey].atk) act = { kind: 'atk', p: it.jumpP };
     const landP = v.land ? (t - v.land) / 0.28 : 1;
+    if (v.R.olMat) v.R.olMat.visible = (S3.quality || 1) >= MODEL_CFG.OUTLINE_MIN_Q; // 手機太卡時自動關描邊
     poseRig(v.R, { t, moving: v.moving, moveP, land: landP < 1 ? landP : null, sleep: it.sleep, stun: it.stun, act, hit: hitP < 1 ? hitP : 0, dead, victory: it.victory });
     if (v.air || v.toss || v.airOff || v.nudge) { airFrame(v, t); nudgeFrame(v, t); }
     // 選取時浮起
@@ -6921,7 +6957,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.23'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.24'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
