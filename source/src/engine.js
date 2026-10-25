@@ -456,7 +456,7 @@ function cast(B, u) {
       break; }
     case 'bat': {
       const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
-      const d = damage(B, u, t0, sk(180), 'phys', { skill: 1 }); heal(B, u, d);
+      const d = damage(B, u, t0, sk(210), 'phys', { skill: 1 }); heal(B, u, d); // v0.13.21 180→210
       break; }
     case 'redpanda':
       { const ids = []; for (const e of es) if (dist(e, u) <= 2) { e.tauntBy = u.id; e.tauntUntil = B.t + 60; e.target = u.id; ids.push(e.id); } B.ev.push({ k: 'taunt', id: u.id, ids }); }
@@ -520,7 +520,7 @@ function cast(B, u) {
       if (!far) far = tgt && tgt.alive ? tgt : null; if (!far) break;
       if (dist(far, u) > 1) { const spot = freeNear(B, far.c, far.r, u); if (spot) { teleport(B, u, spot[0], spot[1]); u.mvFrom.t1 = B.t + 8; u.mvFrom.slide = true; u.mvFrom.jump = false; } }
       u.target = far.id; B.ev.push({ k: 'dash', id: u.id, tg: far.id, s: 'slide' });
-      damage(B, u, far, sk(160), 'magic', { skill: 1 }); stun(B, far, ccT(20));
+      damage(B, u, far, sk(180), 'magic', { skill: 1 }); stun(B, far, ccT(20)); // v0.13.21 160→180
       for (const e of es) if (e !== far && e.alive && dist(e, u) <= 1) damage(B, u, e, sk(80), 'magic', { skill: 1 });
       break; }
     case 'rhino': {
@@ -554,7 +554,7 @@ function cast(B, u) {
       break; }
     case 'eel': {
       let cur = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!cur) break;
-      const hit = [cur.id], chain = [u.id, cur.id]; let amt = sk(260);
+      const hit = [cur.id], chain = [u.id, cur.id]; let amt = sk(280); // v0.13.21 260→280
       damage(B, u, cur, amt, 'magic', { skill: 1 }); stun(B, cur, ccT(10), '麻痺');
       for (let i = 0; i < 4; i++) {
         let nx = null, nd = 99; for (const e of real) if (e.alive && !hit.includes(e.id)) { const d = dist(e, cur); if (d < nd || (d === nd && e.id < nx.id)) { nd = d; nx = e; } }
@@ -602,7 +602,7 @@ function cast(B, u) {
       break; }
     case 'giraffe': {
       for (const e of es) if (e.alive && dist(e, u) <= 2) {
-        damage(B, u, e, sk(200), 'phys', { skill: 1 });
+        damage(B, u, e, sk(180), 'phys', { skill: 1 }); // v0.13.21 200→180
         if (e.alive && e.invuln <= B.t) { const dc = Math.sign(e.c - u.c), dr = Math.sign(e.r - u.r), nc = e.c + dc, nr = e.r + dr; if (nc >= 0 && nc < CFG.COLS && nr >= 0 && nr < CFG.ROWS && passable(B, nc, nr, e.id)) teleport(B, e, nc, nr); }
       }
       B.ev.push({ k: 'shake', id: u.id });
@@ -629,7 +629,7 @@ function cast(B, u) {
     case 'komodo': {
       const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
       damage(B, u, t0, sk(260), 'phys', { skill: 1 });
-      if (t0.alive) addDot(B, u, t0, Math.max(1, Math.floor(t0.maxhp * 6 / 100 * m / 100)), 100, 'poison');
+      if (t0.alive) addDot(B, u, t0, Math.max(1, Math.floor(t0.maxhp * 5 / 100 * m / 100)), 100, 'poison'); // v0.13.21 每秒 6%→5%
       heal(B, u, Math.floor(u.maxhp * 15 / 100)); // v0.13.13 20%→15%
       break; }
   }

@@ -51,8 +51,8 @@ const ANIMALS = {
     hp: 600, atk: 45, ai: 20, rng: 3, arm: 15, mr: 25, mana: 60, sm: 10, mv: 8, // v0.13.13 生命 560→600、能量 70→60
     skill: '長舌', desc: '把 4 格內最遠的敵人拉到身前，220 魔法傷害並暈 1.5 秒。' },
   bat: { name: '蝙蝠', cost: 1, traits: ['sky', 'night'], role: '刺客',
-    hp: 540, atk: 52, ai: 16, rng: 1, arm: 15, mr: 15, mana: 50, sm: 0, mv: 6, // v0.13.12 能量 60→50；v0.13.13 生命 500→540
-    skill: '吸血咬', desc: '開場飛向敵方後排。普攻吸血 20%。技能：咬 180 物理傷害並全額回血。' },
+    hp: 540, atk: 56, ai: 16, rng: 1, arm: 15, mr: 15, mana: 50, sm: 0, mv: 6, // v0.13.12 能量 60→50；v0.13.13 生命 500→540；v0.13.21 攻擊 52→56
+    skill: '吸血咬', desc: '開場飛向敵方後排。普攻吸血 20%。技能：咬 210 物理傷害並全額回血。' },
   redpanda: { name: '小熊貓', cost: 2, traits: ['forest', 'armor'], role: '坦',
     hp: 850, atk: 50, ai: 22, rng: 1, arm: 45, mr: 35, mana: 90, sm: 40, mv: 8,
     skill: '站立威嚇', desc: '嘲諷 2 格內敵人 3 秒，自身受到傷害 −30%。' },
@@ -86,7 +86,7 @@ const ANIMALS = {
   // ---- v0.5 新增 ----
   penguin: { name: '企鵝', cost: 2, traits: ['water', 'pack'], role: '戰士',
     hp: 760, atk: 55, ai: 20, rng: 1, arm: 35, mr: 25, mana: 70, sm: 10, mv: 7,
-    skill: '肚皮滑行', desc: '趴下滑向 3 格內最遠的敵人，撞擊 160 魔法傷害並暈 1 秒，落點周圍敵人受 80 魔法傷害。' },
+    skill: '肚皮滑行', desc: '趴下滑向 3 格內最遠的敵人，撞擊 180 魔法傷害並暈 1 秒，落點周圍敵人受 80 魔法傷害。' },
   rhino: { name: '犀牛', cost: 3, traits: ['savanna', 'armor'], role: '坦',
     hp: 900, atk: 60, ai: 24, rng: 1, arm: 40, mr: 30, mana: 100, sm: 20, mv: 8,
     skill: '犀角衝鋒', desc: '衝向 3 格內最遠的敵人，220 物理傷害並擊飛 1.25 秒，自身獲得 180 護盾。' },
@@ -100,8 +100,8 @@ const ANIMALS = {
     hp: 880, atk: 84, ai: 20, rng: 3, arm: 25, mr: 25, mana: 80, sm: 0, mv: 6,
     skill: '高空擒拿', desc: '抓起目標飛上高空 1.5 秒（無法行動）再摔下，380 物理傷害，周圍 1 格敵人受 120 物理傷害。' },
   eel: { name: '電鰻', cost: 4, traits: ['water', 'night'], role: '法師',
-    hp: 880, atk: 55, ai: 20, rng: 3, arm: 25, mr: 40, mana: 80, sm: 20, mv: 8,
-    skill: '連鎖放電', desc: '電擊目標 260 魔法傷害並彈跳 4 次（每次 −15%），被電到的敵人暈 0.5 秒。' },
+    hp: 880, atk: 55, ai: 20, rng: 3, arm: 25, mr: 40, mana: 70, sm: 20, mv: 8, // v0.13.21 能量 80→70
+    skill: '連鎖放電', desc: '電擊目標 280 魔法傷害並彈跳 4 次（每次 −15%），被電到的敵人暈 0.5 秒。' },
   gorilla: { name: '大猩猩', cost: 4, traits: ['forest', 'armor'], role: '坦',
     hp: 1280, atk: 76, ai: 24, rng: 1, arm: 45, mr: 40, mana: 100, sm: 40, mv: 9,
     skill: '捶胸震地', desc: '捶胸嘲諷 2 格內敵人 2.5 秒，獲得 18% 生命護盾，再雙拳砸地，周圍 1 格 200 魔法傷害。' },
@@ -112,8 +112,8 @@ const ANIMALS = {
     hp: 1350, atk: 95, ai: 20, rng: 3, arm: 30, mr: 40, mana: 100, sm: 30, mv: 8,
     skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
   komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor', 'king'], role: '戰士',
-    hp: 1440, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
-    skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 15% 生命。' },
+    hp: 1360, atk: 94, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9, // v0.13.21 生命 1440→1360、攻擊 100→94
+    skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 25% 的毒傷，自己回復 15% 生命。' },
   // ---- v0.13 新增：讓高階羈絆湊得到 ----
   deer: { name: '小鹿', cost: 1, traits: ['forest', 'pack'], role: '輔助',
     hp: 520, atk: 38, ai: 20, rng: 2, arm: 15, mr: 25, mana: 70, sm: 20, mv: 7,
@@ -128,8 +128,8 @@ const ANIMALS = {
     hp: 500, atk: 50, ai: 17, rng: 3, arm: 15, mr: 20, mana: 70, sm: 10, mv: 6,
     skill: '尖嘯羽箭', desc: '一次射出 3 根羽箭打 3 個不同的敵人，各 130 物理傷害，被打到的魔抗 −20 持續 4 秒。' },
   giraffe: { name: '長頸鹿', cost: 3, traits: ['savanna', 'armor'], role: '戰士',
-    hp: 940, atk: 66, ai: 22, rng: 2, arm: 35, mr: 30, mana: 90, sm: 20, mv: 8,
-    skill: '長頸甩擊', desc: '甩動長脖子橫掃 2 格內所有敵人 200 物理傷害，並把他們擊退 1 格。' },
+    hp: 900, atk: 66, ai: 22, rng: 2, arm: 35, mr: 30, mana: 90, sm: 20, mv: 8, // v0.13.21 生命 940→900
+    skill: '長頸甩擊', desc: '甩動長脖子橫掃 2 格內所有敵人 180 物理傷害，並把他們擊退 1 格。' },
   flamingo: { name: '紅鶴', cost: 3, traits: ['sky', 'water'], role: '法師',
     hp: 700, atk: 50, ai: 20, rng: 3, arm: 20, mr: 35, mana: 80, sm: 20, mv: 7,
     skill: '單腳旋舞', desc: '在敵人密集處掀起水花漩渦 3 秒（中心＋周圍 6 格）：每秒 90 魔法傷害，區內敵人攻速 −25%。' },
