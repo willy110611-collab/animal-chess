@@ -401,13 +401,12 @@ function fxDetail(name, sv, A, sp, tp, tv) {
 const AIR_CFG = {
   hedgehog: { kind: 'jump', h: 2.2, spin: 3, toss: 0, shake: 0.12 },
   squirrel: { kind: 'jump', h: 0.5, toss: 0, shake: 0.04 }, // v0.13.16 配合新技能動作
-  wolf: { kind: 'jump', h: 1.6, flip: 1, toss: 0, shake: 0.08 },
-  frog: { kind: 'leap', h: 2.4, toss: 0.8, shake: 0.1 },
+  wolf: { kind: 'jump', h: 0.2, toss: 0, shake: 0.08 }, // v0.13.17 配合新技能動作
   bat: { kind: 'dive', h: 2.4, toss: 0, shake: 0.06 },
-  redpanda: { kind: 'jump', h: 1.8, spin: 1, toss: 0, shake: 0.14 },
+  redpanda: { kind: 'jump', h: 0.2, toss: 0, shake: 0.14 }, // v0.13.17 配合新技能動作
   croc: { kind: 'breach', h: 1.6, spin: 2, toss: 1.4, shake: 0.12 },
   bee: { kind: 'float', h: 0.6, toss: 0, shake: 0.04 }, // v0.13.15 畫 8 字＋轉身刺，不再俯衝轉圈
-  koala: { kind: 'leap', h: 3.0, flip: 1, toss: 1.0, shake: 0.2 },
+  koala: { kind: 'leap', h: 1.5, toss: 1.0, shake: 0.2 }, // v0.13.17 配合新技能動作
   cheetah: { kind: 'blink', h: 0.4, toss: 0, shake: 0.1 },
   octopus: { kind: 'float', h: 2.0, spin: 1, toss: 0, shake: 0 },
   owl: { kind: 'dive', h: 3.0, toss: 0.6, shake: 0.08 },
@@ -416,7 +415,7 @@ const AIR_CFG = {
   penguin: { kind: 'leap', h: 0.25, toss: 1.4, shake: 0.1 }, // v0.13.14 肚皮貼地滑，不再翻跳；臭鼬改原地倒立（拿掉空翻）
   rhino: { kind: 'leap', h: 0.15, toss: 2.2, shake: 0.2 }, // v0.13.14 貼地連撞
   chameleon: { kind: 'blink', h: 0.6, toss: 0, shake: 0.06 },
-  fox: { kind: 'leap', h: 3.0, flip: 1, toss: 0.6, shake: 0.1 },
+  fox: { kind: 'leap', h: 3.0, toss: 0.6, shake: 0.1 }, // v0.13.17 配合新技能動作
   eagle: { kind: 'dive', h: 3.6, toss: 0, shake: 0.12 },
   eel: { kind: 'breach', h: 2.2, spin: 1, toss: 1.0, shake: 0.1 },
   gorilla: { kind: 'jump', h: 0.5, toss: 1.4, shake: 0.34 }, // v0.13.14 捶胸時小跳，第一拳落地震動

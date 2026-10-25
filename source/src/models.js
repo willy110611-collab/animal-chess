@@ -1002,6 +1002,47 @@ const SKILL_V2 = {
       arm.rotation.x += -2.8 * w + 0.6 * s; R.body.rotation.y += (i % 2 ? 0.4 : -0.4) * (w + s); R.body.rotation.x += -0.2 * w + 0.45 * s; R.body.position.z += 0.1 * s; }
     if (R.tail) R.tail.rotation.x -= 0.7 * up + 0.25 * Math.sin(p * 30) * up;
     if (R.prop) R.prop.visible = false; } },
+  // ---- v0.13.17 第四批 ----
+  wolf: { dur: 1.4, hit: 0.4, desc: '坐下來、挺胸仰頭對天長嚎，最後甩甩毛', fn(R, p) {
+    const sit = bell(p, 0, 0.85), howl = Math.min(1, bell(p, 0.15, 0.85) * 1.6), shake = bell(p, 0.8, 1);
+    R.body.rotation.x -= 0.45 * sit; R.body.position.y -= 0.04 * sit; R.legL.rotation.x -= 0.9 * sit; R.legR.rotation.x -= 0.9 * sit;
+    R.head.rotation.x -= 1.1 * howl; R.head.rotation.z += 0.06 * Math.sin(p * 40) * howl; if (R.jaw) R.jaw.rotation.x += 0.7 * howl;
+    R.torso.scale.z *= 1 + 0.12 * howl; R.armL.rotation.x -= 0.4 * howl; R.armR.rotation.x -= 0.4 * howl;
+    R.body.rotation.y += 0.3 * Math.sin(p * 60) * shake; } },
+  frog: { dur: 1.0, hit: 0.45, desc: '蹲低、鼓起臉頰，張大嘴吐舌，再往後一坐把敵人拉過來', fn(R, p) {
+    const crouch = bell(p, 0, 0.4), shoot = bell(p, 0.3, 0.6), pull = bell(p, 0.5, 0.95);
+    R.body.scale.y *= 1 - 0.35 * crouch; R.body.scale.x *= 1 + 0.2 * crouch; R.head.scale.x *= 1 + 0.3 * crouch;
+    R.body.rotation.x += 0.75 * shoot; R.body.position.z += 0.25 * shoot; R.body.position.y += 0.08 * shoot; R.mouth.scale.y *= 1 + 2.2 * shoot;
+    R.body.rotation.x -= 0.7 * pull; R.body.position.z -= 0.15 * pull; R.armL.rotation.x -= 1.0 * pull; R.armR.rotation.x -= 1.0 * pull;
+    R.legL.rotation.x += 0.6 * pull; R.legR.rotation.x += 0.6 * pull; } },
+  redpanda: { dur: 1.4, hit: 0.35, desc: '站起來雙手舉高變大隻，左右搖擺再用力跺腳', fn(R, p) {
+    const up = Math.min(1, bell(p, 0, 1) * 1.8);
+    R.body.position.y += 0.18 * up; R.body.scale.y *= 1 + 0.22 * up; R.body.rotation.x -= 0.15 * up;
+    R.armL.rotation.z -= 2.6 * up; R.armR.rotation.z += 2.6 * up; R.armL.rotation.x -= 0.3 * up; R.armR.rotation.x -= 0.3 * up;
+    R.body.rotation.z += 0.18 * Math.sin(p * 18) * up; // 左右搖
+    for (let i = 0; i < 2; i++) { const a = 0.5 + i * 0.2, k = bell(p, a, a + 0.12), leg = i ? R.legR : R.legL; leg.rotation.x -= 1.0 * k; R.body.position.y -= 0.05 * bell(p, a + 0.08, a + 0.16); }
+    if (R.tail) R.tail.rotation.x -= 0.8 * up; } },
+  koala: { dur: 1.2, hit: 0.62, desc: '氣到雙手亂揮，跳起來用肚子壓下去', fn(R, p) {
+    const flail = bell(p, 0, 0.45), slam = bell(p, 0.5, 0.8);
+    R.armL.rotation.x -= (1.6 + 0.9 * Math.sin(p * 50)) * flail; R.armR.rotation.x -= (1.6 - 0.9 * Math.sin(p * 50)) * flail;
+    R.body.rotation.z += 0.12 * Math.sin(p * 40) * flail; R.head.rotation.x += 0.2 * flail;
+    R.body.scale.y *= 1 - 0.2 * bell(p, 0.35, 0.5);
+    R.body.rotation.x += 1.2 * slam; R.armL.rotation.z -= 1.3 * slam; R.armR.rotation.z += 1.3 * slam; R.legL.rotation.x -= 1.0 * slam; R.legR.rotation.x -= 1.0 * slam;
+    R.body.scale.y *= 1 - 0.18 * bell(p, 0.6, 0.75); } },
+  cheetah: { dur: 1.0, hit: 0.5, desc: '壓低身子全速衝刺，最後雙爪交叉撲抓', fn(R, p) {
+    const run = bell(p, 0, 0.7), ph = p * 55;
+    R.body.position.y -= 0.06 * run; R.body.scale.z *= 1 + 0.2 * run; R.body.rotation.x += 0.2 * run;
+    R.legL.rotation.x += 1.1 * Math.sin(ph) * run; R.legR.rotation.x += 1.1 * Math.sin(ph + 0.8) * run;
+    R.armL.rotation.x -= 1.1 * Math.sin(ph + 2) * run; R.armR.rotation.x -= 1.1 * Math.sin(ph + 2.8) * run;
+    if (R.tail) R.tail.rotation.x -= 0.5 * run;
+    hopUp(R, ramp(p, 0.5, 0.75), 0.3); clawSwing(R, ramp(p, 0.55, 0.9), -1, true); clawSwing(R, ramp(p, 0.6, 0.95), 1, true); } },
+  fox: { dur: 1.2, hit: 0.72, desc: '歪頭聽聲音、壓低，高高跳起頭朝下插進去', fn(R, p) {
+    const listen = bell(p, 0, 0.35), crouch = bell(p, 0.2, 0.42), air = ramp(p, 0.4, 0.75);
+    R.head.rotation.z += 0.5 * listen; R.head.rotation.x += 0.2 * listen;
+    R.body.scale.y *= 1 - 0.25 * crouch; R.body.position.y -= 0.05 * crouch;
+    R.body.rotation.x += (-0.7 + 2.3 * ease.inOut(air)) * bell(p, 0.4, 0.95); // 先朝上再頭朝下
+    R.armL.rotation.x -= 2.2 * bell(p, 0.55, 0.85); R.armR.rotation.x -= 2.2 * bell(p, 0.55, 0.85);
+    if (R.tail) R.tail.rotation.x -= 1.0 * bell(p, 0.4, 0.9); } },
 };
 for (const k in SKILL_V2) { const A = SKILL_V2[k]; if (!ACT[k] || !ACT[k].skill) continue; ACT[k].skill = { dur: A.dur, hit: A.hit, fx: ACT[k].skill.fx, fn: A.fn, desc: A.desc }; }
 function poseRig(R, st) {
