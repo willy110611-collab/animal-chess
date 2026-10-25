@@ -399,12 +399,12 @@ function fxDetail(name, sv, A, sp, tp, tv) {
 // kind：leap＝跳到目標砸下、jump＝原地跳起砸地、dive＝飛高再俯衝、breach＝鑽進地底從目標腳下竄出、blink＝瞬移連斬、float＝浮空施法、flip＝空翻
 // 可調：h＝高度（格）、spin＝空中轉幾圈、flip＝翻幾圈、toss＝把目標打飛的高度（0＝不打飛）、shake＝落地震動
 const AIR_CFG = {
-  hedgehog: { kind: 'jump', h: 2.2, spin: 3, toss: 0, shake: 0.12 },
+  hedgehog: { kind: 'jump', h: 1.0, toss: 0, shake: 0.12 }, // v0.13.19 配合新技能動作
   squirrel: { kind: 'jump', h: 0.5, toss: 0, shake: 0.04 }, // v0.13.16 配合新技能動作
   wolf: { kind: 'jump', h: 0.2, toss: 0, shake: 0.08 }, // v0.13.17 配合新技能動作
   bat: { kind: 'dive', h: 2.4, toss: 0, shake: 0.06 },
   redpanda: { kind: 'jump', h: 0.2, toss: 0, shake: 0.14 }, // v0.13.17 配合新技能動作
-  croc: { kind: 'breach', h: 1.6, spin: 2, toss: 1.4, shake: 0.12 },
+  croc: { kind: 'breach', h: 1.6, toss: 1.4, shake: 0.12 }, // v0.13.19 配合新技能動作
   bee: { kind: 'float', h: 0.6, toss: 0, shake: 0.04 }, // v0.13.15 畫 8 字＋轉身刺，不再俯衝轉圈
   koala: { kind: 'leap', h: 1.5, toss: 1.0, shake: 0.2 }, // v0.13.17 配合新技能動作
   cheetah: { kind: 'blink', h: 0.4, toss: 0, shake: 0.1 },
@@ -421,7 +421,7 @@ const AIR_CFG = {
   gorilla: { kind: 'jump', h: 0.5, toss: 1.4, shake: 0.34 }, // v0.13.14 捶胸時小跳，第一拳落地震動
   whale: { kind: 'breach', h: 3.6, flip: 0.5, toss: 1.8, shake: 0.36 },
   peacock: { kind: 'float', h: 0.3, toss: 0, shake: 0 }, // v0.13.18 配合新技能動作
-  komodo: { kind: 'leap', h: 2.2, toss: 1.0, shake: 0.16 },
+  komodo: { kind: 'leap', h: 1.0, toss: 1.0, shake: 0.16 }, // v0.13.19 配合新技能動作
   kingboar: { kind: 'jump', h: 2.4, toss: 1.6, shake: 0.36 },
   deer: { kind: 'jump', h: 0.4, toss: 0, shake: 0 }, // v0.13.16 配合新技能動作
   zebra: { kind: 'jump', h: 0.3, toss: 1.0, shake: 0.08 }, // v0.13.15 轉身後踢，拿掉後空翻
@@ -430,7 +430,7 @@ const AIR_CFG = {
   giraffe: { kind: 'jump', h: 0.3, toss: 1.2, shake: 0.14 }, // v0.13.15 甩一圈改由身體動作做
   flamingo: { kind: 'float', h: 0.3, toss: 0, shake: 0 }, // v0.13.16 配合新技能動作
   shark: { kind: 'breach', h: 2.8, flip: 1, toss: 1.4, shake: 0.16 },
-  panda: { kind: 'leap', h: 2.0, flip: 2, toss: 1.0, shake: 0.26 },
+  panda: { kind: 'leap', h: 0.6, toss: 1.0, shake: 0.26 }, // v0.13.19 配合新技能動作
 };
 const AIR_ON = { on: true };
 const DEMO_CAM = { x: 0, y: 8.6, z: 9.6 }, DEMO_CAM_ATK = { x: 2.2, y: 4.6, z: 5.6 }; // 普攻展示鏡頭更近、稍微側面 // 設成 false 可整個關掉立體技能動作

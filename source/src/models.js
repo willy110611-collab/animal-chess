@@ -1001,7 +1001,7 @@ const SKILL_V2 = {
     for (let i = 0; i < 3; i++) { const a = 0.22 + i * 0.22, w = bell(p, a - 0.08, a + 0.06), s = bell(p, a + 0.02, a + 0.16), arm = i % 2 ? R.armL : R.armR;
       arm.rotation.x += -2.8 * w + 0.6 * s; R.body.rotation.y += (i % 2 ? 0.4 : -0.4) * (w + s); R.body.rotation.x += -0.2 * w + 0.45 * s; R.body.position.z += 0.1 * s; }
     if (R.tail) R.tail.rotation.x -= 0.7 * up + 0.25 * Math.sin(p * 30) * up;
-    if (R.prop) R.prop.visible = false; } },
+    if (R.prop) R.prop.visible = p > 0.9; } }, // 丟完松果，最後手上再拿一顆
   // ---- v0.13.17 第四批 ----
   wolf: { dur: 1.4, hit: 0.4, desc: '坐下來、挺胸仰頭對天長嚎，最後甩甩毛', fn(R, p) {
     const sit = bell(p, 0, 0.85), howl = Math.min(1, bell(p, 0.15, 0.85) * 1.6), shake = bell(p, 0.8, 1);
@@ -1079,6 +1079,37 @@ const SKILL_V2 = {
     R.fan.rotation.z += 0.12 * Math.sin(p * 90) * rattle; // 抖動尾羽
     R.body.rotation.y += Math.PI * 2 * ease.inOut(ramp(p, 0.2, 0.9));
     R.head.rotation.x -= 0.3 * o; R.body.position.y += 0.06 * o; R.wingL.rotation.z -= 0.5 * o; R.wingR.rotation.z += 0.5 * o; } },
+  // ---- v0.13.19 第六批 ----
+  whale: { dur: 1.5, hit: 0.55, desc: '弓起背、噴水孔噴水，尾巴高舉，再整個肚子拍下去掀起巨浪', fn(R, p) {
+    const arch = bell(p, 0, 0.55), crash = bell(p, 0.5, 0.75);
+    R.body.rotation.x -= 0.6 * arch; R.body.position.y += 0.3 * arch; R.armL.rotation.z -= 1.0 * arch; R.armR.rotation.z += 1.0 * arch;
+    if (R.tail) R.tail.rotation.x += 1.1 * arch - 0.6 * crash;
+    if (R.blow) R.blow.scale.setScalar(1 + 1.5 * bell(p, 0.05, 0.45));
+    R.body.rotation.x += 0.5 * crash; R.body.scale.y *= 1 - 0.22 * bell(p, 0.55, 0.72); R.body.scale.x *= 1 + 0.12 * bell(p, 0.55, 0.72); } },
+  komodo: { dur: 1.2, hit: 0.5, desc: '壓低頭左右晃著靠近，張大嘴咬住再甩頭撕扯', fn(R, p) {
+    const stalk = bell(p, 0, 0.45), bite = bell(p, 0.35, 0.6), tear = bell(p, 0.5, 0.95);
+    R.body.position.y -= 0.04 * stalk; R.head.rotation.x += 0.2 * stalk; R.body.rotation.y += 0.4 * Math.sin(p * 18) * stalk; R.body.scale.y *= 1 - 0.12 * stalk;
+    if (R.jawU) R.jawU.rotation.x -= 1.0 * bite; if (R.jaw) R.jaw.rotation.x += 0.6 * bite; R.body.position.z += 0.6 * bite; R.body.rotation.x += 0.25 * bite;
+    R.body.rotation.y += 0.4 * Math.sin(p * 50) * tear; R.head.rotation.z += 0.25 * Math.sin(p * 50) * tear;
+    if (R.tail) R.tail.rotation.y += 0.8 * Math.sin(p * 22) * bell(p, 0, 1); } },
+  hedgehog: { dur: 1.4, hit: 0.5, desc: '發抖、縮成刺球原地狂轉，刺一口氣炸開', fn(R, p) {
+    const shiver = bell(p, 0, 0.25), ball = Math.min(1, bell(p, 0.15, 0.9) * 2), burst = bell(p, 0.45, 0.65);
+    R.body.position.x += 0.03 * Math.sin(p * 120) * shiver;
+    R.head.scale.setScalar(1 - 0.8 * ball); R.armL.scale.setScalar(1 - 0.8 * ball); R.armR.scale.setScalar(1 - 0.8 * ball);
+    R.spikes.scale.setScalar(1 + 0.35 * ball + 0.5 * burst);
+    R.body.rotation.y += Math.PI * 4 * ease.inOut(ramp(p, 0.2, 0.85)); R.body.position.y += 0.1 * ball; } },
+  croc: { dur: 1.3, hit: 0.3, desc: '張大嘴撲上去咬住，整隻翻滾兩圈', fn(R, p) {
+    const open = bell(p, 0, 0.3), lunge = bell(p, 0.15, 0.95);
+    if (R.jawU) R.jawU.rotation.x -= 1.1 * open; if (R.jaw) R.jaw.rotation.x += 0.4 * open;
+    R.body.position.z += 0.45 * lunge; R.body.position.y += 0.12 * lunge;
+    R.body.rotation.z += ease.inOut(ramp(p, 0.25, 0.9)) * Math.PI * 4; // 死亡翻滾
+    if (R.tail) R.tail.rotation.y += 0.8 * Math.sin(p * 25) * lunge; } },
+  panda: { dur: 1.3, hit: 0.5, desc: '抱住膝蓋縮成球往前滾三圈，滾完張開雙手', fn(R, p) {
+    const curl = Math.min(1, bell(p, 0.05, 0.85) * 2), open = bell(p, 0.8, 1);
+    R.head.scale.setScalar(1 - 0.25 * curl); R.armL.rotation.x -= 1.5 * curl; R.armR.rotation.x -= 1.5 * curl; R.legL.rotation.x -= 1.2 * curl; R.legR.rotation.x -= 1.2 * curl;
+    R.body.rotation.x += ease.inOut(ramp(p, 0.1, 0.8)) * Math.PI * 6; R.body.position.y += 0.25 * curl; R.body.position.z += 0.3 * curl;
+    R.armL.rotation.z -= 2.2 * open; R.armR.rotation.z += 2.2 * open;
+    if (R.prop) R.prop.visible = p > 0.8 || p < 0.05; } },
 };
 for (const k in SKILL_V2) { const A = SKILL_V2[k]; if (!ACT[k] || !ACT[k].skill) continue; ACT[k].skill = { dur: A.dur, hit: A.hit, fx: ACT[k].skill.fx, fn: A.fn, desc: A.desc }; }
 function poseRig(R, st) {
