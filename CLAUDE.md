@@ -26,6 +26,16 @@
 - 使用者改「遊戲數據.xlsx」→ `python3 tools/xlsx2sheet.py 遊戲數據.xlsx` 產生 src/sheet.js → **再跑 `python3 tools/simsheet.py 遊戲數據.xlsx`** 把模擬結果寫進「模擬結果」分頁，連同上線一起交回給使用者。
 - 平衡報告（真人對局統計）：https://zoochess.willy110611.workers.dev/report
 
+## 在 Claude Code（使用者電腦）上工作
+- 這個資料夾就是 repo，改完照上面流程測試後，直接 `git add -A && git commit && git push`，不用再寫 上傳.flag。
+- 版本號：`source/src/ui.js` 的 `dataset.v` 與 `sw.js` 的 CACHE 要一致；伺服器版本由 build.py 自動帶入。
+- 上線確認：`https://willy110611-collab.github.io/animal-chess/sw.js` 與 `https://zoochess.willy110611.workers.dev/api/ping` 都顯示新版本號。
+- 平衡模擬：`node test/trait_sim.js 40`（羈絆）、`node test/td_sim.js 10`（塔防）、`node test/smoke.js`（必跑）。
+- 2026-10-25：v0.13.12 上線＝技能規則照聯盟戰棋＋「普通攻擊重做」（models.js 的 ATK_V2、features.js 技能展示的普攻模式、units3d.js）。下一步：照同樣方向重做技能動畫（企鵝肚皮滑行、河馬一屁股坐、犀牛連撞、臭鼬倒立放屁、大猩猩輪流捶地…）。
+- 專案文件（claude.ai 專案「遊戲」）：完成與待辦清單、音樂音效與羈絆改版企劃、塔防模式企劃。
+- v0.13.12 技能規則照聯盟戰棋：`engine.js` 的 `SKILL_CFG`（射程內才放、施法與持續型技能鎖能量、受傷回能 1%減傷前＋3%減傷後、物理技能吃攻擊加成、4/5 費 3 星技能倍率、控制秒數隨星級、技能不挑寶箱與隱身敵人）。技能比較：`node test/skill_sim.js 600`（加第二個參數可指定舊 engine 檔比較）。
+- 這台電腦沒裝 node：測試用瀏覽器跑。`source/dist/run.html`＋`nodeshim.js`（不進 repo）模擬 node 的 require/fs/vm；`.claude/launch.json` 的 static（`py -m http.server 8765`）開起來後到 `http://localhost:8765/source/dist/run.html` 呼叫 `runTest('test/smoke.js')`。`source/node_modules/three` 是從舊 index.html 抽出來的 three.js（給 build.py 用）。
+
 ## 上線方式（Cowork 專案的雲端 session 不能直接推 GitHub）
 - 用 device_commit_files 把改到的檔案寫進使用者電腦的 animal-chess，最後另外寫入 `D:\##Claude##\Games\動物戰棋\自動上傳\上傳.flag`（內容＝commit 說明），使用者電腦上的自動上傳程式會推上去。細節見專案文件「自動上傳說明」。
 

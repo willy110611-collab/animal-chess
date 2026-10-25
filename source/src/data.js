@@ -51,7 +51,7 @@ const ANIMALS = {
     hp: 560, atk: 45, ai: 20, rng: 3, arm: 15, mr: 25, mana: 70, sm: 10, mv: 8,
     skill: '長舌', desc: '把 4 格內最遠的敵人拉到身前，220 魔法傷害並暈 1.5 秒。' },
   bat: { name: '蝙蝠', cost: 1, traits: ['sky', 'night'], role: '刺客',
-    hp: 500, atk: 52, ai: 16, rng: 1, arm: 15, mr: 15, mana: 60, sm: 0, mv: 6,
+    hp: 500, atk: 52, ai: 16, rng: 1, arm: 15, mr: 15, mana: 50, sm: 0, mv: 6, // v0.14 技能規則改版後能量 60→50
     skill: '吸血咬', desc: '開場飛向敵方後排。普攻吸血 20%。技能：咬 180 物理傷害並全額回血。' },
   redpanda: { name: '小熊貓', cost: 2, traits: ['forest', 'armor'], role: '坦',
     hp: 850, atk: 50, ai: 22, rng: 1, arm: 45, mr: 35, mana: 90, sm: 40, mv: 8,

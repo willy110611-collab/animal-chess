@@ -52,7 +52,7 @@ const ANIMALS = {
     hp: 560, atk: 45, ai: 20, rng: 3, arm: 15, mr: 25, mana: 70, sm: 10, mv: 8,
     skill: '長舌', desc: '把 4 格內最遠的敵人拉到身前，220 魔法傷害並暈 1.5 秒。' },
   bat: { name: '蝙蝠', cost: 1, traits: ['sky', 'night'], role: '刺客',
-    hp: 500, atk: 52, ai: 16, rng: 1, arm: 15, mr: 15, mana: 60, sm: 0, mv: 6,
+    hp: 500, atk: 52, ai: 16, rng: 1, arm: 15, mr: 15, mana: 50, sm: 0, mv: 6, // v0.14 技能規則改版後能量 60→50
     skill: '吸血咬', desc: '開場飛向敵方後排。普攻吸血 20%。技能：咬 180 物理傷害並全額回血。' },
   redpanda: { name: '小熊貓', cost: 2, traits: ['forest', 'armor'], role: '坦',
     hp: 850, atk: 50, ai: 22, rng: 1, arm: 45, mr: 35, mana: 90, sm: 40, mv: 8,
@@ -410,7 +410,20 @@ function makeRng(seed) {
   f.get = () => a; f.set = v => { a = v | 0; }; // 換房主時接續亂數狀態
   return f;
 }
-const SKILL_MUL = [0, 100, 150, 225];
+const SKILL_MUL = [0, 100, 150, 225]; // 合體技用
+// ===== 技能規則（v0.13.12 照聯盟戰棋）=====
+const SKILL_CFG = {
+  MUL: { 4: [0, 100, 150, 300], 5: [0, 100, 150, 450] }, // 技能數值的星級倍率（%）；沒列的費用用 SKILL_MUL（1～3 費 100/150/225）
+  CC_MUL: [0, 100, 110, 125],  // 技能控制秒數的星級倍率（%）
+  CAST_TICKS: 8,               // 施法動作時間（tick），期間不能普攻、不回能量
+  MANA_ATK: 10,                // 每次普攻回的能量
+  MANA_PRE: 1, MANA_POST: 3, MANA_CAP: 42, // 受傷回能量：減傷前傷害 1%＋實際受到傷害 3%，單次最多 42
+  NEED_RANGE: true,            // 能量滿也要「射程內有敵人」才放技能（不會隔空放）
+  AD_SCALE: true,              // 物理技能傷害跟著攻擊力加成（裝備、增益）一起變
+  LOCK: { hedgehog: 30, wolf: 80, redpanda: 60, koala: 100, lion: 120, peacock: 80 }, // 持續型技能：效果期間鎖能量（tick）
+};
+const skillMul = u => ((SKILL_CFG.MUL[(ANIMALS[u.key] || {}).cost] || SKILL_MUL)[u.star] || 100);
+function addMana(B, u, n) { if (u.manaLock > B.t) return; u.mana += n; }
 const idx = (c, r) => r * CFG.COLS + c;
 const inB = (c, r) => c >= 0 && c < CFG.COLS && r >= 0 && r < CFG.ROWS;
 // ===== 六角格（odd-r：奇數列往右半格）。棋盤 CFG.COLS×CFG.ROWS（目前 9×10），以棋盤中心點對稱 =====
@@ -510,6 +523,7 @@ function spawn(B, key, star, owner, team, c, r, items, summon) {
   // 3 星進化
   if (star >= 3 && ANIMALS[key]) { u.evo = true; u.maxhp = Math.floor(u.maxhp * 12 / 10); u.atk = Math.floor(u.atk * 12 / 10); }
   if (s.neutral) u.neutral = true;
+  u.atkBase = Math.max(1, Math.floor(s.atk * m / 100 * (star >= 3 && ANIMALS[key] ? 12 : 10) / 10)); // 物理技能的攻擊加成以這個為基準（不含裝備）
   u.hp = u.maxhp;
   B.units.push(u);
   B.grid[idx(c, r)] = u.id;
@@ -637,6 +651,7 @@ function damage(B, src, tgt, raw, type, o) {
   }
   let amt = raw, crit = !!o.crit;
   if (o.skill && src.skillAmp) amt = Math.floor(amt * 130 / 100);
+  if (o.skill && type === 'phys' && SKILL_CFG.AD_SCALE && src.atkBase && src.alive) amt = Math.floor(amt * effAtk(B, src) / src.atkBase);
   if (src.packPct && (o.atk || o.skill)) {
     let n = 0; for (const a of B.units) if (a.alive && a !== src && a.team === src.team && (src.packAll || hasTrait(a, 'pack')) && dist(a, src) <= 1) n++;
     amt = Math.floor(amt * (100 + n * src.packPct) / 100);
@@ -651,6 +666,7 @@ function damage(B, src, tgt, raw, type, o) {
   if (crit) amt = Math.floor(amt * 150 / 100);
   if (o.atk && src.firstHit) { amt = Math.floor(amt * 150 / 100); src.firstHit = false; }
   if (B.t > CFG.OVERTIME_TICK) amt = Math.floor(amt * (100 + 10 * Math.floor((B.t - CFG.OVERTIME_TICK) / 20)) / 100);
+  const pre = amt; // 減傷前（算受傷回能量用）
   if (type === 'phys') {
     let arm = tgt.arm; if (tgt.key === 'croc' && terrainAt(B, tgt.c, tgt.r) === 'water') arm *= 2;
     if (tgt.plague) arm = Math.floor(arm * Math.max(10, 100 - 6 * tgt.plague) / 100);
@@ -666,8 +682,9 @@ function damage(B, src, tgt, raw, type, o) {
   tgt.hp -= left;
   src.dmgDone += amt;
   B.ev.push({ k: 'dmg', id: tgt.id, a: amt, c: crit, ty: type, src: src.id, sk: !!o.skill, at: !!o.atk, prey: !!o.prey }); tgt.dmgTaken = (tgt.dmgTaken || 0) + amt;
-  if (!tgt.asleep) tgt.mana += Math.min(15, 2 + Math.floor(amt / 40));
-  else { tgt.slept += amt; if (tgt.slept * 100 >= tgt.maxhp * 15) wake(B, tgt, false); }
+  if (!tgt.asleep) { // 受傷回能量（照聯盟戰棋：減傷前 1%＋減傷後 3%，小數累積到下次）
+    if (!(tgt.manaLock > B.t)) { const x = (tgt.manaCarry || 0) + pre * SKILL_CFG.MANA_PRE + amt * SKILL_CFG.MANA_POST; tgt.mana += Math.min(SKILL_CFG.MANA_CAP, Math.floor(x / 100)); tgt.manaCarry = x % 100; }
+  } else { tgt.slept += amt; if (tgt.slept * 100 >= tgt.maxhp * 15) wake(B, tgt, false); }
   if (o.atk && src.lifesteal) heal(B, src, Math.floor(amt * src.lifesteal / 100));
   if (o.atk && tgt.key === 'hedgehog' && statOf(src.key).rng === 1 && src.alive && tgt.hp > 0) {
     damage(B, tgt, src, Math.floor(amt * 20 / 100), 'magic', { reflect: true });
@@ -675,8 +692,8 @@ function damage(B, src, tgt, raw, type, o) {
   if (o.atk && src.fang) addDot(B, src, tgt, Math.max(1, Math.floor(tgt.maxhp * 4 / 300)), 60, 'bleed');
   if (o.atk && src.frost) tgt.buffs.push({ s: 'as', v: -20, u: B.t + 40 });
   if (o.atk && src.gale) src.galeStacks = Math.min(10, (src.galeStacks || 0) + 1);
-  if (o.atk && src.pollen) src.mana += 5;
-  if (o.atk && B.weather === 'rain') src.mana += 2;
+  if (o.atk && src.pollen) addMana(B, src, 5);
+  if (o.atk && B.weather === 'rain') addMana(B, src, 2);
   if (o.atk && tgt.thorn && src.alive && tgt.hp > 0) damage(B, tgt, src, Math.floor(amt * tgt.thorn / 100), 'magic', { reflect: true });
   if (o.atk && src.dewHit && tgt.hp > 0 && tgt.alive) damage(B, src, tgt, 35, 'magic', {});
   if (o.atk && src.toxicUntil > B.t) addDot(B, src, tgt, 30, 60, 'poison');
@@ -765,8 +782,9 @@ function freeNear(B, c, r, from) {
 function clusterCenter(B, u) {
   // 敵人最密集的「半徑 1（7 格）」中心
   let best = null, bn = -1;
-  for (const e of enemies(B, u)) {
-    let n = 0; for (const f of enemies(B, u)) if (hexD(f.c, f.r, e.c, e.r) <= 1) n++;
+  const es = enemies(B, u).filter(e => !e.neutral);
+  for (const e of es) {
+    let n = 0; for (const f of es) if (hexD(f.c, f.r, e.c, e.r) <= 1) n++;
     if (n > bn) { bn = n; best = e; }
   }
   return best;
@@ -806,9 +824,11 @@ function pickTarget(B, u) {
 
 // ---- 技能 ----
 function cast(B, u) {
-  const m = SKILL_MUL[u.star] || 100, sk = v => Math.floor(v * m / 100);
+  const m = skillMul(u), sk = v => Math.floor(v * m / 100), ccT = v => Math.floor(v * (SKILL_CFG.CC_MUL[u.star] || 100) / 100);
   const tgt = u.target >= 0 ? U(B, u.target) : null;
   const es = enemies(B, u);
+  // 技能「挑目標」只挑真正的敵人：不挑寶箱木箱，看不到（隱身）的也不挑（全部都看不到時才挑）
+  const real = es.filter(e => !e.neutral), seen = real.filter(e => !hiddenFrom(B, e, u)), foes = seen.length ? seen : real;
   B.ev.push({ k: 'skill', id: u.id, s: (ANIMALS[u.key] || {}).skill || '', tg: u.target });
   u.stealth = false;
   switch (u.key) {
@@ -828,11 +848,11 @@ function cast(B, u) {
       break;
     case 'frog': {
       let far = null, fd = -1;
-      for (const e of es) { const d = dist(e, u); if (d <= 4 && d > fd) { fd = d; far = e; } }
+      for (const e of foes) { const d = dist(e, u); if (d <= 4 && d > fd) { fd = d; far = e; } }
       if (!far) break;
       if (fd > 1 && far.invuln <= B.t) { const spot = freeNear(B, u.c, u.r, far); if (spot) teleport(B, far, spot[0], spot[1]); }
       B.ev.push({ k: 'proj', id: u.id, tg: far.id, s: 'tongue' });
-      damage(B, u, far, sk(220), 'magic', { skill: 1 }); stun(B, far, 30);
+      damage(B, u, far, sk(220), 'magic', { skill: 1 }); stun(B, far, ccT(30));
       break; }
     case 'bat': {
       const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
@@ -847,7 +867,7 @@ function cast(B, u) {
       B.zones.push({ kind: 'gas', team: u.team, c: cc.c, r: cc.r, until: B.t + 80, per: sk(40), src: u.id }); B.ev.push({ k: 'zone', kind: 'gas', c: cc.c, r: cc.r, id: u.id });
       break; }
     case 'croc':
-      if (tgt && tgt.alive) { stun(B, tgt, 40); damage(B, u, tgt, sk(300), 'phys', { skill: 1 }); }
+      if (tgt && tgt.alive) { stun(B, tgt, ccT(40)); damage(B, u, tgt, sk(300), 'phys', { skill: 1 }); }
       break;
     case 'bee':
       for (let i = 0; i < 3; i++) {
@@ -863,7 +883,7 @@ function cast(B, u) {
       if (tgt && tgt.alive) damage(B, u, tgt, sk(250), 'phys', { skill: 1 });
       break;
     case 'cheetah': {
-      let low = null; for (const e of es) if (!low || e.hp * 1000 / e.maxhp < low.hp * 1000 / low.maxhp) low = e;
+      let low = null; for (const e of foes) if (!low || e.hp * 1000 / e.maxhp < low.hp * 1000 / low.maxhp) low = e;
       if (!low) break;
       if (dist(low, u) > 1) { const spot = freeNear(B, low.c, low.r, u); if (spot) teleport(B, u, spot[0], spot[1]); }
       u.target = low.id; u.sameHits = 0;
@@ -873,11 +893,11 @@ function cast(B, u) {
       const cc = clusterCenter(B, u); if (!cc) break;
       B.zones.push({ kind: 'ink', team: u.team, c: cc.c, r: cc.r, until: B.t + 30, per: 0 }); B.ev.push({ k: 'zone', kind: 'ink', c: cc.c, r: cc.r, id: u.id });
       for (const e of es) if (hexD(e.c, e.r, cc.c, cc.r) <= 1) {
-        damage(B, u, e, sk(200), 'magic', { skill: 1 }); e.blind = Math.max(e.blind, B.t + 60); B.ev.push({ k: 'cc', id: e.id, s: '致盲' });
+        damage(B, u, e, sk(200), 'magic', { skill: 1 }); e.blind = Math.max(e.blind, B.t + ccT(60)); B.ev.push({ k: 'cc', id: e.id, s: '致盲' });
       }
       break; }
     case 'owl': {
-      let low = null; for (const e of es) if (!low || e.hp < low.hp) low = e;
+      let low = null; for (const e of foes) if (!low || e.hp < low.hp) low = e;
       if (!low) break;
       B.ev.push({ k: 'proj', id: u.id, tg: low.id, s: 'owl' });
       damage(B, u, low, sk(350), 'phys', { skill: 1, crit: 1 });
@@ -887,39 +907,39 @@ function cast(B, u) {
       B.ev.push({ k: 'shake', id: u.id });
       break;
     case 'elephant':
-      for (const e of es) if (dist(e, u) <= 2) { stun(B, e, 30); damage(B, u, e, sk(220), 'magic', { skill: 1 }); }
+      for (const e of es) if (dist(e, u) <= 2) { stun(B, e, ccT(30)); damage(B, u, e, sk(220), 'magic', { skill: 1 }); }
       B.ev.push({ k: 'shake', id: u.id });
       break;
     case 'lion':
       { const ids = []; for (const a of allies(B, u)) { a.buffs.push({ s: 'atk', v: 25, u: B.t + 120 }); ids.push(a.id); } B.ev.push({ k: 'buff', id: u.id, ids, s: 'atk' }); }
-      for (const e of es) if (dist(e, u) <= 2) stun(B, e, 30, '恐懼');
+      for (const e of es) if (dist(e, u) <= 2) stun(B, e, ccT(30), '恐懼');
       break;
     // ---- v0.5 新動物 ----
     case 'penguin': {
-      let far = null, fd = -1; for (const e of es) { const d = dist(e, u); if (d <= 3 && d > fd) { fd = d; far = e; } }
+      let far = null, fd = -1; for (const e of foes) { const d = dist(e, u); if (d <= 3 && d > fd) { fd = d; far = e; } }
       if (!far) far = tgt && tgt.alive ? tgt : null; if (!far) break;
       if (dist(far, u) > 1) { const spot = freeNear(B, far.c, far.r, u); if (spot) { teleport(B, u, spot[0], spot[1]); u.mvFrom.t1 = B.t + 8; u.mvFrom.slide = true; u.mvFrom.jump = false; } }
       u.target = far.id; B.ev.push({ k: 'dash', id: u.id, tg: far.id, s: 'slide' });
-      damage(B, u, far, sk(160), 'magic', { skill: 1 }); stun(B, far, 20);
+      damage(B, u, far, sk(160), 'magic', { skill: 1 }); stun(B, far, ccT(20));
       for (const e of es) if (e !== far && e.alive && dist(e, u) <= 1) damage(B, u, e, sk(80), 'magic', { skill: 1 });
       break; }
     case 'rhino': {
-      let far = null, fd = -1; for (const e of es) { const d = dist(e, u); if (d <= 3 && d > fd) { fd = d; far = e; } }
+      let far = null, fd = -1; for (const e of foes) { const d = dist(e, u); if (d <= 3 && d > fd) { fd = d; far = e; } }
       if (!far) far = tgt && tgt.alive ? tgt : null; if (!far) break;
       if (dist(far, u) > 1) { const spot = freeNear(B, far.c, far.r, u); if (spot) { teleport(B, u, spot[0], spot[1]); u.mvFrom.t1 = B.t + 8; u.mvFrom.slide = true; u.mvFrom.jump = false; } }
       u.target = far.id; B.ev.push({ k: 'dash', id: u.id, tg: far.id, s: 'charge' });
-      damage(B, u, far, sk(220), 'phys', { skill: 1 }); stun(B, far, 25, '擊飛');
+      damage(B, u, far, sk(220), 'phys', { skill: 1 }); stun(B, far, ccT(25), '擊飛');
       u.shield += sk(180);
       break; }
     case 'chameleon': {
-      let low = null; for (const e of es) if (dist(e, u) <= 3 && (!low || e.hp < low.hp)) low = e;
+      let low = null; for (const e of foes) if (dist(e, u) <= 3 && (!low || e.hp < low.hp)) low = e;
       if (!low) low = tgt && tgt.alive ? tgt : null; if (!low) break;
       B.ev.push({ k: 'proj', id: u.id, tg: low.id, s: 'tongue' });
       damage(B, u, low, sk(280), 'phys', { skill: 1 });
       u.stealth = true; u.forceCrit = true; u.target = low.id;
       break; }
     case 'fox': {
-      let best = null; for (const e of es) if (!e.neutral && (!best || (e.rng >= 2) > (best.rng >= 2) || ((e.rng >= 2) === (best.rng >= 2) && e.atk > best.atk))) best = e;
+      let best = null; for (const e of foes) if ((!best || (e.rng >= 2) > (best.rng >= 2) || ((e.rng >= 2) === (best.rng >= 2) && e.atk > best.atk))) best = e;
       if (!best) break;
       if (dist(best, u) > 1) { const spot = freeNear(B, best.c, best.r, u); if (spot) { teleport(B, u, spot[0], spot[1]); u.mvFrom.t1 = B.t + 10; u.mvFrom.big = true; } }
       u.target = best.id;
@@ -927,7 +947,7 @@ function cast(B, u) {
       break; }
     case 'eagle': {
       const t0 = tgt && tgt.alive && !tgt.neutral ? tgt : pickTarget(B, u); if (!t0) break;
-      stun(B, t0, 30, '被抓走');
+      stun(B, t0, ccT(30), '被抓走');
       if (t0.alive && t0.invuln <= B.t) { t0.mvFrom = { c: t0.c, r: t0.r, t0: B.t, t1: B.t + 30, jump: true, grab: true }; }
       B.ev.push({ k: 'grab', id: u.id, tg: t0.id });
       B.landings.push({ id: t0.id, t: B.t + 30, by: u.id, dmg: sk(380), splash: sk(120) });
@@ -935,12 +955,12 @@ function cast(B, u) {
     case 'eel': {
       let cur = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!cur) break;
       const hit = [cur.id], chain = [u.id, cur.id]; let amt = sk(260);
-      damage(B, u, cur, amt, 'magic', { skill: 1 }); stun(B, cur, 10, '麻痺');
+      damage(B, u, cur, amt, 'magic', { skill: 1 }); stun(B, cur, ccT(10), '麻痺');
       for (let i = 0; i < 4; i++) {
-        let nx = null, nd = 99; for (const e of es) if (e.alive && !hit.includes(e.id)) { const d = dist(e, cur); if (d < nd || (d === nd && e.id < nx.id)) { nd = d; nx = e; } }
+        let nx = null, nd = 99; for (const e of real) if (e.alive && !hit.includes(e.id)) { const d = dist(e, cur); if (d < nd || (d === nd && e.id < nx.id)) { nd = d; nx = e; } }
         if (!nx || nd > 3) break;
         amt = Math.floor(amt * 85 / 100); hit.push(nx.id); chain.push(nx.id);
-        damage(B, u, nx, amt, 'magic', { skill: 1 }); stun(B, nx, 10, '麻痺'); cur = nx;
+        damage(B, u, nx, amt, 'magic', { skill: 1 }); stun(B, nx, ccT(10), '麻痺'); cur = nx;
       }
       B.ev.push({ k: 'chain', id: u.id, ids: chain });
       break; }
@@ -951,12 +971,12 @@ function cast(B, u) {
       break; }
     case 'whale': {
       const ux = hexX(u.c, u.r); // 以自己為中心、左右各 1 格寬的直線帶
-      for (const e of es) if (Math.abs(hexX(e.c, e.r) - ux) <= 1) { damage(B, u, e, sk(260), 'magic', { skill: 1 }); stun(B, e, 20); }
+      for (const e of es) if (Math.abs(hexX(e.c, e.r) - ux) <= 1) { damage(B, u, e, sk(260), 'magic', { skill: 1 }); stun(B, e, ccT(20)); }
       for (const a of allies(B, u)) if (Math.abs(hexX(a.c, a.r) - ux) <= 1) heal(B, a, Math.floor(a.maxhp * 15 / 100));
       B.ev.push({ k: 'wave', id: u.id, c: u.c, x: ux });
       break; }
     case 'peacock': {
-      for (const e of es) if (dist(e, u) <= 3) stun(B, e, 30, '魅惑');
+      for (const e of es) if (dist(e, u) <= 3) stun(B, e, ccT(30), '魅惑');
       const ids = []; for (const a of allies(B, u)) if (dist(a, u) <= 3) { a.buffs.push({ s: 'as', v: 30, u: B.t + 80 }); a.buffs.push({ s: 'dr', v: 20, u: B.t + 80 }); ids.push(a.id); }
       B.ev.push({ k: 'buff', id: u.id, ids, s: 'as' });
       break; }
@@ -969,7 +989,7 @@ function cast(B, u) {
       break; }
     case 'zebra': {
       const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
-      damage(B, u, t0, sk(170), 'phys', { skill: 1 }); t0.blind = Math.max(t0.blind, B.t + 40); B.ev.push({ k: 'cc', id: t0.id, s: '致盲' });
+      damage(B, u, t0, sk(170), 'phys', { skill: 1 }); t0.blind = Math.max(t0.blind, B.t + ccT(40)); B.ev.push({ k: 'cc', id: t0.id, s: '致盲' });
       break; }
     case 'hippo': {
       const ids = []; for (const e of es) if (dist(e, u) <= 1) { e.tauntBy = u.id; e.tauntUntil = B.t + 40; e.target = u.id; ids.push(e.id); } B.ev.push({ k: 'taunt', id: u.id, ids });
@@ -977,7 +997,7 @@ function cast(B, u) {
       u.shield += Math.floor(u.maxhp * 22 / 100);
       break; }
     case 'parrot': {
-      const list = es.filter(e => e.alive && !e.neutral).sort((a, b) => dist(a, u) - dist(b, u) || a.id - b.id).slice(0, 3);
+      const list = foes.filter(e => e.alive).sort((a, b) => dist(a, u) - dist(b, u) || a.id - b.id).slice(0, 3);
       for (const e of list) { B.ev.push({ k: 'proj', id: u.id, tg: e.id, s: 'feather' }); damage(B, u, e, sk(130), 'phys', { skill: 1 }); e.buffs.push({ s: 'mrd', v: 20, u: B.t + 80 }); }
       break; }
     case 'giraffe': {
@@ -992,7 +1012,7 @@ function cast(B, u) {
       B.zones.push({ kind: 'swirl', team: u.team, c: cc.c, r: cc.r, until: B.t + 60, per: sk(90), src: u.id }); B.ev.push({ k: 'zone', kind: 'swirl', c: cc.c, r: cc.r, id: u.id });
       break; }
     case 'shark': {
-      let low = null; for (const e of es) if (!e.neutral && (!low || e.hp * 1000 / e.maxhp < low.hp * 1000 / low.maxhp)) low = e;
+      let low = null; for (const e of foes) if (!low || e.hp * 1000 / e.maxhp < low.hp * 1000 / low.maxhp) low = e;
       if (!low) break;
       if (dist(low, u) > 1) { const spot = freeNear(B, low.c, low.r, u); if (spot) teleport(B, u, spot[0], spot[1]); }
       u.target = low.id;
@@ -1002,7 +1022,7 @@ function cast(B, u) {
       break; }
     case 'panda': {
       const fwd = u.team === 0 ? 1 : -1, hit = [];
-      for (const e of es) if (e.alive && dist(e, u) <= 2 && (e.r - u.r) * fwd >= -1) { damage(B, u, e, sk(240), 'magic', { skill: 1 }); stun(B, e, 20); hit.push(e.id); }
+      for (const e of es) if (e.alive && dist(e, u) <= 2 && (e.r - u.r) * fwd >= -1) { damage(B, u, e, sk(240), 'magic', { skill: 1 }); stun(B, e, ccT(20)); hit.push(e.id); }
       heal(B, u, Math.floor(u.maxhp * 18 / 100));
       B.ev.push({ k: 'shake', id: u.id });
       break; }
@@ -1016,7 +1036,7 @@ function cast(B, u) {
   u.castCount++;
   if (u.honeyHeal) heal(B, u, Math.floor(u.maxhp * 12 / 100));
   if (u.waxShell) u.shield += 200;
-  if (hasAug(B, u, 'trample') && TANKS.includes(u.key)) { for (const e of enemies(B, u)) if (dist(e, u) <= 1) stun(B, e, 20); B.ev.push({ k: 'aug', id: u.id, a: 'trample' }); }
+  if (hasAug(B, u, 'trample') && TANKS.includes(u.key)) { for (const e of enemies(B, u)) if (dist(e, u) <= 1) stun(B, e, ccT(20)); B.ev.push({ k: 'aug', id: u.id, a: 'trample' }); }
 }
 
 function fireCombo(B, cbx) {
@@ -1099,12 +1119,14 @@ function step(B) {
     if (u.mvFrom && u.mvFrom.t1 > t) continue;
     if (u.mvFrom) u.mvFrom = null;
     if (u.busy > t) continue;
-    if (u.mana >= u.manaMax && u.manaMax < 999) {
-      u.mana = u.honeypot ? 25 : 0;
-      cast(B, u); u.busy = t + 8;
+    let tg = pickTarget(B, u);
+    if (u.mana >= u.manaMax && u.manaMax < 999 && (!SKILL_CFG.NEED_RANGE || (tg && !tg.neutral && dist(u, tg) <= effRange(B, u)))) { // 能量滿＋射程內有敵人才放
+      if (tg) u.target = tg.id;
+      u.mana = u.honeypot ? 25 : 0; u.manaCarry = 0;
+      cast(B, u); u.busy = t + SKILL_CFG.CAST_TICKS;
+      u.manaLock = t + Math.max(SKILL_CFG.CAST_TICKS, SKILL_CFG.LOCK[u.key] || 0);
       continue;
     }
-    let tg = pickTarget(B, u);
     if (B.td) { // 塔防模式：我方守住位置不追；敵方只在靠近時交戰，否則一路往我方底線走（飛行的直接飛過去，只會順手打射程內的）
       if (u.team === 0 && tg && dist(u, tg) > effRange(B, u) + (u.rng <= 1 ? (B.td.leash || 0) : 0)) tg = null; // 近戰可以往前追幾格
       if (u.team === 1 && (!tg || dist(u, tg) > effRange(B, u) + (hasTrait(u, 'sky') ? 0 : (B.td.engage || 0)))) {
@@ -1119,7 +1141,7 @@ function step(B) {
         B.ev.push({ k: 'atk', id: u.id, tg: tg.id, rg: u.rng > 1 });
         u.stealth = false;
         damage(B, u, tg, effAtk(B, u), 'phys', { atk: 1 });
-        u.mana += 10;
+        addMana(B, u, SKILL_CFG.MANA_ATK);
         u.nextAtk = t + effInterval(B, u);
       }
     } else {
@@ -2364,7 +2386,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'https://zoochess.pages.dev', 'http://localhost:8123', 'http://127.0.0.1:8123'], // 網站網址（Cloudflare Pages 的預覽網址 *.zoochess.pages.dev 也允許）
-  VERSION: '0.13.11',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.13.12',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）

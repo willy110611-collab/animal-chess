@@ -330,16 +330,17 @@ function loadFormation(i) {
 // ---- 圖鑑：技能展示（在大廳開一個小戰場，讓這隻動物連放幾次技能）----
 // 可調：DEMO_CFG.STAR 星級、SEC 展示秒數、MANA 放技能需要的怒氣（越小放越多次）、FOES 假人數量與血量
 const DEMO_CFG = { STAR: 2, SEC: 9, MANA: 25, FOES: 3, FOE_HP: 9000 };
-function skillDemo(key) {
+function skillDemo(key, mode) { // mode＝'atk'：只看普通攻擊
   if (G && !$('game').hidden && !(REPLAY && REPLAY.demo)) { toast('比賽中不能播放，回大廳再看', 1800); return; }
   if (REPLAY) endReplay();
   ME = 0; netReset(); newGame(2, true);
   G.rules.augments = false; G.rules.encounters = false; G.rules.carousel = false; G.encounter = null; G.portal = null; G.portalVote = null; G.demo = true; G.timer = 999000;
   $('overlay').hidden = true;
-  const units = [{ key, star: DEMO_CFG.STAR, owner: 0, team: 0, c: toGlobal(0, 4, 2)[0], r: toGlobal(0, 4, 2)[1], items: [] }];
+  const sr = mode === 'atk' ? 4 : 2; S3.demoClose = mode === 'atk';
+  const units = [{ key, star: DEMO_CFG.STAR, owner: 0, team: 0, c: toGlobal(0, 4, sr)[0], r: toGlobal(0, 4, sr)[1], items: [] }];
   for (let i = 0; i < DEMO_CFG.FOES; i++) { const [c, r] = toGlobal(1, 3 + i, i === 1 ? 3 : 4); units.push({ key: 'boar', star: 1, owner: -1, team: 1, c, r, items: [] }); }
   const B = createBattle({ seed: 7, terrain: {}, height: {}, units, pve: true, weather: 'sunny' });
-  for (const u of B.units) { if (u.team === 1) { u.maxhp = u.hp = DEMO_CFG.FOE_HP; u.atk = 1; } else { u.manaMax = DEMO_CFG.MANA; u.mana = DEMO_CFG.MANA; } }
+  for (const u of B.units) { if (u.team === 1) { u.maxhp = u.hp = DEMO_CFG.FOE_HP; u.atk = 1; } else if (mode === 'atk') { u.manaMax = 99999; u.mana = 0; } else { u.manaMax = DEMO_CFG.MANA; u.mana = DEMO_CFG.MANA; } }
   for (const k in S3.V) if (k[0] === 'b') s3Remove(k);
   REPLAY = { B, acc: 0, end: 0, demo: key, t: 0 }; S3.demoK = 'b' + B.units.find(u => u.team === 0).id;
   cv = { bt: { B, teams: [0, 1] }, B, vt: 0, zonePos: {}, lastCell: {}, replay: true };

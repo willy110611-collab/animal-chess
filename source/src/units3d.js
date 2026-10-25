@@ -94,7 +94,7 @@ function s3Frame(dt, ctx) {
   S3.cam.position.copy(S3.camBase);
   if (S3.demoK && S3.V[S3.demoK]) { // 圖鑑技能展示：鏡頭拉近跟著主角（可調：DEMO_CAM 距離與高度）
     const dv = S3.V[S3.demoK], f = S3.demoF || (S3.demoF = dv.pos.clone()); f.lerp(V3(dv.pos.x, 0, dv.pos.z - 0.5), Math.min(1, dt * 3));
-    S3.cam.position.set(f.x + DEMO_CAM.x, DEMO_CAM.y, f.z + DEMO_CAM.z); S3.camLook.set(f.x, 0.5, f.z);
+    const dc = S3.demoClose ? DEMO_CAM_ATK : DEMO_CAM; S3.cam.position.set(f.x + dc.x, dc.y, f.z + dc.z); S3.camLook.set(f.x, 0.5, f.z);
   } else if (S3.demoF) { S3.demoF = null; S3.camLook.set(0, 0, S3.W / S3.H < 1 ? 0.15 : 0.2); }
   if (S3.shake > 0) { S3.cam.position.x += (Math.random() - .5) * S3.shake; S3.cam.position.y += (Math.random() - .5) * S3.shake; S3.shake = Math.max(0, S3.shake - dt * 1.6); }
   S3.cam.lookAt(S3.camLook);
@@ -435,7 +435,7 @@ const AIR_CFG = {
   panda: { kind: 'leap', h: 2.0, flip: 2, toss: 1.0, shake: 0.26 },
 };
 const AIR_ON = { on: true };
-const DEMO_CAM = { x: 0, y: 8.6, z: 9.6 }; // 設成 false 可整個關掉立體技能動作
+const DEMO_CAM = { x: 0, y: 8.6, z: 9.6 }, DEMO_CAM_ATK = { x: 2.2, y: 4.6, z: 5.6 }; // 普攻展示鏡頭更近、稍微側面 // 設成 false 可整個關掉立體技能動作
 function airStart(v, key, tk, dur, hit) {
   const C = AIR_CFG[key]; if (!C || !AIR_ON.on || !v) return;
   const tv = tk !== undefined ? S3.V[tk] : null;
@@ -516,7 +516,7 @@ function airFrame(v, t) {
 function atkNudge(v, tv, heavy) {
   if (!v || !tv || !AIR_ON.on) return;
   const d = V3(tv.pos.x - v.pos.x, 0, tv.pos.z - v.pos.z); if (d.lengthSq() < 1e-4) return; d.normalize();
-  v.nudge = { t0: nowS(), d, amt: heavy ? 0.42 : 0.28, dur: 0.22 };
+  v.nudge = { t0: nowS(), d, amt: heavy ? 0.16 : 0.1, dur: 0.22 }; // v0.14：攻擊動作本身已有前衝，這裡只補一點
   tv.nudge = { t0: nowS() + 0.04, d, amt: heavy ? 0.24 : 0.14, dur: 0.26, kb: true };
 }
 function nudgeFrame(v, t) {
