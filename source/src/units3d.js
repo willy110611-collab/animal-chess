@@ -406,7 +406,7 @@ const AIR_CFG = {
   bat: { kind: 'dive', h: 2.4, toss: 0, shake: 0.06 },
   redpanda: { kind: 'jump', h: 1.8, spin: 1, toss: 0, shake: 0.14 },
   croc: { kind: 'breach', h: 1.6, spin: 2, toss: 1.4, shake: 0.12 },
-  bee: { kind: 'dive', h: 2.8, spin: 2, toss: 0, shake: 0.04 },
+  bee: { kind: 'float', h: 0.6, toss: 0, shake: 0.04 }, // v0.13.15 畫 8 字＋轉身刺，不再俯衝轉圈
   koala: { kind: 'leap', h: 3.0, flip: 1, toss: 1.0, shake: 0.2 },
   cheetah: { kind: 'blink', h: 0.4, toss: 0, shake: 0.1 },
   octopus: { kind: 'float', h: 2.0, spin: 1, toss: 0, shake: 0 },
@@ -425,10 +425,10 @@ const AIR_CFG = {
   komodo: { kind: 'leap', h: 2.2, toss: 1.0, shake: 0.16 },
   kingboar: { kind: 'jump', h: 2.4, toss: 1.6, shake: 0.36 },
   deer: { kind: 'jump', h: 1.4, flip: 1, toss: 0, shake: 0 },
-  zebra: { kind: 'flip', h: 1.2, flip: 1, toss: 1.0, shake: 0.08 },
+  zebra: { kind: 'jump', h: 0.3, toss: 1.0, shake: 0.08 }, // v0.13.15 轉身後踢，拿掉後空翻
   hippo: { kind: 'leap', h: 1.6, toss: 0.8, shake: 0.24 },
   parrot: { kind: 'dive', h: 2.6, spin: 1, toss: 0, shake: 0.04 },
-  giraffe: { kind: 'jump', h: 1.0, spin: 1, toss: 1.2, shake: 0.14 },
+  giraffe: { kind: 'jump', h: 0.3, toss: 1.2, shake: 0.14 }, // v0.13.15 甩一圈改由身體動作做
   flamingo: { kind: 'float', h: 1.8, spin: 2, toss: 0, shake: 0 },
   shark: { kind: 'breach', h: 2.8, flip: 1, toss: 1.4, shake: 0.16 },
   panda: { kind: 'leap', h: 2.0, flip: 2, toss: 1.0, shake: 0.26 },

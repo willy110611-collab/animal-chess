@@ -888,7 +888,7 @@ const ATK_V2 = {
 };
 for (const k in ATK_V2) { const A = ATK_V2[k]; if (!ACT[k]) continue; ACT[k].atk = { dur: A.dur, hit: 0.5, fx: A.fx, fn: A.fn, desc: A.desc }; }
 
-// ===== v0.13.14 技能動作重做：用身體本身做出技能（特效沿用原本的 fx）=====
+// ===== v0.13.14～ 技能動作重做：用身體本身做出技能（特效沿用原本的 fx）=====
 // 可調：dur 動作秒數、hit 特效出現的時間點（0～1）；整隻跳起來的高度在 units3d.js 的 AIR_CFG
 const SKILL_V2 = {
   penguin: { dur: 1.1, hit: 0.45, desc: '跳起來肚皮貼地往前滑，滑完彈起來', fn(R, p) {
@@ -927,6 +927,42 @@ const SKILL_V2 = {
     R.body.position.y += 0.1 * chest; R.head.rotation.x -= 0.3 * chest;
     for (let i = 0; i < 4; i++) { const a = 0.3 + i * 0.16, up = bell(p, a, a + 0.1), hit = bell(p, a + 0.08, a + 0.16), arm = i % 2 ? R.armR : R.armL;
       arm.rotation.x += -3.0 * up + 1.0 * hit; arm.rotation.z += (i % 2 ? 0.5 : -0.5) * up; R.body.rotation.x += 0.45 * hit; R.body.position.y -= 0.1 * hit; R.body.scale.y *= 1 - 0.12 * hit; R.body.rotation.z += (i % 2 ? -1 : 1) * 0.12 * (up + hit); } } },
+  // ---- v0.13.15 第二批 ----
+  zebra: { dur: 1.1, hit: 0.5, desc: '轉身、前腳撐地，兩隻後腳用力往後踢', fn(R, p) {
+    const t = turnBack(p), k = bell(p, 0.38, 0.68), pre = bell(p, 0.15, 0.42);
+    R.body.rotation.y += Math.PI * t;
+    R.body.rotation.x -= 0.2 * pre; R.body.position.y -= 0.05 * pre; // 蓄力壓低
+    R.body.rotation.x += 0.85 * k; R.body.position.y += 0.22 * k; R.head.rotation.x += 0.5 * k; // 屁股翹起
+    R.legL.rotation.x -= 2.2 * k; R.legR.rotation.x -= 2.2 * k;
+    R.armL.rotation.x += 0.5 * k; R.armR.rotation.x += 0.5 * k;
+    if (R.tail) R.tail.rotation.x -= 1.2 * k;
+    R.body.scale.y *= 1 - 0.12 * bell(p, 0.66, 0.8); } },
+  giraffe: { dur: 1.3, hit: 0.55, desc: '頭往後仰蓄力，再用長脖子甩一整圈', fn(R, p) {
+    const w = ease.out(ramp(p, 0, 0.35)) * (1 - ramp(p, 0.35, 0.45));
+    R.body.rotation.y -= 0.7 * w; R.head.rotation.x -= 0.6 * w; R.head.rotation.y -= 0.5 * w;
+    const sw = ease.inOut(ramp(p, 0.38, 0.8)); R.body.rotation.y += Math.PI * 2 * sw; // 甩一圈
+    const lag = bell(p, 0.38, 0.85); R.head.rotation.y -= 0.6 * lag; R.head.rotation.z += 0.5 * lag; R.body.rotation.z -= 0.15 * lag;
+    R.body.position.y += 0.06 * lag; R.body.scale.y *= 1 - 0.1 * bell(p, 0.82, 0.95); } },
+  shark: { dur: 1.2, hit: 0.6, desc: '頭朝下潛進地底，竄出來張大嘴咬住再甩頭', fn(R, p) {
+    const dive = bell(p, 0, 0.35), up = bell(p, 0.45, 0.75), shake = bell(p, 0.62, 0.95);
+    R.body.rotation.x += 0.9 * dive; R.tail.rotation.x -= 0.8 * dive;
+    R.body.rotation.x -= 0.8 * up; R.body.position.y += 0.15 * up; R.jaw.rotation.x += 1.3 * bell(p, 0.45, 0.65);
+    R.body.rotation.y += 0.45 * Math.sin(p * 55) * shake; R.body.rotation.z += 0.2 * Math.sin(p * 55) * shake; // 咬住甩頭
+    R.tail.rotation.y += 0.9 * Math.sin(p * 30) * bell(p, 0, 1); } },
+  chameleon: { dur: 1.2, hit: 0.6, desc: '壓低身子左右晃、悄悄靠近，再猛然出舌', fn(R, p) {
+    const sneak = bell(p, 0, 0.55), strike = bell(p, 0.52, 0.75);
+    R.body.scale.y *= 1 - 0.2 * sneak; R.body.position.y -= 0.04 * sneak;
+    R.body.rotation.z += 0.3 * Math.sin(p * 16) * sneak; R.body.position.x += 0.12 * Math.sin(p * 16) * sneak; // 左右晃（像在樹枝上）
+    R.head.rotation.x -= 0.2 * sneak;
+    R.body.position.z += 0.3 * strike; R.head.rotation.x -= 0.35 * strike; R.head.position.z += 0.12 * strike; R.body.scale.z *= 1 + 0.15 * strike;
+    if (R.tail) R.tail.rotation.x += 0.8 * sneak - 0.6 * strike; } },
+  bee: { dur: 1.3, hit: 0.6, desc: '畫 8 字指揮蜂群，再轉身用尾針往前刺', fn(R, p) {
+    const f8 = bell(p, 0, 0.6), q = ramp(p, 0, 0.6) * Math.PI * 2;
+    R.body.position.x += 0.35 * Math.sin(q) * f8; R.body.position.z += 0.18 * Math.sin(q * 2) * f8; R.body.rotation.z -= 0.5 * Math.cos(q) * f8; // 8 字飛
+    R.body.position.y += 0.1 * f8;
+    const t = turnBack(ramp(p, 0.45, 1)), st = bell(p, 0.55, 0.8);
+    R.body.rotation.y += Math.PI * t; R.body.position.z += 0.45 * st; R.body.rotation.x -= 0.7 * st;
+    if (R.wingL) { R.wingL.rotation.z += 0.5 * Math.sin(p * 90); R.wingR.rotation.z -= 0.5 * Math.sin(p * 90); } } },
 };
 for (const k in SKILL_V2) { const A = SKILL_V2[k]; if (!ACT[k] || !ACT[k].skill) continue; ACT[k].skill = { dur: A.dur, hit: A.hit, fx: ACT[k].skill.fx, fn: A.fn, desc: A.desc }; }
 function poseRig(R, st) {
