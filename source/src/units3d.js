@@ -405,7 +405,6 @@ const AIR_CFG = {
   frog: { kind: 'leap', h: 2.4, toss: 0.8, shake: 0.1 },
   bat: { kind: 'dive', h: 2.4, toss: 0, shake: 0.06 },
   redpanda: { kind: 'jump', h: 1.8, spin: 1, toss: 0, shake: 0.14 },
-  skunk: { kind: 'flip', h: 1.6, flip: -1, toss: 0, shake: 0 },
   croc: { kind: 'breach', h: 1.6, spin: 2, toss: 1.4, shake: 0.12 },
   bee: { kind: 'dive', h: 2.8, spin: 2, toss: 0, shake: 0.04 },
   koala: { kind: 'leap', h: 3.0, flip: 1, toss: 1.0, shake: 0.2 },
@@ -414,13 +413,13 @@ const AIR_CFG = {
   owl: { kind: 'dive', h: 3.0, toss: 0.6, shake: 0.08 },
   elephant: { kind: 'jump', h: 1.8, toss: 1.6, shake: 0.32 },
   lion: { kind: 'leap', h: 3.4, toss: 1.2, shake: 0.26 },
-  penguin: { kind: 'leap', h: 1.2, flip: 1, toss: 1.4, shake: 0.1 },
-  rhino: { kind: 'leap', h: 0.8, toss: 2.2, shake: 0.2 },
+  penguin: { kind: 'leap', h: 0.25, toss: 1.4, shake: 0.1 }, // v0.13.14 肚皮貼地滑，不再翻跳；臭鼬改原地倒立（拿掉空翻）
+  rhino: { kind: 'leap', h: 0.15, toss: 2.2, shake: 0.2 }, // v0.13.14 貼地連撞
   chameleon: { kind: 'blink', h: 0.6, toss: 0, shake: 0.06 },
   fox: { kind: 'leap', h: 3.0, flip: 1, toss: 0.6, shake: 0.1 },
   eagle: { kind: 'dive', h: 3.6, toss: 0, shake: 0.12 },
   eel: { kind: 'breach', h: 2.2, spin: 1, toss: 1.0, shake: 0.1 },
-  gorilla: { kind: 'jump', h: 3.0, toss: 1.4, shake: 0.34 },
+  gorilla: { kind: 'jump', h: 0.5, toss: 1.4, shake: 0.34 }, // v0.13.14 捶胸時小跳，第一拳落地震動
   whale: { kind: 'breach', h: 3.6, flip: 0.5, toss: 1.8, shake: 0.36 },
   peacock: { kind: 'float', h: 2.4, spin: 1, toss: 0, shake: 0 },
   komodo: { kind: 'leap', h: 2.2, toss: 1.0, shake: 0.16 },

@@ -887,6 +887,48 @@ const ATK_V2 = {
   panda: { dur: 0.6, desc: '舉起竹子當棍子打', fx: 'slam', fn(R, p) { const k = ATKP(p); R.armR.rotation.x += -3.0 * k.w + 1.3 * k.s; R.armR.rotation.z += 0.3 * k.w; R.body.rotation.y += 0.3 * k.w - 0.3 * k.s; R.body.rotation.x += 0.3 * k.s; R.body.position.z += 0.3 * k.s; } },
 };
 for (const k in ATK_V2) { const A = ATK_V2[k]; if (!ACT[k]) continue; ACT[k].atk = { dur: A.dur, hit: 0.5, fx: A.fx, fn: A.fn, desc: A.desc }; }
+
+// ===== v0.13.14 技能動作重做：用身體本身做出技能（特效沿用原本的 fx）=====
+// 可調：dur 動作秒數、hit 特效出現的時間點（0～1）；整隻跳起來的高度在 units3d.js 的 AIR_CFG
+const SKILL_V2 = {
+  penguin: { dur: 1.1, hit: 0.45, desc: '跳起來肚皮貼地往前滑，滑完彈起來', fn(R, p) {
+    const crouch = bell(p, 0, 0.18), lay = ease.out(ramp(p, 0.12, 0.3)) * (1 - ease.inOut(ramp(p, 0.78, 0.95))), slide = ease.out(ramp(p, 0.22, 0.75)) * (1 - ease.inOut(ramp(p, 0.82, 1)));
+    R.body.scale.y *= 1 - 0.2 * crouch; hopUp(R, ramp(p, 0.1, 0.3), 0.3);
+    R.body.rotation.x += 1.45 * lay; R.body.position.y += 0.18 * lay; R.body.position.z += 0.25 * slide;
+    R.body.rotation.z += 0.12 * Math.sin(p * 40) * lay; // 滑的時候左右晃
+    R.armL.rotation.z -= 1.4 * lay; R.armR.rotation.z += 1.4 * lay; R.armL.rotation.x += 0.8 * lay; R.armR.rotation.x += 0.8 * lay;
+    if (R.legL) { R.legL.rotation.x -= 1.2 * lay; R.legR.rotation.x -= 1.2 * lay; }
+    hopUp(R, ramp(p, 0.8, 1), 0.25); } },
+  hippo: { dur: 1.3, hit: 0.55, desc: '轉身、跳起來，用大屁股重重坐下去', fn(R, p) {
+    const turn = ease.inOut(ramp(p, 0, 0.25)) * (1 - ease.inOut(ramp(p, 0.8, 1)));
+    R.body.rotation.y += Math.PI * turn;
+    const sit = bell(p, 0.5, 0.85); R.body.rotation.x -= 0.55 * sit; R.body.scale.y *= 1 - 0.25 * bell(p, 0.52, 0.66); R.body.scale.x *= 1 + 0.15 * bell(p, 0.52, 0.66);
+    if (R.legL) { R.legL.rotation.x -= 1.3 * sit; R.legR.rotation.x -= 1.3 * sit; }
+    R.armL.rotation.z -= 1.0 * bell(p, 0.25, 0.6); R.armR.rotation.z += 1.0 * bell(p, 0.25, 0.6);
+    if (R.jaw) R.jaw.rotation.x += 0.9 * bell(p, 0.5, 0.9); } },
+  rhino: { dur: 1.3, hit: 0.3, desc: '低頭連撞三下，一下比一下用力', fn(R, p) {
+    R.head.rotation.x += 0.75 * Math.min(1, bell(p, 0, 1) * 2);
+    for (let i = 0; i < 3; i++) { const a = 0.08 + i * 0.28, k = bell(p, a, a + 0.24), s = 0.45 + i * 0.2; R.body.position.z += s * k; R.body.rotation.x += 0.3 * k; R.body.scale.z *= 1 - 0.18 * bell(p, a + 0.1, a + 0.2); R.body.scale.y *= 1 + 0.1 * bell(p, a + 0.1, a + 0.2); R.body.position.y += 0.05 * Math.abs(Math.sin(k * Math.PI * 2)); }
+    const run = Math.sin(p * 45) * bell(p, 0, 1);
+    if (R.legL) { R.legL.rotation.x += 0.9 * run; R.legR.rotation.x -= 0.9 * run; }
+    if (R.armL) { R.armL.rotation.x -= 0.9 * run; R.armR.rotation.x += 0.9 * run; } } },
+  skunk: { dur: 1.5, hit: 0.45, desc: '轉身倒立、尾巴豎起來對著敵人噴', fn(R, p) {
+    const turn = ease.inOut(ramp(p, 0, 0.2)) * (1 - ease.inOut(ramp(p, 0.85, 1)));
+    R.body.rotation.y += Math.PI * turn;
+    const hs = ease.out(ramp(p, 0.15, 0.4)) * (1 - ease.inOut(ramp(p, 0.75, 0.92))); // 倒立
+    R.body.rotation.x += 2.1 * hs; R.body.position.y += 0.3 * hs; R.body.position.z += 0.1 * hs;
+    R.armL.rotation.x -= 1.2 * hs; R.armR.rotation.x -= 1.2 * hs;
+    if (R.legL) { R.legL.rotation.x += 0.5 * hs; R.legR.rotation.x += 0.5 * hs; }
+    const puff = bell(p, 0.4, 0.75); R.tail.rotation.x += 0.9 * hs + 0.25 * Math.sin(p * 50) * puff; R.tail.scale.setScalar(1 + 0.25 * puff);
+    R.body.rotation.z += 0.08 * Math.sin(p * 30) * puff; } },
+  gorilla: { dur: 1.5, hit: 0.38, desc: '先捶胸，再左右拳輪流捶地四下', fn(R, p) {
+    const chest = bell(p, 0, 0.3);
+    R.armL.rotation.x -= 1.3 * chest * (0.6 + 0.4 * Math.sin(p * 60)); R.armR.rotation.x -= 1.3 * chest * (0.6 - 0.4 * Math.sin(p * 60));
+    R.body.position.y += 0.1 * chest; R.head.rotation.x -= 0.3 * chest;
+    for (let i = 0; i < 4; i++) { const a = 0.3 + i * 0.16, up = bell(p, a, a + 0.1), hit = bell(p, a + 0.08, a + 0.16), arm = i % 2 ? R.armR : R.armL;
+      arm.rotation.x += -3.0 * up + 1.0 * hit; arm.rotation.z += (i % 2 ? 0.5 : -0.5) * up; R.body.rotation.x += 0.45 * hit; R.body.position.y -= 0.1 * hit; R.body.scale.y *= 1 - 0.12 * hit; R.body.rotation.z += (i % 2 ? -1 : 1) * 0.12 * (up + hit); } } },
+};
+for (const k in SKILL_V2) { const A = SKILL_V2[k]; if (!ACT[k] || !ACT[k].skill) continue; ACT[k].skill = { dur: A.dur, hit: A.hit, fx: ACT[k].skill.fx, fn: A.fn, desc: A.desc }; }
 function poseRig(R, st) {
   for (const g of R.groups) resetG(g);
   const t = st.t + R.phase;
