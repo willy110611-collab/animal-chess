@@ -31,7 +31,7 @@
 - 版本號：`source/src/ui.js` 的 `dataset.v` 與 `sw.js` 的 CACHE 要一致；伺服器版本由 build.py 自動帶入。
 - 上線確認：`https://willy110611-collab.github.io/animal-chess/sw.js` 與 `https://zoochess.willy110611.workers.dev/api/ping` 都顯示新版本號。
 - 平衡模擬：`node test/trait_sim.js 40`（羈絆）、`node test/td_sim.js 10`（塔防）、`node test/smoke.js`（必跑）。
-- 2026-10-25：v0.13.12 上線＝技能規則照聯盟戰棋＋「普通攻擊重做」（models.js 的 ATK_V2、features.js 技能展示的普攻模式、units3d.js）。v0.13.14 技能動作重做第一批（models.js 的 SKILL_V2：企鵝、河馬、犀牛、臭鼬、大猩猩；units3d.js 的 AIR_CFG 一起調低）；v0.13.15 第二批：斑馬、長頸鹿、鯊魚、變色龍、蜜蜂；v0.13.16 第三批：電鰻、鸚鵡、小鹿、紅鶴、蝙蝠、松鼠；v0.13.17 第四批：野狼、青蛙、小熊貓、無尾熊、獵豹、狐狸；v0.13.18 第五批：章魚、貓頭鷹、大象、獅子、老鷹、孔雀；v0.13.19 第六批：鯨魚、科摩多、刺蝟、鱷魚、熊貓＝33 隻全部重做完。之後要改某隻：預覽頁 source/dist/make_preview.py（skill_v2_preview.js 寫 SKILL_NEXT），進遊戲用 source/dist/integrate.py，上線用 source/dist/release.sh（三個都在 dist，不進 repo）。
+- 2026-10-25：v0.13.12 上線＝技能規則照聯盟戰棋＋「普通攻擊重做」（models.js 的 ATK_V2、features.js 技能展示的普攻模式、units3d.js）。v0.13.14 技能動作重做第一批（models.js 的 SKILL_V2：企鵝、河馬、犀牛、臭鼬、大猩猩；units3d.js 的 AIR_CFG 一起調低）；v0.13.15 第二批：斑馬、長頸鹿、鯊魚、變色龍、蜜蜂；v0.13.16 第三批：電鰻、鸚鵡、小鹿、紅鶴、蝙蝠、松鼠；v0.13.17 第四批：野狼、青蛙、小熊貓、無尾熊、獵豹、狐狸；v0.13.18 第五批：章魚、貓頭鷹、大象、獅子、老鷹、孔雀；v0.13.19 第六批：鯨魚、科摩多、刺蝟、鱷魚、熊貓＝33 隻全部重做完。v0.13.20 技能說明顯示各星級數值（ui.js 的 skillDesc，150/225/438，目前星級加粗）。之後要改某隻：預覽頁 source/dist/make_preview.py（skill_v2_preview.js 寫 SKILL_NEXT），進遊戲用 source/dist/integrate.py，上線用 source/dist/release.sh（三個都在 dist，不進 repo）。
 - 專案文件（claude.ai 專案「遊戲」）：完成與待辦清單、音樂音效與羈絆改版企劃、塔防模式企劃。
 - v0.13.13 平衡：野狼攻擊 62、青蛙生命 600 能量 60、蝙蝠生命 540、變色龍生命 720、河馬能量 100、科摩多技能回血 15%。
 - v0.13.12 技能規則照聯盟戰棋：`engine.js` 的 `SKILL_CFG`（射程內才放、施法與持續型技能鎖能量、受傷回能 1%減傷前＋3%減傷後、物理技能吃攻擊加成、4/5 費 3 星技能倍率、控制秒數隨星級、技能不挑寶箱與隱身敵人）。技能比較：`node test/skill_sim.js 600`（加第二個參數可指定舊 engine 檔比較）。

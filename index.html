@@ -5974,6 +5974,15 @@ function unitStats(u) {
   s.aps = (20 / A.ai * (100 + s.as) / 100).toFixed(2);
   return s;
 }
+// 技能說明的數值依星級顯示（像聯盟戰棋 150/225/438），star 給了就把那一星加粗；倍率跟 engine.js 的 SKILL_CFG 一樣，3 星傷害再 +30%（進化）
+const SKILL_NUM_SKIP = { bee: 1 }; // 蜜蜂說明裡的 60 是小蜂固定傷害，不隨星級
+function skillDesc(key, star) {
+  const A = ANIMALS[key]; if (!A || SKILL_NUM_SKIP[key]) return A ? A.desc : '';
+  const mul = SKILL_CFG.MUL[A.cost] || SKILL_MUL;
+  const fmt = (v, dmg) => [1, 2, 3].map(s => { const x = Math.floor(v * mul[s] / 100 * (s >= 3 && dmg ? 1.3 : 1)); return s === star ? `<b>${x}</b>` : x; }).join('/');
+  return A.desc.replace(/(\d+)( ?)(物理傷害|魔法傷害|真實傷害|護盾)/g, (m, v, sp, w) => fmt(+v, w !== '護盾') + sp + w)
+    .replace(/(治療[^0-9，。]*?)(\d+)/g, (m, pre, v) => pre + fmt(+v, false));
+}
 function findUnit(uid) {
   for (const k in G.board) if (G.board[k].uid === uid) return { u: G.board[k], zone: 'board', cell: +k };
   for (const P of G.players) { const i = P.bench.findIndex(u => u && u.uid === uid); if (i >= 0) return { u: P.bench[i], zone: 'bench', i, pid: P.id }; }
@@ -6332,7 +6341,7 @@ function renderSheet() {
       <div class="meta"><span class="tg" style="color:${COST_COL[A.cost]}">${A.cost} 費</span><span class="tg">${A.role}</span>${A.traits.map(t => `<span class="tg">${iconTrait(t)}${TNAME(t)}</span>`).join('')}<span>${mine ? '你的' : P.team === myTeam() ? '隊友 ' + P.name + ' 的' : '敵方'}</span></div></div>
       ${sel.more ? `<div class="stats"><span>生命<b>${s.hp}</b></span><span>攻擊<b>${s.atk}</b></span><span>攻速<b>${s.aps}</b></span><span>射程<b>${A.rng}</b></span><span>護甲<b>${s.arm}</b></span><span>魔抗<b>${s.mr}</b></span><span>能量<b>${s.sm}/${A.mana}</b></span><span>裝備<b>${u.items.length}/3</b></span></div>` : ''}
       ${u.star >= 3 ? `<p style="color:#a86a10"><b>進化：${EVOLVE[u.key]}</b>　生命攻擊 +20%、技能傷害 +30%、相鄰友軍攻速 +10%</p>` : ''}
-      <p><b>${A.skill}</b>　${A.desc}</p>
+      <p><b>${A.skill}</b>　${skillDesc(u.key, u.star)}</p>
       ${preyLine(u.key)}
       ${recItemsLine(u.key)}
       ${u.items.length ? `<p class="its">${u.items.map(i => iconItem(i)).join('')}<span style="font-size:12px">${u.items.map(i => itemDef(i).name).join('、')}</span></p>` : ''}
@@ -6882,7 +6891,7 @@ function showDex(tab) {
   tab = tab || 'animals';
   const tabs = [['animals', '動物'], ['traits', '羈絆'], ['combos', '合體技'], ['items', '裝備'], ['augs', '海克斯'], ['arena', '場地'], ['rules', '規則']];
   let body = '';
-  if (tab === 'animals') body = `<div class="dexf">${['all', 1, 2, 3, 4, 5].map(c => `<button data-df="c${c}" class="${c === 'all' ? 'on' : ''}">${c === 'all' ? '全部' : c + ' 費'}</button>`).join('')}${Object.keys(TRAITS).map(t => `<button data-df="t${t}">${TRAITS[t].name}</button>`).join('')}</div>` + Object.keys(ANIMALS).map(k => { const A = ANIMALS[k]; return `<div class="row" data-dc="c${A.cost}" data-dt="${A.traits.map(t => 't' + t).join(' ')}">${pimg(k)}<div><b>${A.name}</b>　<span style="color:${COST_COL[A.cost]};font-weight:900">${A.cost} 費</span>・${A.role}・${A.traits.map(TNAME).join('・')}<br>生命 ${A.hp}・攻擊 ${A.atk}・射程 ${A.rng}<br><b>${A.skill}</b>：${A.desc}<br><button class="btn sm demo" data-demo="${k}">▶ 技能展示</button></div></div>`; }).join('');
+  if (tab === 'animals') body = `<div class="dexf">${['all', 1, 2, 3, 4, 5].map(c => `<button data-df="c${c}" class="${c === 'all' ? 'on' : ''}">${c === 'all' ? '全部' : c + ' 費'}</button>`).join('')}${Object.keys(TRAITS).map(t => `<button data-df="t${t}">${TRAITS[t].name}</button>`).join('')}</div>` + Object.keys(ANIMALS).map(k => { const A = ANIMALS[k]; return `<div class="row" data-dc="c${A.cost}" data-dt="${A.traits.map(t => 't' + t).join(' ')}">${pimg(k)}<div><b>${A.name}</b>　<span style="color:${COST_COL[A.cost]};font-weight:900">${A.cost} 費</span>・${A.role}・${A.traits.map(TNAME).join('・')}<br>生命 ${A.hp}・攻擊 ${A.atk}・射程 ${A.rng}<br><b>${A.skill}</b>：${skillDesc(k)}<br><button class="btn sm demo" data-demo="${k}">▶ 技能展示</button></div></div>`; }).join('');
   if (tab === 'traits') body = Object.keys(TRAITS).map(t => { const T = TRAITS[t]; return `<div class="plain">${iconTrait(t)}<div><b>${T.name}</b>（${Object.keys(ANIMALS).filter(k => ANIMALS[k].traits.includes(t)).map(k => ANIMALS[k].name).join('、')}）<br>${T.tiers.map((n, i) => `(${n}) ${T.desc[i]}`).join('<br>')}</div></div>`; }).join('') + `<div class="plain"><div>羈絆以「不同種類」計算，兩位隊友的棋子合併計。兩人都有出同一羈絆時效果 +${SYNERGY_BONUS}%（默契）。</div></div>`;
   if (tab === 'combos') body = COMBOS.map(c => `<div class="row">${pimg(c.a)}<div><b>${c.name}</b>　${ANIMALS[c.a].name}＋${ANIMALS[c.b].name}<br>${c.desc}</div></div>`).join('') + '<div class="plain"><div>兩隻需分屬兩位隊友、開場相鄰。兩隻都放過一次技能後自動發動一次。</div></div>';
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
@@ -6903,7 +6912,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.19'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.20'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
