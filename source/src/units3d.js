@@ -408,10 +408,10 @@ const AIR_CFG = {
   bee: { kind: 'float', h: 0.6, toss: 0, shake: 0.04 }, // v0.13.15 畫 8 字＋轉身刺，不再俯衝轉圈
   koala: { kind: 'leap', h: 1.5, toss: 1.0, shake: 0.2 }, // v0.13.17 配合新技能動作
   cheetah: { kind: 'blink', h: 0.4, toss: 0, shake: 0.1 },
-  octopus: { kind: 'float', h: 2.0, spin: 1, toss: 0, shake: 0 },
+  octopus: { kind: 'float', h: 0.6, toss: 0, shake: 0 }, // v0.13.18 配合新技能動作
   owl: { kind: 'dive', h: 3.0, toss: 0.6, shake: 0.08 },
-  elephant: { kind: 'jump', h: 1.8, toss: 1.6, shake: 0.32 },
-  lion: { kind: 'leap', h: 3.4, toss: 1.2, shake: 0.26 },
+  elephant: { kind: 'jump', h: 0.4, toss: 1.6, shake: 0.32 }, // v0.13.18 配合新技能動作
+  lion: { kind: 'jump', h: 0.3, toss: 1.2, shake: 0.26 }, // v0.13.18 配合新技能動作
   penguin: { kind: 'leap', h: 0.25, toss: 1.4, shake: 0.1 }, // v0.13.14 肚皮貼地滑，不再翻跳；臭鼬改原地倒立（拿掉空翻）
   rhino: { kind: 'leap', h: 0.15, toss: 2.2, shake: 0.2 }, // v0.13.14 貼地連撞
   chameleon: { kind: 'blink', h: 0.6, toss: 0, shake: 0.06 },
@@ -420,7 +420,7 @@ const AIR_CFG = {
   eel: { kind: 'breach', h: 2.2, spin: 1, toss: 1.0, shake: 0.1 },
   gorilla: { kind: 'jump', h: 0.5, toss: 1.4, shake: 0.34 }, // v0.13.14 捶胸時小跳，第一拳落地震動
   whale: { kind: 'breach', h: 3.6, flip: 0.5, toss: 1.8, shake: 0.36 },
-  peacock: { kind: 'float', h: 2.4, spin: 1, toss: 0, shake: 0 },
+  peacock: { kind: 'float', h: 0.3, toss: 0, shake: 0 }, // v0.13.18 配合新技能動作
   komodo: { kind: 'leap', h: 2.2, toss: 1.0, shake: 0.16 },
   kingboar: { kind: 'jump', h: 2.4, toss: 1.6, shake: 0.36 },
   deer: { kind: 'jump', h: 0.4, toss: 0, shake: 0 }, // v0.13.16 配合新技能動作

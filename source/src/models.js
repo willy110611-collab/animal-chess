@@ -1043,6 +1043,42 @@ const SKILL_V2 = {
     R.body.rotation.x += (-0.7 + 2.3 * ease.inOut(air)) * bell(p, 0.4, 0.95); // 先朝上再頭朝下
     R.armL.rotation.x -= 2.2 * bell(p, 0.55, 0.85); R.armR.rotation.x -= 2.2 * bell(p, 0.55, 0.85);
     if (R.tail) R.tail.rotation.x -= 1.0 * bell(p, 0.4, 0.9); } },
+  // ---- v0.13.18 第五批 ----
+  octopus: { dur: 1.2, hit: 0.55, desc: '頭脹大、八隻腳張開，再一縮往後噴墨', fn(R, p) {
+    const inf = bell(p, 0, 0.55), jet = bell(p, 0.48, 0.8);
+    R.head.scale.setScalar(1 + 0.4 * inf - 0.25 * jet); R.body.position.y += 0.2 * inf;
+    R.tents.forEach((t, i) => { t[0].rotation.x -= 1.2 * inf - 0.9 * jet; t[0].rotation.z += 0.15 * Math.sin(p * 20 + i) * inf; });
+    R.body.position.z -= 0.3 * jet; R.body.rotation.x -= 0.4 * jet; } },
+  owl: { dur: 1.3, hit: 0.55, desc: '頭轉一百八十度鎖定獵物，張翅無聲滑翔，爪子往前抓', fn(R, p) {
+    const look = bell(p, 0, 0.35), glide = bell(p, 0.25, 0.9), grab = bell(p, 0.45, 0.7);
+    R.head.rotation.y += Math.PI * 0.9 * look; R.head.scale.setScalar(1 + 0.1 * look);
+    R.wingL.rotation.z -= 1.5 * glide; R.wingR.rotation.z += 1.5 * glide; R.body.rotation.x += 0.45 * glide; R.body.position.y += 0.15 * glide;
+    R.body.rotation.x -= 0.3 * grab; R.legL.rotation.x -= 1.6 * grab; R.legR.rotation.x -= 1.6 * grab; R.body.position.z += 0.25 * grab; } },
+  elephant: { dur: 1.4, hit: 0.62, desc: '前腳抬起、鼻子高舉吹號角，耳朵張開，再重重踩下', fn(R, p) {
+    const rear = bell(p, 0, 0.62), trumpet = Math.min(1, bell(p, 0.05, 0.6) * 1.5);
+    R.body.rotation.x -= 0.65 * rear; R.body.position.y += 0.2 * rear; R.armL.rotation.x -= 1.6 * rear; R.armR.rotation.x -= 1.6 * rear;
+    R.trunk.forEach((t, i) => { t.rotation.x -= (0.5 + i * 0.12) * trumpet; t.rotation.z += 0.05 * Math.sin(p * 40) * trumpet; });
+    R.earL.rotation.y -= 0.9 * trumpet; R.earR.rotation.y += 0.9 * trumpet;
+    R.body.scale.y *= 1 - 0.18 * bell(p, 0.6, 0.75); R.body.position.y -= 0.04 * bell(p, 0.6, 0.75); } },
+  lion: { dur: 1.3, hit: 0.4, desc: '壓低身子，再往前挺身張大嘴咆哮，鬃毛整個炸開', fn(R, p) {
+    const pre = bell(p, 0, 0.35), roar = Math.min(1, bell(p, 0.28, 1) * 1.6);
+    R.body.scale.y *= 1 - 0.15 * pre; R.head.rotation.x += 0.35 * pre;
+    R.body.position.z += 0.25 * roar; R.body.rotation.x += 0.2 * roar; R.head.rotation.x -= 0.25 * roar;
+    if (R.jaw) R.jaw.rotation.x += 0.9 * roar; if (R.mane) R.mane.scale.setScalar(1 + 0.3 * roar);
+    R.head.rotation.z += 0.07 * Math.sin(p * 55) * roar; R.body.position.x += 0.02 * Math.sin(p * 70) * roar;
+    R.armR.rotation.x -= 1.5 * bell(p, 0.25, 0.5); if (R.tail) R.tail.rotation.x -= 0.7 * roar; } },
+  eagle: { dur: 1.5, hit: 0.3, desc: '用力拍翅、爪子張開往前抓住，再抱著獵物往上飛', fn(R, p) {
+    const flap = Math.abs(Math.sin(p * 20)), claw = bell(p, 0.15, 0.4), lift = bell(p, 0.3, 1);
+    R.wingL.rotation.z -= (0.6 + 1.3 * flap) * bell(p, 0, 1); R.wingR.rotation.z += (0.6 + 1.3 * flap) * bell(p, 0, 1);
+    R.legL.rotation.x -= 1.8 * claw; R.legR.rotation.x -= 1.8 * claw; R.body.rotation.x -= 0.4 * claw; R.body.position.z += 0.3 * claw;
+    R.body.position.y += 1.0 * lift; R.legL.rotation.x -= 0.6 * lift; R.legR.rotation.x -= 0.6 * lift; R.body.rotation.x += 0.3 * lift;
+    if (R.tail) R.tail.rotation.x += 0.4 * lift; } },
+  peacock: { dur: 1.6, hit: 0.45, desc: '尾羽整個張開沙沙抖動，慢慢轉一圈炫耀', fn(R, p) {
+    const o = Math.min(1, bell(p, 0, 1) * 1.8), rattle = bell(p, 0.25, 0.85);
+    R.fan.scale.setScalar(1 + 0.6 * o); R.fan.rotation.x -= 0.5 * o; R.fan.position.y += 0.15 * o;
+    R.fan.rotation.z += 0.12 * Math.sin(p * 90) * rattle; // 抖動尾羽
+    R.body.rotation.y += Math.PI * 2 * ease.inOut(ramp(p, 0.2, 0.9));
+    R.head.rotation.x -= 0.3 * o; R.body.position.y += 0.06 * o; R.wingL.rotation.z -= 0.5 * o; R.wingR.rotation.z += 0.5 * o; } },
 };
 for (const k in SKILL_V2) { const A = SKILL_V2[k]; if (!ACT[k] || !ACT[k].skill) continue; ACT[k].skill = { dur: A.dur, hit: A.hit, fx: ACT[k].skill.fx, fn: A.fn, desc: A.desc }; }
 function poseRig(R, st) {
