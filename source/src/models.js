@@ -367,6 +367,7 @@ const BUILD = {
   elephant(R) {
     plush(R, { fur: '#8c98a6', belly: '#a3aebb', headR: 0.32, bodyW: 0.3, bodyH: 0.3 });
     const M = R.M;
+    for (const l of [R.legL, R.legR]) l.children.slice(1).forEach(c => { c.material = M('#efe6d6'); }); // v0.14 淺色腳趾甲
     for (const s of [-1, 1]) {
       const e = saveBase(grp(R.head, [s * 0.28, 0.24, -0.02], [0, s * 0.35, 0]));
       e.add(mesh(GEO.sph, M('#76838f'), [s * 0.1, 0, 0], [0.2, 0.24, 0.04])); e.add(mesh(GEO.sph, M('#c9a9a6'), [s * 0.1, 0, 0.03], [0.14, 0.17, 0.02]));
@@ -607,6 +608,7 @@ Object.assign(BUILD, {
   deer(R) {
     plush(R, { fur: '#c98a52', belly: '#f4e2c4', muzzle: '#f4e2c4', nose: '#3a2418', headR: 0.27, limb: '#a86e3e' });
     const M = R.M;
+    snout(R, { col: '#f4e2c4', nose: '#3a2418', w: 0.09, h: 0.075, l: 0.11, y: 0.14, z: 0.23 }); // v0.14 小鹿的細長嘴
     for (let i = 0; i < 5; i++) R.body.add(mesh(GEO.sph, M('#fbf2e2'), [(i % 2 ? 1 : -1) * 0.1, 0.36 - i * 0.03, -0.12 - i * 0.02], 0.03)); // 背上白點
     for (const s of [-1, 1]) { // 鹿角
       const a = saveBase(grp(R.head, [s * 0.1, 0.4, -0.02], [0, 0, -s * 0.25]));
@@ -658,6 +660,7 @@ Object.assign(BUILD, {
   giraffe(R) {
     plush(R, { fur: '#f0c45a', belly: '#f8e6b0', muzzle: '#f8e6b0', nose: '#6a4a2a', headR: 0.25, limb: '#e0b04a' });
     const M = R.M;
+    snout(R, { col: '#f8e6b0', nose: '#6a4a2a', w: 0.1, h: 0.08, l: 0.12, y: 0.12, z: 0.21 }); // v0.14 長頸鹿的長臉
     // 長脖子：頭往上抬高
     R.head.position.y += 0.35; saveBase(R.head);
     R.neck = R.body.add(mesh(GEO.cap, M('#f0c45a'), [0, 0.66, 0.02], [0.17, 0.38, 0.17]));

@@ -29,7 +29,7 @@ const goldSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy=
 
 // ---- 3D 小頭像（商店卡、圖鑑、資訊卡）----
 // 頭像：第一次開啟時用 3D 模型畫出來（分批，不卡住畫面），畫好後存在本機，之後開遊戲直接讀
-const PORT_VER = 'p5-' + Object.keys(ANIMALS).length; // 模型外觀有改時把 p1 改成 p2，舊快取就會重畫
+const PORT_VER = 'p6-' + Object.keys(ANIMALS).length; // 模型外觀有改時把 p1 改成 p2，舊快取就會重畫
 // 立繪取景：PAD＝卡牌全身留邊（越大角色越小），HEAD_PAD＝圓形頭像留邊
 const PORT_CFG = { PAD: 1.12, HEAD_PAD: 1.3 };
 // 隊伍頭像（血量圓圈）可選的角色：設定 → 頭像。第一個是預設；電腦／其他隊伍依序輪流用
@@ -1026,7 +1026,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.29'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.30'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
