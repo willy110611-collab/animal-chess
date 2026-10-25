@@ -45,13 +45,13 @@ const ANIMALS = {
     hp: 450, atk: 45, ai: 18, rng: 3, arm: 15, mr: 15, mana: 60, sm: 0, mv: 7,
     skill: '松果連彈', desc: '丟松果 150 物理傷害，彈射另外 2 個敵人（70%）。' },
   wolf: { name: '野狼', cost: 1, traits: ['savanna', 'pack'], role: '戰士',
-    hp: 660, atk: 58, ai: 18, rng: 1, arm: 25, mr: 20, mana: 70, sm: 0, mv: 7,
+    hp: 660, atk: 62, ai: 18, rng: 1, arm: 25, mr: 20, mana: 70, sm: 0, mv: 7, // v0.13.13 攻擊 58→62
     skill: '狼嚎', desc: '自身與 2 格內群居友軍攻速 +30%，持續 4 秒。' },
   frog: { name: '青蛙', cost: 1, traits: ['water', 'pack'], role: '法師',
-    hp: 560, atk: 45, ai: 20, rng: 3, arm: 15, mr: 25, mana: 70, sm: 10, mv: 8,
+    hp: 600, atk: 45, ai: 20, rng: 3, arm: 15, mr: 25, mana: 60, sm: 10, mv: 8, // v0.13.13 生命 560→600、能量 70→60
     skill: '長舌', desc: '把 4 格內最遠的敵人拉到身前，220 魔法傷害並暈 1.5 秒。' },
   bat: { name: '蝙蝠', cost: 1, traits: ['sky', 'night'], role: '刺客',
-    hp: 500, atk: 52, ai: 16, rng: 1, arm: 15, mr: 15, mana: 50, sm: 0, mv: 6, // v0.14 技能規則改版後能量 60→50
+    hp: 540, atk: 52, ai: 16, rng: 1, arm: 15, mr: 15, mana: 50, sm: 0, mv: 6, // v0.13.12 能量 60→50；v0.13.13 生命 500→540
     skill: '吸血咬', desc: '開場飛向敵方後排。普攻吸血 20%。技能：咬 180 物理傷害並全額回血。' },
   redpanda: { name: '小熊貓', cost: 2, traits: ['forest', 'armor'], role: '坦',
     hp: 850, atk: 50, ai: 22, rng: 1, arm: 45, mr: 35, mana: 90, sm: 40, mv: 8,
@@ -91,7 +91,7 @@ const ANIMALS = {
     hp: 900, atk: 60, ai: 24, rng: 1, arm: 40, mr: 30, mana: 100, sm: 20, mv: 8,
     skill: '犀角衝鋒', desc: '衝向 3 格內最遠的敵人，220 物理傷害並擊飛 1.25 秒，自身獲得 180 護盾。' },
   chameleon: { name: '變色龍', cost: 3, traits: ['forest', 'night'], role: '刺客',
-    hp: 680, atk: 70, ai: 18, rng: 2, arm: 20, mr: 20, mana: 70, sm: 0, mv: 7,
+    hp: 720, atk: 70, ai: 18, rng: 2, arm: 20, mr: 20, mana: 70, sm: 0, mv: 7, // v0.13.13 生命 680→720
     skill: '變色突襲', desc: '被動：開場隱身。技能：重新隱身，長舌彈向 3 格內血最少的敵人 280 物理傷害，下一次普攻必定暴擊。' },
   fox: { name: '狐狸', cost: 3, traits: ['savanna', 'night'], role: '刺客',
     hp: 720, atk: 68, ai: 16, rng: 1, arm: 25, mr: 25, mana: 70, sm: 0, mv: 6,
@@ -113,7 +113,7 @@ const ANIMALS = {
     skill: '孔雀開屏', desc: '3 格內敵人被魅惑 1.5 秒；3 格內友軍攻速 +30%、受到傷害 −20%，持續 4 秒。' },
   komodo: { name: '科摩多巨蜥', cost: 5, traits: ['savanna', 'armor', 'king'], role: '戰士',
     hp: 1440, atk: 100, ai: 22, rng: 1, arm: 50, mr: 35, mana: 90, sm: 0, mv: 9,
-    skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 20% 生命。' },
+    skill: '劇毒撕咬', desc: '被動：普攻對中毒敵人傷害 +30%。技能：撕咬 260 物理傷害，5 秒內再造成目標最大生命 30% 的毒傷，自己回復 15% 生命。' },
   // ---- v0.13 新增：讓高階羈絆湊得到 ----
   deer: { name: '小鹿', cost: 1, traits: ['forest', 'pack'], role: '輔助',
     hp: 520, atk: 38, ai: 20, rng: 2, arm: 15, mr: 25, mana: 70, sm: 20, mv: 7,
@@ -122,7 +122,7 @@ const ANIMALS = {
     hp: 690, atk: 60, ai: 18, rng: 1, arm: 25, mr: 20, mana: 70, sm: 0, mv: 6,
     skill: '斑紋後踢', desc: '後腿一踢：目標 170 物理傷害並致盲 2 秒（普攻落空）。' },
   hippo: { name: '河馬', cost: 2, traits: ['water', 'armor'], role: '坦',
-    hp: 900, atk: 52, ai: 24, rng: 1, arm: 40, mr: 35, mana: 90, sm: 30, mv: 9,
+    hp: 900, atk: 52, ai: 24, rng: 1, arm: 40, mr: 35, mana: 100, sm: 30, mv: 9, // v0.13.13 能量 90→100
     skill: '河馬大口', desc: '張大嘴嘲諷周圍 1 格敵人 2 秒，咬目標 200 魔法傷害，獲得 22% 生命護盾。' },
   parrot: { name: '鸚鵡', cost: 2, traits: ['sky', 'forest'], role: '遠程',
     hp: 500, atk: 50, ai: 17, rng: 3, arm: 15, mr: 20, mana: 70, sm: 10, mv: 6,

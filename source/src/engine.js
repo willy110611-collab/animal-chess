@@ -630,7 +630,7 @@ function cast(B, u) {
       const t0 = tgt && tgt.alive ? tgt : pickTarget(B, u); if (!t0) break;
       damage(B, u, t0, sk(260), 'phys', { skill: 1 });
       if (t0.alive) addDot(B, u, t0, Math.max(1, Math.floor(t0.maxhp * 6 / 100 * m / 100)), 100, 'poison');
-      heal(B, u, Math.floor(u.maxhp * 20 / 100));
+      heal(B, u, Math.floor(u.maxhp * 15 / 100)); // v0.13.13 20%→15%
       break; }
   }
   u.castCount++;

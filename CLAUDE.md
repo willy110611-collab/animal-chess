@@ -33,6 +33,7 @@
 - 平衡模擬：`node test/trait_sim.js 40`（羈絆）、`node test/td_sim.js 10`（塔防）、`node test/smoke.js`（必跑）。
 - 2026-10-25：v0.13.12 上線＝技能規則照聯盟戰棋＋「普通攻擊重做」（models.js 的 ATK_V2、features.js 技能展示的普攻模式、units3d.js）。下一步：照同樣方向重做技能動畫（企鵝肚皮滑行、河馬一屁股坐、犀牛連撞、臭鼬倒立放屁、大猩猩輪流捶地…）。
 - 專案文件（claude.ai 專案「遊戲」）：完成與待辦清單、音樂音效與羈絆改版企劃、塔防模式企劃。
+- v0.13.13 平衡：野狼攻擊 62、青蛙生命 600 能量 60、蝙蝠生命 540、變色龍生命 720、河馬能量 100、科摩多技能回血 15%。
 - v0.13.12 技能規則照聯盟戰棋：`engine.js` 的 `SKILL_CFG`（射程內才放、施法與持續型技能鎖能量、受傷回能 1%減傷前＋3%減傷後、物理技能吃攻擊加成、4/5 費 3 星技能倍率、控制秒數隨星級、技能不挑寶箱與隱身敵人）。技能比較：`node test/skill_sim.js 600`（加第二個參數可指定舊 engine 檔比較）。
 - 這台電腦沒裝 node：測試用瀏覽器跑。`source/dist/run.html`＋`nodeshim.js`（不進 repo）模擬 node 的 require/fs/vm；`.claude/launch.json` 的 static（`py -m http.server 8765`）開起來後到 `http://localhost:8765/source/dist/run.html` 呼叫 `runTest('test/smoke.js')`。`source/node_modules/three` 是從舊 index.html 抽出來的 three.js（給 build.py 用）。
 
