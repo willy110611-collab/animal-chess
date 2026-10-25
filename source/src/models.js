@@ -110,6 +110,7 @@ function plush(R, o) {
   for (const s of [-1, 1]) {
     const leg = saveBase(grp(body, [s * 0.12, 0.13, 0.02]));
     leg.add(mesh(GEO.sph, M(o.limb || o.fur), [0, -0.07, 0.05], [0.085, 0.065, 0.11]));
+    for (const tx of [-0.035, 0, 0.035]) leg.add(mesh(GEO.sphLo, M(o.limb || o.fur), [tx, -0.1, 0.145], [0.026, 0.022, 0.026])); // v0.14 腳趾
     if (s < 0) R.legL = leg; else R.legR = leg;
   }
   // 手（樞紐在肩）
@@ -127,6 +128,8 @@ function plush(R, o) {
   R.headTop = hr * 1.55 + 0.5;
   if (o.muzzle) R.head.add(mesh(GEO.sph, M(o.muzzle), [0, hr * 0.5, hr * 0.72], [hr * 0.42, hr * 0.3, hr * 0.32]));
   if (o.nose) R.head.add(mesh(GEO.sph, M(o.nose), [0, hr * 0.62, hr * 0.98], [hr * 0.11, hr * 0.08, hr * 0.07]));
+  if (o.nose) R.head.add(mesh(GEO.sphLo, M('#ffffff', { basic: 1 }), [hr * 0.03, hr * 0.66, hr * 1.04], [hr * 0.035, hr * 0.022, hr * 0.02])); // v0.14 鼻頭反光
+  if (o.cheek !== false) for (const sx of [-1, 1]) R.head.add(mesh(GEO.sph, M(o.headCol || o.fur), [sx * hr * 0.86, hr * 0.42, hr * 0.28], [hr * 0.22, hr * 0.17, hr * 0.2], [0, 0, sx * 0.5])); // v0.14 臉頰蓬毛
   addEyes(R, R.head, hr * 0.8, hr * 0.36, hr * 0.84, hr * 0.1);
   if (o.blush !== false) addBlush(R, R.head, hr * 0.52, hr * 0.56, hr * 0.78);
   return body;
