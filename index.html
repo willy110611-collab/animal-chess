@@ -7011,7 +7011,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.34'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.35'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -8981,25 +8981,7 @@ function eggArenaDeco() {
     p.add(mesh(GEO.box, MB(0xffe27a), [0, 0.12, 0.25], [0.13, 0.025, 0.01]));
     p.position.set(x, -0.3, z); p.rotation.y = Math.atan2(-x, -(z + 0.5)); g.add(p);
   }
-  mergeStatic(g); S3.scene.add(g); S3.eggDeco = g;
-}
-// 不會動的裝飾：同材質的網格合併成一個（50 次繪製 → 3 次），外觀不變
-function mergeStatic(g) {
-  g.updateMatrixWorld(true);
-  const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), by = new Map();
-  const keyOf = m => m.type + '|' + (m.color ? m.color.getHex() : '') + '|' + m.transparent + '|' + m.opacity + '|' + m.side; // 顏色、種類一樣就算同一種材質
-  g.traverse(o => { if (o.isMesh) { const k = keyOf(o.material); if (!by.has(k)) by.set(k, []); by.get(k).push(o); } });
-  for (const [, list] of by) {
-    if (list.length < 2) continue;
-    const mat = list[0].material;
-    const parts = list.map(o => { const geo = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()); geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld)); return geo; });
-    let n = 0; for (const p of parts) n += p.attributes.position.count;
-    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3); let off = 0;
-    for (const p of parts) { pos.set(p.attributes.position.array, off * 3); nor.set(p.attributes.normal.array, off * 3); off += p.attributes.position.count; p.dispose(); }
-    const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); mg.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-    for (const o of list) { o.parent.remove(o); if (o.material !== mat) o.material.dispose(); }
-    g.add(new THREE.Mesh(mg, mat));
-  }
+  mergeStatic(g); S3.scene.add(g); S3.eggDeco = g; // 用 scene3d.js 的 mergeStatic：同色網格合併（50 次繪製 → 3 次）
 }
 
 // ---- 掛到遊戲裡 ----
