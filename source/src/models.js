@@ -338,7 +338,7 @@ const BUILD = {
       const t = saveBase(grp(R.body, [Math.sin(a) * 0.17, 0.18, Math.cos(a) * 0.17], [0, a, 0]));
       const segs = [];
       let parent = t;
-      for (let k = 0; k < 4; k++) { const s = saveBase(grp(parent, [0, -0.02, k ? 0.07 : 0])); s.add(mesh(GEO.sph, M(k % 2 ? '#c25858' : '#d46a6a'), [0, 0, 0.03], 0.065 - k * 0.011)); segs.push(s); parent = s; }
+      for (let k = 0; k < 4; k++) { const s = saveBase(grp(parent, [0, -0.02, k ? 0.07 : 0])); s.add(mesh(GEO.sph, M(k % 2 ? '#c25858' : '#d46a6a'), [0, 0, 0.03], 0.065 - k * 0.011)); s.add(mesh(GEO.sph, M('#f2c0b0'), [0, -0.045 + k * 0.008, 0.035], [0.028 - k * 0.004, 0.012, 0.028 - k * 0.004])); segs.push(s); parent = s; } // v0.14 腳底吸盤
       R.tents.push(segs);
     }
     R.headR = 0.3; R.headTop = 0.9;
@@ -566,7 +566,7 @@ Object.assign(BUILD, {
     R.tongue = mesh(GEO.cap, M('#e8c24a'), [0, 0, 0], [0.03, 1, 0.03]); R.tongue.visible = false; R.yaw.add(R.tongue);
     [[0.12, 0.3, 0.15], [-0.14, 0.26, 0.12], [0.18, 0.2, 0.0], [-0.1, 0.38, -0.12], [0.08, 0.34, -0.18]].forEach(p => R.body.add(mesh(GEO.sph, M('#5e573f'), p, [0.035, 0.035, 0.015])));
     [[0.15, 0.22, 0.14], [-0.17, 0.32, 0.06], [0.2, 0.36, -0.08], [-0.05, 0.2, -0.24], [0.02, 0.46, -0.1]].forEach(p => R.body.add(mesh(GEO.sph, M('#a89a62'), p, [0.03, 0.03, 0.012]))); // v0.14 淺色鱗斑
-    for (let i = 0; i < 5; i++) R.body.add(mesh(GEO.cone, M('#5e573f'), [0, 0.5 - i * 0.07, -0.12 - i * 0.05], [0.025, 0.06, 0.025], [-0.5 - i * 0.15, 0, 0])); // 背上一排小刺
+    for (let i = 0; i < 6; i++) { const th = 0.25 + i * 0.24; R.body.add(mesh(GEO.cone, M('#5e573f'), [0, 0.27 + 0.25 * Math.cos(th), -0.276 * Math.sin(th)], [0.045, 0.1, 0.045], [-th, 0, 0])); } // 背上一排小刺（沿著背的弧線）
     const t = saveBase(grp(R.body, [0, 0.12, -0.22])); R.tail = t; t.add(mesh(GEO.cone, M('#7b7356'), [0, 0, -0.22], [0.14, 0.48, 0.1], [-1.45, 0, 0]));
     R.headTop = 0.95;
   },
@@ -689,6 +689,7 @@ Object.assign(BUILD, {
     R.torso = saveBase(mesh(GEO.sph, M('#6c8aa8'), [0, 0.3, 0], [0.26, 0.24, 0.38])); R.body.add(R.torso);
     R.body.add(mesh(GEO.sph, M('#f2f2ee'), [0, 0.22, 0.06], [0.2, 0.15, 0.3]));
     R.body.add(mesh(GEO.cone, M('#5a7894'), [0, 0.6, -0.05], [0.09, 0.22, 0.05], [-0.3, 0, 0])); // 背鰭
+    for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.cap, M('#4a6680'), [sx * 0.235, 0.32, 0.16 - i * 0.05], [0.012, 0.09, 0.012], [0, 0, sx * 0.25])); // v0.14 鰓裂
     R.head = saveBase(grp(R.body, [0, 0.3, 0.26]));
     R.head.add(mesh(GEO.sph, M('#6c8aa8'), [0, 0.04, 0.02], [0.2, 0.17, 0.16]));
     R.jaw = saveBase(grp(R.head, [0, -0.05, 0.08])); R.jaw.add(mesh(GEO.sph, M('#f2f2ee'), [0, -0.02, 0.02], [0.15, 0.06, 0.1]));
