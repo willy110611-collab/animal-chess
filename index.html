@@ -6927,6 +6927,15 @@ function loop(now) {
   requestAnimationFrame(loop); // 先排下一幀：就算這一幀某個特效出錯，遊戲也不會整個停住
   const t0 = performance.now(); try { loopBody(now); } catch (e) { console.error(e); } const d = performance.now() - t0; S3.perf = S3.perf || { n: 0, sum: 0, big: 0 }; S3.perf.n++; S3.perf.sum += d; if (d > 50) S3.perf.big++;
 }
+// 除錯用：網址加 ?zoodebug 才有，讓沒開視窗時也能手動跑幾幀再截圖（玩家看不到）
+if (/zoodebug/.test(location.search)) {
+  let fake = 0;
+  window.__zdbg = {
+    step(n, ms) { fake = Math.max(fake, performance.now()); for (let i = 0; i < (n || 1); i++) { fake += ms || 33; try { loopBody(fake); } catch (e) { console.error(e); } } },
+    shot() { this.step(1); return new Promise(r => S3.renderer.domElement.toBlob(r, 'image/png')); },
+    G: () => G, S3,
+  };
+}
 function loopBody(now) {
   const frozen = now < (S3.freezeUntil || 0);
   const dt = frozen ? 0 : Math.min(0.1, (now - (lastT || now)) / 1000); lastT = now;
@@ -7001,7 +7010,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.31'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.32'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
