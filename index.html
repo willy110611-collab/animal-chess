@@ -3445,7 +3445,8 @@ const BUILD = {
       R.head.add(mesh(GEO.sph, M('#f7f2df'), [s * 0.16, 0.14, 0.13], [0.07, 0.07, 0.05]));
     }
     R.eyeMat = M('#241914'); R.glow = '#ffe27a';
-    for (const s of [-1, 1]) R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.16, 0.14, 0.17], [0.04, 0.045, 0.025]));
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.16, 0.14, 0.17], [0.04, 0.045, 0.025])); R.head.add(mesh(GEO.sphLo, M('#ffffff', { basic: 1 }), [s * 0.16 + 0.014, 0.16, 0.19], 0.012)); } // v0.14 眼睛反光
+    surfSpots(R.body, M('#4f8a3e'), [0, 0.24, 0], [0.34, 0.24, 0.3], 9, 0.045, 0.35, 0.85); // v0.14 背上深色斑點
     R.mouth = saveBase(mesh(GEO.torus, M('#3a2620'), [0, -0.01, 0.2], [0.14, 0.05, 0.08], [0.2, 0, 0])); R.head.add(R.mouth);
     addBlush(R, R.head, 0.01, 0.2, 0.17);
     for (const s of [-1, 1]) {
@@ -3512,9 +3513,10 @@ const BUILD = {
     for (const s of [-1, 1]) R.jawU.add(mesh(GEO.sph, M('#2e221d'), [s * 0.05, 0.08, 0.38], 0.015));
     R.jaw = saveBase(grp(R.head, [0, 0.08, 0.1])); R.jaw.add(mesh(GEO.sph, M('#d8d7a0'), [0, 0, 0.16], [0.17, 0.05, 0.2]));
     R.eyeMat = M('#241914'); R.glow = '#ffe27a';
-    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, M('#5e8a4a'), [s * 0.11, 0.33, 0.04], 0.075)); R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.11, 0.35, 0.1], [0.03, 0.035, 0.02])); }
+    for (const s of [-1, 1]) { R.head.add(mesh(GEO.sph, M('#5e8a4a'), [s * 0.11, 0.33, 0.04], 0.075)); R.head.add(mesh(GEO.sph, M('#d8c85a'), [s * 0.112, 0.345, 0.085], [0.042, 0.042, 0.025])); R.head.add(mesh(GEO.sph, R.eyeMat, [s * 0.112, 0.35, 0.103], [0.016, 0.034, 0.01])); R.head.add(mesh(GEO.sphLo, M('#ffffff', { basic: 1 }), [s * 0.112 + 0.012, 0.365, 0.11], 0.008)); } // v0.14 黃色鱷魚眼＋直瞳孔＋反光
     for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#4c7339'), [0, 0.45 - i * 0.1, -0.2 - i * 0.02], 0.045));
     const t = saveBase(grp(R.body, [0, 0.12, -0.2])); R.tail = t; t.add(mesh(GEO.cone, M('#5e8a4a'), [0, 0, -0.2], [0.13, 0.42, 0.08], [-1.45, 0, 0]));
+    for (let i = 0; i < 4; i++) t.add(mesh(GEO.cone, M('#4c7339'), [0, 0.035 - i * 0.004, -0.06 - i * 0.08], [0.025, 0.05, 0.02], [-0.3, 0, 0])); // v0.14 尾巴上的鱗脊
     R.headTop = 0.95;
   },
   bee(R) {
@@ -3675,6 +3677,7 @@ Object.assign(BUILD, {
     }
     for (let i = 0; i < 5; i++) R.body.add(mesh(GEO.cone, M('#4f9a40'), [0, 0.5 - i * 0.07, -0.2 - i * 0.02], [0.025, 0.05, 0.025], [-0.6, 0, 0]));
     [[0.12, 0.3, 0.2], [-0.15, 0.24, 0.17], [0.18, 0.2, 0.05]].forEach(p => R.body.add(mesh(GEO.sph, M('#f2b84a'), p, [0.03, 0.03, 0.015])));
+    surfSpots(R.body, M('#9ad86a'), [0, 0.27, 0], [0.25, 0.27, 0.23], 10, 0.022, -0.3, 0.7); // v0.14 淺綠斑點
     const t = saveBase(grp(R.body, [0, 0.12, -0.24])); R.tail = t;
     t.add(mesh(new THREE.TorusGeometry(0.1, 0.035, 8, 20, Math.PI * 1.6), M('#58a84a'), [0, 0.04, -0.08], 1, [0, Math.PI / 2, 0]));
     R.tongue = mesh(GEO.cap, M('#e98a9a'), [0, 0, 0], [0.05, 1, 0.05]); R.tongue.visible = false; R.yaw.add(R.tongue);
@@ -3848,11 +3851,12 @@ Object.assign(BUILD, {
   zebra(R) {
     plush(R, { fur: '#fafafa', belly: '#fafafa', muzzle: '#3a3638', nose: '#1e1b1c', headR: 0.27, limb: '#f4f2ee', bodyW: 0.27 });
     const M = R.M;
+    snout(R, { col: '#3a3638', nose: '#1e1b1c', w: 0.12, h: 0.09, l: 0.11, y: 0.13, z: 0.23 }); // v0.14 立體的馬嘴
     for (const s of [-1, 1]) for (let i = 0; i < 4; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [s * 0.24, 0.27, -0.15 + i * 0.09], [0.035, 0.2 - Math.abs(i - 1.5) * 0.03, 0.035], [0, 0, s * 0.15])); // 身體條紋
     for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.18 + i * 0.09, 0.225 - Math.abs(i - 1) * 0.01], [0.17 - Math.abs(i - 1) * 0.03, 0.022, 0.03])); // 胸前條紋
     for (let i = 0; i < 3; i++) R.body.add(mesh(GEO.sph, M('#2a2628'), [0, 0.47, -0.12 + i * 0.09], [0.12, 0.02, 0.025])); // 背上條紋
     for (const s of [-1, 1]) for (let i = 0; i < 3; i++) R.head.add(mesh(GEO.sph, M('#2a2628'), [s * 0.24, 0.24 + i * 0.08, -0.02], [0.03, 0.03, 0.13], [0, 0, s * 0.3])); // 臉頰條紋
-    for (let i = 0; i < 6; i++) R.head.add(mesh(GEO.box, M('#2a2628'), [0, 0.46 - i * 0.02, -0.04 - i * 0.06], [0.04, 0.08, 0.05], [-0.3 - i * 0.15, 0, 0])); // 鬃毛
+    for (let i = 0; i < 7; i++) R.head.add(mesh(GEO.sph, M(i % 2 ? '#f4f2ee' : '#2a2628'), [0, 0.47 - i * 0.025, -0.02 - i * 0.055], [0.03, 0.065, 0.04], [-0.3 - i * 0.15, 0, 0])); // v0.14 鬃毛改成黑白相間的圓毛簇
     triEar(R, R.head, -0.16, 0.38, 0, '#f4f2ee', '#2a2628', 0.12, 0.4); triEar(R, R.head, 0.16, 0.38, 0, '#f4f2ee', '#2a2628', 0.12, 0.4);
     const t = saveBase(grp(R.body, [0, 0.2, -0.24])); R.tail = t; t.add(mesh(GEO.cyl, M('#f4f2ee'), [0, -0.05, -0.03], [0.015, 0.12, 0.015], [-0.4, 0, 0])); t.add(mesh(GEO.sph, M('#2a2628'), [0, -0.12, -0.06], [0.035, 0.06, 0.035]));
     R.headTop = 1.0;
@@ -6991,7 +6995,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.26'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.27'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
