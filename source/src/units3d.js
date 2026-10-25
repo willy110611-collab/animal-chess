@@ -400,7 +400,7 @@ function fxDetail(name, sv, A, sp, tp, tv) {
 // 可調：h＝高度（格）、spin＝空中轉幾圈、flip＝翻幾圈、toss＝把目標打飛的高度（0＝不打飛）、shake＝落地震動
 const AIR_CFG = {
   hedgehog: { kind: 'jump', h: 2.2, spin: 3, toss: 0, shake: 0.12 },
-  squirrel: { kind: 'jump', h: 2.6, spin: 1, toss: 0, shake: 0.04 },
+  squirrel: { kind: 'jump', h: 0.5, toss: 0, shake: 0.04 }, // v0.13.16 配合新技能動作
   wolf: { kind: 'jump', h: 1.6, flip: 1, toss: 0, shake: 0.08 },
   frog: { kind: 'leap', h: 2.4, toss: 0.8, shake: 0.1 },
   bat: { kind: 'dive', h: 2.4, toss: 0, shake: 0.06 },
@@ -424,12 +424,12 @@ const AIR_CFG = {
   peacock: { kind: 'float', h: 2.4, spin: 1, toss: 0, shake: 0 },
   komodo: { kind: 'leap', h: 2.2, toss: 1.0, shake: 0.16 },
   kingboar: { kind: 'jump', h: 2.4, toss: 1.6, shake: 0.36 },
-  deer: { kind: 'jump', h: 1.4, flip: 1, toss: 0, shake: 0 },
+  deer: { kind: 'jump', h: 0.4, toss: 0, shake: 0 }, // v0.13.16 配合新技能動作
   zebra: { kind: 'jump', h: 0.3, toss: 1.0, shake: 0.08 }, // v0.13.15 轉身後踢，拿掉後空翻
   hippo: { kind: 'leap', h: 1.6, toss: 0.8, shake: 0.24 },
-  parrot: { kind: 'dive', h: 2.6, spin: 1, toss: 0, shake: 0.04 },
+  parrot: { kind: 'float', h: 0.8, toss: 0, shake: 0.04 }, // v0.13.16 配合新技能動作
   giraffe: { kind: 'jump', h: 0.3, toss: 1.2, shake: 0.14 }, // v0.13.15 甩一圈改由身體動作做
-  flamingo: { kind: 'float', h: 1.8, spin: 2, toss: 0, shake: 0 },
+  flamingo: { kind: 'float', h: 0.3, toss: 0, shake: 0 }, // v0.13.16 配合新技能動作
   shark: { kind: 'breach', h: 2.8, flip: 1, toss: 1.4, shake: 0.16 },
   panda: { kind: 'leap', h: 2.0, flip: 2, toss: 1.0, shake: 0.26 },
 };

@@ -963,6 +963,45 @@ const SKILL_V2 = {
     const t = turnBack(ramp(p, 0.45, 1)), st = bell(p, 0.55, 0.8);
     R.body.rotation.y += Math.PI * t; R.body.position.z += 0.45 * st; R.body.rotation.x -= 0.7 * st;
     if (R.wingL) { R.wingL.rotation.z += 0.5 * Math.sin(p * 90); R.wingR.rotation.z -= 0.5 * Math.sin(p * 90); } } },
+  // ---- v0.13.16 第三批 ----
+  eel: { dur: 1.2, hit: 0.55, desc: '身體捲起來蓄電、一閃一閃，再整條往前甩出電', fn(R, p) {
+    const coil = bell(p, 0, 0.6), whip = bell(p, 0.5, 0.8);
+    R.segs.forEach((s, i) => { s.rotation.z += 0.5 * Math.sin(p * 30 - i * 0.9) * coil; s.rotation.x -= 0.25 * coil - 0.35 * whip; });
+    R.head.rotation.x -= 0.5 * coil; R.head.scale.setScalar(1 + 0.18 * Math.abs(Math.sin(p * 24)) * coil); // 一閃一閃
+    R.body.position.y += 0.15 * coil; R.body.position.z += 0.35 * whip; R.head.rotation.x += 0.7 * whip;
+    R.earL.rotation.z += 0.7 * coil; R.earR.rotation.z -= 0.7 * coil; } },
+  parrot: { dur: 1.1, hit: 0.45, desc: '張開翅膀大叫，左右翅膀輪流把三根羽毛甩出去', fn(R, p) {
+    const open = bell(p, 0, 1), scream = bell(p, 0.05, 0.4);
+    R.wingL.rotation.z -= 1.2 * open; R.wingR.rotation.z += 1.2 * open;
+    R.body.rotation.x -= 0.35 * scream; R.head.rotation.x -= 0.5 * scream; if (R.beak) R.beak.scale.y = 1 + 0.8 * scream;
+    for (let i = 0; i < 3; i++) { const a = 0.3 + i * 0.18, k = bell(p, a, a + 0.16), w = i % 2 ? R.wingR : R.wingL; w.rotation.y += (i % 2 ? 1.6 : -1.6) * k; w.rotation.z += (i % 2 ? -1.0 : 1.0) * k; R.body.rotation.y += (i % 2 ? -0.5 : 0.5) * k; R.body.rotation.x += 0.45 * k; R.body.position.z += 0.18 * k; }
+    if (R.tail) R.tail.rotation.x -= 0.6 * open; } },
+  deer: { dur: 1.3, hit: 0.55, desc: '前腳抬起站起來，再低頭深深一鞠躬灑下祝福', fn(R, p) {
+    const rear = bell(p, 0, 0.5), bow = bell(p, 0.45, 0.95);
+    R.body.rotation.x -= 0.55 * rear; R.body.position.y += 0.08 * rear;
+    R.armL.rotation.x -= 1.2 * rear * (0.7 + 0.3 * Math.sin(p * 30)); R.armR.rotation.x -= 1.2 * rear * (0.7 - 0.3 * Math.sin(p * 30));
+    R.head.rotation.x -= 0.4 * rear;
+    R.head.rotation.x += 0.9 * bow; R.body.rotation.x += 0.3 * bow; R.armL.rotation.x += 0.4 * bow; R.armR.rotation.x += 0.4 * bow;
+    if (R.tail) R.tail.rotation.x -= 0.6 * Math.abs(Math.sin(p * 20)) * bell(p, 0, 1); } },
+  flamingo: { dur: 1.4, hit: 0.45, desc: '單腳站、翅膀張開，優雅地轉兩圈', fn(R, p) {
+    const pose = bell(p, 0, 1), spin = ease.inOut(ramp(p, 0.15, 0.85));
+    R.legL.rotation.x -= 1.6 * Math.min(1, pose * 2); // 一隻腳收起來
+    R.wingL.rotation.z -= 1.5 * Math.min(1, pose * 2); R.wingR.rotation.z += 1.5 * Math.min(1, pose * 2);
+    R.body.rotation.y += Math.PI * 4 * spin; R.body.position.y += 0.1 * pose;
+    R.head.rotation.x -= 0.3 * pose; R.head.rotation.z += 0.25 * Math.sin(p * 14) * pose; } },
+  bat: { dur: 1.1, hit: 0.6, desc: '用翅膀把自己包起來，再猛然張開撲上去咬', fn(R, p) {
+    const wrap = bell(p, 0, 0.5), flare = bell(p, 0.42, 0.75), bite = bell(p, 0.55, 0.8);
+    R.wingL.rotation.y -= 1.4 * wrap; R.wingR.rotation.y += 1.4 * wrap; R.wingL.rotation.z += 0.6 * wrap; R.wingR.rotation.z -= 0.6 * wrap; R.body.scale.setScalar(1 - 0.12 * wrap);
+    R.wingL.rotation.z -= 1.6 * flare; R.wingR.rotation.z += 1.6 * flare;
+    R.body.position.z += 0.45 * bite; R.body.rotation.x += 0.6 * bite; R.head.rotation.x += 0.4 * bite; } },
+  squirrel: { dur: 1.1, hit: 0.3, desc: '站起來鼓起臉頰，尾巴翹高，左右手連丟三顆松果', fn(R, p) {
+    const up = bell(p, 0, 1), puff = bell(p, 0, 0.35);
+    R.body.rotation.x -= 0.25 * up; R.body.position.y += 0.06 * up;
+    R.head.scale.x *= 1 + 0.25 * puff; R.head.scale.y *= 1 - 0.05 * puff; // 鼓臉頰
+    for (let i = 0; i < 3; i++) { const a = 0.22 + i * 0.22, w = bell(p, a - 0.08, a + 0.06), s = bell(p, a + 0.02, a + 0.16), arm = i % 2 ? R.armL : R.armR;
+      arm.rotation.x += -2.8 * w + 0.6 * s; R.body.rotation.y += (i % 2 ? 0.4 : -0.4) * (w + s); R.body.rotation.x += -0.2 * w + 0.45 * s; R.body.position.z += 0.1 * s; }
+    if (R.tail) R.tail.rotation.x -= 0.7 * up + 0.25 * Math.sin(p * 30) * up;
+    if (R.prop) R.prop.visible = false; } },
 };
 for (const k in SKILL_V2) { const A = SKILL_V2[k]; if (!ACT[k] || !ACT[k].skill) continue; ACT[k].skill = { dur: A.dur, hit: A.hit, fx: ACT[k].skill.fx, fn: A.fn, desc: A.desc }; }
 function poseRig(R, st) {
