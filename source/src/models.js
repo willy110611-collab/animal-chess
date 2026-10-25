@@ -1208,6 +1208,8 @@ function poseRig(R, st) {
     const fl = R.key === 'bat' ? Math.sin(t * 14) * 0.7 : Math.sin(t * 60) * 0.5;
     if (R.wingL) { R.wingL.rotation.z += fl; R.wingR.rotation.z -= fl; }
   }
+  // v0.14 待機時偶爾左右張望（每隻錯開，攻擊、技能、移動、睡覺時不做）
+  if (!st.act && !st.moving && !st.sleep && st.dead === undefined && R.key !== 'owl') { const c = (t * 0.14 + R.phase * 0.37) % 1, lk = bell(c, 0.82, 1); R.head.rotation.y += (Math.floor(t * 0.14 + R.phase * 0.37) % 2 ? 0.45 : -0.45) * lk; R.head.rotation.z += 0.08 * lk; }
   // 貓頭鷹偶爾轉頭 180°
   if (R.key === 'owl' && !st.act) { const c = (t % 9); R.head.rotation.y += c > 7 ? Math.sin((c - 7) / 2 * Math.PI) * Math.PI * 0.95 : 0; }
   // 移動：擠壓與伸展（起步壓扁、空中拉長、落地回彈）
