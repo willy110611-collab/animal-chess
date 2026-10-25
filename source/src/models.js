@@ -2,7 +2,7 @@
 const GEO = {};
 function geos() {
   if (GEO.sph) return GEO;
-  GEO.sph = new THREE.SphereGeometry(1, 22, 16);
+  GEO.sph = new THREE.SphereGeometry(1, 18, 13); // v0.14 22×16→18×13：三角形少約 35%，外觀幾乎一樣（有描邊後看不出差別）
   GEO.sphLo = new THREE.SphereGeometry(1, 12, 8);
   GEO.cone = new THREE.ConeGeometry(1, 1, 14);
   GEO.cyl = new THREE.CylinderGeometry(1, 1, 1, 14);
@@ -24,7 +24,7 @@ function toonGrad() {
 // ===== v0.14 角色精緻化（只影響動物，場景不變）=====
 // 可調：GRAD 角色的明暗色階（越大越亮）、RIM 邊緣光強度、RIM_POW 邊緣光寬窄（越大越細）、RIM_COL 邊緣光顏色
 const MODEL_CFG = { GRAD: [150, 200, 238, 255], RIM: 0.3, RIM_POW: 2.6, RIM_COL: '1.0, 0.95, 0.84',
-  OUTLINE: true, OUTLINE_W: 0.005, OUTLINE_COL: '#3a2a22', OUTLINE_MIN_Q: 0.7 }; // OUTLINE 描邊開關、OUTLINE_W 描邊粗細（畫面比例）、OUTLINE_COL 描邊顏色、OUTLINE_MIN_Q 自動畫質降到這以下就關描邊（省一半繪製）
+  OUTLINE: true, OUTLINE_W: 0.005, OUTLINE_COL: '#3a2a22', OUTLINE_MIN_Q: 0.7, OUTLINE_MIN_R: 0.09 }; // OUTLINE_MIN_R 小於這個大小的部位不描邊 // OUTLINE 描邊開關、OUTLINE_W 描邊粗細（畫面比例）、OUTLINE_COL 描邊顏色、OUTLINE_MIN_Q 自動畫質降到這以下就關描邊（省一半繪製）
 function outlineMat() { // 描邊：背面往外推一點、塗深色（粗細固定在畫面上，不受部位大小影響）
   const m = new THREE.MeshBasicMaterial({ color: MODEL_CFG.OUTLINE_COL, side: THREE.BackSide });
   const w = MODEL_CFG.OUTLINE_W.toFixed(4);
@@ -764,6 +764,7 @@ function mergeRig(R) {
   if (MODEL_CFG.OUTLINE) { // 身體、頭、手腳等不透明的部位加描邊（眼睛、腮紅、透明的不加）
     const om = outlineMat(), add = [];
     R.root.traverse(o => { if (o.isMesh && o.visible && o !== R.tongue && !o.userData.outline && !o.material.transparent && o.material.isMeshToonMaterial && o.material !== R.eyeMat) add.push(o); });
+    for (let i = add.length - 1; i >= 0; i--) { const o = add[i]; if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const sc = Math.max(o.scale.x, o.scale.y, o.scale.z); if (o.geometry.boundingSphere.radius * sc < MODEL_CFG.OUTLINE_MIN_R) add.splice(i, 1); } // 太小的部位不描邊（省繪製次數，看不出差別）
     for (const o of add) { const ol = new THREE.Mesh(o.geometry, om); ol.userData.outline = true; ol.userData.unit = true; ol.position.copy(o.position); ol.rotation.copy(o.rotation); ol.scale.copy(o.scale); ol.renderOrder = -1; o.parent.add(ol); if (o === R.torso || o === R.mouth) (R.olSync = R.olSync || []).push([o, ol]); }
     R.mats.push(om); R.olMat = om;
   }
