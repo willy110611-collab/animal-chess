@@ -207,6 +207,7 @@ function s3Frame(dt, ctx) {
       setS(v.el.mp, 'mpw', (mpf * 100).toFixed(0) + '%');
       const mcls = !hasMp ? 'nomp' : mpf >= 1 ? 'full' : '';
       if (v.mcls !== mcls) { if (v.mcls === 'full' && mcls === '' && v.mode === 'combat') { v.el.mpb.classList.remove('cast'); void v.el.mpb.offsetWidth; v.el.mpb.classList.add('cast'); } v.mcls = mcls; v.el.mpb.classList.toggle('nomp', mcls === 'nomp'); v.el.mpb.classList.toggle('full', mcls === 'full'); }
+      if (v.mlock !== !!it.mlock) { v.mlock = !!it.mlock; v.el.mpb.classList.toggle('lock', v.mlock); } // 鎖能量時能量條變灰色斜紋
       // 裝備小圖示（血條下方，不用點進去看）
       const ik = (it.items || []).join(',');
       if (v.ik !== ik) { v.ik = ik; v.el.it.innerHTML = (it.items || []).map(x => `<span>${iconItem(x)}</span>`).join(''); }

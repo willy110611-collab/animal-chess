@@ -81,6 +81,8 @@ body:has(#game:not([hidden])) { overflow: hidden; }
 .hb-mp { position: relative; height: 4px; margin-top: 1px; background: #1d2030; border-radius: 2px; overflow: hidden; box-shadow: 0 0 0 1px rgba(20,20,40,.8); }
 .hb-mp i { display: block; height: 100%; width: 0; background: linear-gradient(#9fdcff, #3a8fe0); transition: width .12s linear; }
 .hb-mp.nomp { visibility: hidden; }
+.hb-mp.lock { background: repeating-linear-gradient(45deg, #2a2d40 0 3px, #474c66 3px 6px); } /* 鎖能量中（照聯盟戰棋：技能效果期間不回能量，能量條變灰色斜紋） */
+.hb-mp.lock i { background: linear-gradient(#c8cede, #8a93b4); }
 .hb-mp.full i { background: linear-gradient(#ffffff, #8fd0ff); animation: mpfull .5s ease-in-out infinite alternate; }
 @keyframes mpfull { to { filter: brightness(1.5); box-shadow: 0 0 6px #bfe6ff; } }
 .hb-mp.cast::after { content: ""; position: absolute; inset: 0; background: #fff; animation: mpcast .35s ease-out forwards; }
