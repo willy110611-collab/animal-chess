@@ -12,6 +12,14 @@ if shutil.which('node'):
         fp = os.path.join(S, f + '.js')
         r = subprocess.run(['node', '--check', fp], capture_output=True, text=True)
         if r.returncode: sys.exit('語法錯誤，沒有打包：' + f + '.js\n' + r.stderr.strip()[:600])
+# 名稱重複檢查：所有檔案打包在同一個範圍，兩個檔案定義同名的函式／變數，後面的會蓋掉前面的（不會報錯，很難發現）
+_seen = {}
+for f in CLIENT:
+    for i, l in enumerate(rd(os.path.join(S, f + '.js')).split('\n'), 1):
+        m = re.match(r'^(?:async\s+)?function\s+([\w$]+)|^(?:const|let|var)\s+([\w$]+)\s*=', l)
+        if m: _seen.setdefault(m.group(1) or m.group(2), []).append(f'{f}.js:{i}')
+_dup = {k: v for k, v in _seen.items() if len(v) > 1}
+if _dup: sys.exit('名稱重複，沒有打包：' + '；'.join(f'{k}（{"、".join(v)}）' for k, v in _dup.items()))
 page = rd(os.path.join(S, 'template.html')).replace('/*__JS__*/', '(function(){\n' + js + '\n})();')
 three_p = os.path.join(H, 'node_modules/three/build/three.min.js')
 if not os.path.exists(three_p): sys.exit('先在 source/ 執行 npm install（需要 three.js）')
