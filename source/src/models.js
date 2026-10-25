@@ -162,7 +162,7 @@ function surfSpots(parent, mat, c, rad, n, size, y0, y1, frontOnly) {
   for (let i = 0; i < n; i++) {
     const t = (i + 0.5) / n, y = y0 + (y1 - y0) * t, a = i * 2.39996 + (frontOnly ? -1.2 : 0), rr = Math.sqrt(Math.max(0, 1 - y * y));
     const x = Math.sin(a) * rr, z = Math.cos(a) * rr; if (frontOnly && z < -0.2) continue;
-    parent.add(mesh(GEO.sph, mat, [c[0] + x * rad[0] * 0.93, c[1] + y * rad[1] * 0.93, c[2] + z * rad[2] * 0.93], size * (0.8 + 0.4 * ((i * 7) % 5) / 5)));
+    parent.add(mesh(GEO.sphLo, mat, [c[0] + x * rad[0] * 0.93, c[1] + y * rad[1] * 0.93, c[2] + z * rad[2] * 0.93], size * (0.8 + 0.4 * ((i * 7) % 5) / 5)));
   }
 }
 
