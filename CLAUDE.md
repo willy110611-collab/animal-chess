@@ -24,6 +24,7 @@
 
 ## Excel 數值流程
 - 使用者改「遊戲數據.xlsx」→ `python3 tools/xlsx2sheet.py 遊戲數據.xlsx` 產生 src/sheet.js → **再跑 `python3 tools/simsheet.py 遊戲數據.xlsx`** 把模擬結果寫進「模擬結果」分頁，連同上線一起交回給使用者。
+- **改了 data.js 的動物數值，Excel 也要跟著改**，不然下次跑 xlsx2sheet.py 會把 Excel 裡的舊數字蓋回去。2026-10-25 已把兩個 Excel（遊戲數據.xlsx、遊戲數據_v0.13.xlsx）的數值與技能說明對齊到 v0.13.21，舊檔備份成 .bak-20261025。data2xlsx.py 需要 node 和 openpyxl，這台電腦都沒有。
 - 平衡報告（真人對局統計）：https://zoochess.willy110611.workers.dev/report
 
 ## 在 Claude Code（使用者電腦）上工作
