@@ -162,11 +162,18 @@ function prepList() {
   if (pve) pveOf(G.round).forEach(([key, c, r], i) => { const [gc, gr] = toGlobal(1 - vt === 1 ? 1 : 0, c, r); const [vc, vr] = [CFG.COLS - 1 - c, CFG.ROWS - 1 - r]; const [x, z] = cellWorld(vc, vr); const st = unitStats({ key, star: key === 'kingboar' ? BOSS_CFG.STAR : PVE_STAR[G.round] || 3, items: [] }); list.push({ k: 'pw' + i, key, star: PVE_STAR[G.round] || 3, enemy: true, x, z, hp: st.hp, maxhp: st.hp }); });
   return list;
 }
+// 雙人連攜預覽：準備階段我方緊鄰隊友的棋子（跟 engine.js findLinks 同規則），開戰會連成一組
+function prepLinkPairs(vt) {
+  const us = []; for (const k in G.board) { const u = G.board[k], P = G.players[u.owner]; if (P && P.team === vt && ANIMALS[u.key]) { const [c, r] = cellRC(+k); us.push({ u, c, r, l: null }); } }
+  us.sort((a, b) => a.u.uid - b.u.uid); const out = [];
+  for (const a of us) { if (a.l) continue; let best = null; for (const b of us) if (!b.l && b !== a && b.u.owner !== a.u.owner && hexD(a.c, a.r, b.c, b.r) === 1 && (!best || b.u.uid < best.u.uid)) best = b; if (best) { a.l = best; best.l = a; out.push(['u' + a.u.uid, 'u' + best.u.uid]); } }
+  return out;
+}
 function renderPrep() {
   s3SetArena(G.arena); $('stage').dataset.arena = G.arena;
   const sc = scoutTeam();
   s3SetTerrain(G.terrain, sc >= 0 ? SIDE(sc) : mySide(), null, G.height || {});
-  s3Sync(prepList(), 'prep');
+  s3Sync(prepList(), 'prep'); S3.linkPairs = sc >= 0 ? [] : prepLinkPairs(myTeam());
   renderDock(); renderTraits(); renderSheet(); if (sc >= 0) s3Highlight([]); else highlightSel();
   renderScoutBar(); $('stage').classList.toggle('scouting', sc >= 0);
 }
@@ -673,6 +680,7 @@ function renderWatchBar() {
 const kOf = u => u.uid ? 'u' + u.uid : 'b' + u.id;
 function bWorld(c, r) { const [vc, vr] = vview(c, r, cv.vt); return cellWorld(vc, vr); }
 function combatSync() {
+  S3.linkPairs = (cv.B.links || []).filter(([a, b]) => cv.B.units[a].alive && cv.B.units[b].alive).map(([a, b]) => [kOf(cv.B.units[a]), kOf(cv.B.units[b])]); // 雙人連攜光帶
   const B = cv.B, frac = REPLAY ? Math.min(1, REPLAY.acc / CFG.TICK_MS) : B.over ? 1 /* 打完就停在最後位置，避免別的戰場還在打時棋子前後抖 */ : (G.phase === 'combat' || (NET.role === 'client' && G.phase === 'result' && !B.over)) ? Math.min(1, G.acc / CFG.TICK_MS) : 1, list = [];
   for (const u of B.units) {
     let c = u.c, r = u.r, lift = 0, moving = false, moveP = null, jumpP = null, mp = null;
@@ -958,7 +966,7 @@ if (/zoodebug/.test(location.search)) {
   window.__zdbg = {
     step(n, ms) { fake = Math.max(fake, performance.now()); for (let i = 0; i < (n || 1); i++) { fake += ms || 33; try { loopBody(fake); } catch (e) { console.error(e); } } },
     shot() { this.step(1); return new Promise(r => S3.renderer.domElement.toBlob(r, 'image/png')); },
-    G: () => G, S3,
+    G: () => G, S3, act: a => { const r = actMe(a); renderPrep(); return r; },
   };
 }
 function loopBody(now) {
@@ -1020,7 +1028,7 @@ function showDex(tab) {
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
   if (tab === 'augs') body = [1, 2, 3].map(tr => `<div class="plain"><div><b>${AUG_TIER_NAME[tr]}</b>（第 ${CFG.AUG_ROUNDS.join('、')} 回合三選一，銀／金／彩 依回合機率出現）</div></div>` + AUGMENTS.filter(x => x.tier === tr).map(x => `<div class="plain">${augIcon(x.id)}<div><b>${x.name}</b>　${x.desc}</div></div>`).join('')).join('');
   if (tab === 'arena') body = Object.keys(ARENAS).map(a => `<div class="plain"><div><b>${ARENAS[a].name}</b>　地形：${Object.keys(ARENAS[a].weights).sort((x, y) => ARENAS[a].weights[y] - ARENAS[a].weights[x]).map(t => TERRAIN_SKIN[a][t]).join('、')}（越前面越常見）</div></div>`).join('') + Object.keys(TERRAIN).map(t => `<div class="plain"><div><b>${TERRAIN[t].name}類</b>　${TERRAIN[t].desc}</div></div>`).join('') + `<div class="plain"><div><b>高台</b>（${Object.keys(ARENAS).map(a => TERRAIN_SKIN[a].high).join('、')}）　遠程射程 +${HIGH.RANGE}；從低處打上高台的普攻有 ${HIGH.MISS}% 落空；爬坡移動變慢</div></div>` + '<div class="plain"><div>每個階段換一個場地，地形與高台雙方對稱。</div></div>';
-  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（${CFG.COLS}×${CFG.ROWS_HALF} 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用（每隻動物：${Object.entries(CFG.POOL).map(([c, n]) => `${c} 費 ${n} 張`).join('、')}），被買光的就不會出現在商店。<br>環境羈絆（森林、草原、水域、天空）湊到最高階＝「生態圈」：超強效果、戰場換裝、羈絆圖示變彩色。<br>海克斯、傳送門、奇遇的選擇都跟著準備倒數，時間到自動選第一個。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
+  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（${CFG.COLS}×${CFG.ROWS_HALF} 格）與 ${CFG.TEAM_HP} 點團隊血量。<br><b>雙人默契</b>：開場時你的棋子緊鄰隊友的棋子，兩隻會連攜（金色光帶），攻速 +${DUO_CFG.LINK_AS}%，其中一隻倒下另一隻會報仇（攻擊 +${DUO_CFG.AVENGE_ATK}%）。隊友下戰鬥指令後 3 秒內你也下指令 → 擊掌合擊，全隊攻速與攻擊 +${DUO_CFG.COMBO_AS}%。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用（每隻動物：${Object.entries(CFG.POOL).map(([c, n]) => `${c} 費 ${n} 張`).join('、')}），被買光的就不會出現在商店。<br>環境羈絆（森林、草原、水域、天空）湊到最高階＝「生態圈」：超強效果、戰場換裝、羈絆圖示變彩色。<br>海克斯、傳送門、奇遇的選擇都跟著準備倒數，時間到自動選第一個。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
   $('panel').innerHTML = `<button class="x" id="dexX" aria-label="關閉">✕</button><h2>圖鑑</h2><div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div><div class="dex">${body}</div>`;
   $('overlay').hidden = false;
   $('dexX').onclick = () => { $('overlay').hidden = true; };
@@ -1035,7 +1043,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.35'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.14.0'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });

@@ -289,7 +289,7 @@ body:has(#lobby:not([hidden])) #sheet { display: none !important; }
 #banner.show { animation: ban 1.6s cubic-bezier(.2,.9,.3,1.2) forwards; }
 #banner .b1 { font-family: var(--f-display); font-size: clamp(30px, 8vw, 46px); color: #fff6e0; -webkit-text-stroke: 6px rgba(70,30,15,.85); paint-order: stroke fill; letter-spacing: .04em; }
 #banner .b2 { font-size: 14px; font-weight: 900; color: #fff3dc; text-shadow: 0 2px 0 rgba(70,30,15,.7); }
-#banner.win .b1 { color: #ffe27a; } #banner.lose .b1 { color: #ff9a7a; }
+#banner.win .b1 { color: #ffe27a; } #banner.lose .b1 { color: #ff9a7a; } #banner.duo .b1 { color: #ffd25a; font-size: clamp(36px, 10vw, 56px); } /* 擊掌合擊 */
 @keyframes ban { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } 25% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
 #cutin { position: absolute; left: 0; right: 0; top: 30%; height: 96px; pointer-events: none; display: none; }
 #cutin.show { display: block; }

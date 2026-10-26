@@ -136,7 +136,13 @@ function featuresEvent(B, ev) {
     case 'die': sfx('death', 60); break;
     case 'combo': sfx('combo'); break;
     case 'zone': if (ev.kind === 'meteor') sfx('boom'); else if (ev.kind === 'water') sfx('splash'); break;
-    case 'cmd': { const P = G.players[ev.owner]; sfx('cmd'); if (ev.owner === ME || (P && P.team === myTeam())) banner(`${P.name}：${COMMANDS[ev.type].name}！`, COMMANDS[ev.type].desc); for (const u of B.units) if (u.alive && u.owner === ev.owner) { const p = posOf(kOf(u), 0.3); if (p) burst(p, 5, { tex: 'spark', color: ev.type === 'charge' ? 0xff8a5a : ev.type === 'rally' ? 0x8ab8ff : 0x9be07a, scale: 0.13, speed: 0.6, up: 2, g: 0, add: true }); } break; }
+    case 'cmd': { const P = G.players[ev.owner]; sfx('cmd'); if (ev.owner === ME || (P && P.team === myTeam())) { const hint = ev.owner !== ME && B.cmdUsed && !B.cmdUsed[ME] && B.duoDone && !B.duoDone[P.team]; banner(`${P.name}：${COMMANDS[ev.type].name}！`, hint ? '3 秒內你也下指令 → 擊掌合擊！' : COMMANDS[ev.type].desc); } for (const u of B.units) if (u.alive && u.owner === ev.owner) { const p = posOf(kOf(u), 0.3); if (p) burst(p, 5, { tex: 'spark', color: ev.type === 'charge' ? 0xff8a5a : ev.type === 'rally' ? 0x8ab8ff : 0x9be07a, scale: 0.13, speed: 0.6, up: 2, g: 0, add: true }); } break; }
+    case 'duo': { // 擊掌合擊：兩位隊友 3 秒內都下了指令
+      const A = G.players[ev.a], Bp = G.players[ev.b]; sfx('combo');
+      const mine = B.units.find(u => u.owner === ME); if (mine && mine.team === ev.team) banner('擊掌合擊！', `${A ? A.name : ''} ✋ ${Bp ? Bp.name : ''}　全隊攻速與攻擊 +${DUO_CFG.COMBO_AS}%`, 'duo');
+      for (const u of B.units) if (u.alive && u.team === ev.team) { const p = posOf(kOf(u), 0.5); if (p) { burst(p, 8, { tex: 'star', color: 0xffd25a, scale: 0.14, speed: 1.2, up: 2.2, g: -1, add: true }); sprite('ring', p, { scale: 0.2, scale1: 1.1, life: 0.45, color: 0xffe08a, add: true }); } }
+      S3.shake = Math.max(S3.shake, 0.12); break; }
+    case 'avenge': { const u = B.units[ev.id]; if (u) { s3Num(kOf(u), '報仇！', 'skill', 0, 15); const p = posOf(kOf(u), 0.5); if (p) burst(p, 8, { tex: 'spark', color: 0xff5a4a, scale: 0.13, speed: 1.4, up: 1.6, g: 0, add: true }); } break; }
     case 'aug': sfx('zap', 120); break;
     case 'night': sfx('howl'); break;
   }

@@ -223,6 +223,7 @@ function s3Frame(dt, ctx) {
   for (const o of S3.hlObjs || []) if (o.material.emissive) o.material.emissive.setHex(o.userData.hl).multiplyScalar(br);
   // 特效
   s3FxFrame(dt, t);
+  s3Links(S3.linkPairs || []);
   S3.renderer.render(S3.scene, S3.cam);
   S3.calls = S3.renderer.info.render.calls;
 }
@@ -374,6 +375,20 @@ function s3FxFrame(dt, t) {
     return true;
   });
   S3.fx = keep.concat(S3.fx);
+}
+// 雙人連攜：連成一組的兩隻腳下一塊共用的金色光圈（橢圓形把兩隻包起來，會輕輕閃）。可調：COL 顏色、W 寬度、PAD 兩端多出來的長度、OP 透明度
+const LINK_FX = { COL: 0xffb81f, W: 0.5, PAD: 0.55, OP: 0.5 };
+function s3Links(pairs) {
+  const L = S3.linkObjs || (S3.linkObjs = []);
+  while (L.length < pairs.length) { const m = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: LINK_FX.COL, transparent: true, opacity: LINK_FX.OP, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.renderOrder = 1; S3.scene.add(m); L.push(m); }
+  const pulse = 0.7 + 0.3 * Math.sin(nowS() * 5);
+  L.forEach((m, i) => {
+    const pr = pairs[i], a = pr && posOf(pr[0], 0), b = pr && posOf(pr[1], 0);
+    if (!a || !b) { m.visible = false; return; }
+    const d = Math.hypot(b.x - a.x, b.z - a.z); m.visible = d > 0.05 && d < 3;
+    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2; m.position.set(mx, groundH(mx, mz) + 0.05, mz); // 貼在地面上方一點（不跟著飛行單位飄起來）
+    m.rotation.set(-Math.PI / 2, 0, -Math.atan2(b.z - a.z, b.x - a.x)); m.scale.set(d / 2 + LINK_FX.PAD, LINK_FX.W, 1); m.material.opacity = LINK_FX.OP * pulse;
+  });
 }
 const posOf = (k, h) => { const v = S3.V[k]; if (!v) return null; const p = v.pos.clone().add(V3(0, (h === undefined ? 0.45 : h) * (v.scale || 1) + (v.R.fly || 0) * 0.6 + groundH(v.pos.x, v.pos.z), 0)); if (v.airOff) p.add(v.airOff); return p; };
 function slash(texName, at, o) { o = o || {}; return sprite(texName, at, { scale: o.scale || 0.7, scale1: (o.scale || 0.7) * 1.25, life: o.life || 0.28, rot: o.rot || 0, color: o.color, add: false, delay: o.delay, fadeIn: 0.15 }); }

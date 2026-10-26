@@ -353,6 +353,10 @@ const COMMANDS = {
   rally:   { name: '集結', desc: '你的棋子受到傷害 −25%，持續 4 秒' },
   hold:    { name: '堅守', desc: '你的棋子回復 10% 生命並獲得 15% 護盾' },
 };
+// ===== 雙人默契（v0.14，只有一隊兩個人時才有）=====
+// 連攜：開場時你的棋子緊鄰隊友的棋子 → 兩隻連成一組（每隻最多一組），兩隻都活著攻速 +LINK_AS%；其中一隻倒下，另一隻「報仇」攻擊 +AVENGE_ATK%、回 AVENGE_HEAL% 生命
+// 擊掌合擊：隊友下戰鬥指令後 COMBO_WINDOW tick（20 tick＝1 秒）內你也下指令 → 全隊攻速 +COMBO_AS%、攻擊 +COMBO_ATK%，持續 COMBO_TICKS；電腦隊友會在 AI_REPLY tick 後跟上你的指令
+const DUO_CFG = { LINK_AS: 10, AVENGE_ATK: 30, AVENGE_TICKS: 80, AVENGE_HEAL: 15, COMBO_WINDOW: 60, COMBO_AS: 20, COMBO_ATK: 20, COMBO_TICKS: 80, AI_REPLY: 20 };
 // ===== 開局傳送門（全場投票）=====
 const PORTALS = [
   { id: 'goldseason', name: '金幣雨季', desc: '每回合基本收入 +1' },
@@ -478,6 +482,7 @@ function createBattle(input) {
   if (B.flags.eternalnight) B.night = true;
   augStart(B);
   findCombos(B);
+  findLinks(B);
   return B;
 }
 
@@ -491,7 +496,7 @@ function spawn(B, key, star, owner, team, c, r, items, summon) {
     buffs: [], dots: [], target: -1, nextAtk: 0, mvFrom: null, busy: 0, stun: 0, invuln: 0, blind: 0,
     tauntBy: -1, tauntUntil: 0, stealth: false, firstHit: false, castCount: 0, items: items.slice(),
     lifesteal: key === 'bat' ? 20 : 0, sameHits: 0, lastTgt: -1, asleep: false, slept: 0,
-    ccImmune: 0, fang: false, honeypot: false, skillAmp: false, toxicUntil: 0, dmgDone: 0, waterShieldPct: 0,
+    ccImmune: 0, fang: false, honeypot: false, skillAmp: false, toxicUntil: 0, dmgDone: 0, waterShieldPct: 0, linkTo: -1,
   };
   for (const it of items) {
     const d = MATS[it] || ITEMS[it] || EMBLEMS[it]; if (!d) continue;
@@ -579,6 +584,17 @@ function applyTraits(B) {
   }
 }
 
+// 雙人連攜：開場時緊鄰隊友棋子的配成一組（照 id 順序、每隻最多一組，雙方手機算出來一樣）
+function findLinks(B) {
+  B.links = []; B.ownerTeam = {}; B.duoDone = {};
+  for (const u of B.units) if (u.owner >= 0 && B.ownerTeam[u.owner] === undefined) B.ownerTeam[u.owner] = u.team;
+  const ok = u => u.alive && !u.summon && !u.neutral && u.owner >= 0 && ANIMALS[u.key];
+  for (const u of B.units) {
+    if (!ok(u) || u.linkTo >= 0) continue;
+    let best = null; for (const v of B.units) if (ok(v) && v.linkTo < 0 && v.team === u.team && v.owner !== u.owner && dist(u, v) === 1 && (!best || v.id < best.id)) best = v;
+    if (best) { u.linkTo = best.id; best.linkTo = u.id; B.links.push([u.id, best.id]); }
+  }
+}
 function findCombos(B) {
   for (const cb of COMBOS) for (const team of [0, 1]) {
     const as = B.units.filter(u => u.team === team && u.key === cb.a);
@@ -620,6 +636,7 @@ function effInterval(B, u) {
   if (u.galeStacks) p += u.galeStacks * 3;
   if (B.weather === 'heat') p += 15 + (hasTrait(u, 'savanna') ? 10 : 0);
   if (onTile(B, u, 'burn')) p += BURN_AS;
+  if (u.linkTo >= 0 && B.units[u.linkTo].alive) p += DUO_CFG.LINK_AS; // 雙人連攜
   return Math.max(5, Math.floor(u.ai * 100 / p));
 }
 function effRange(B, u) { return u.rng + (u.rng >= 2 && terrainAt(B, u.c, u.r) === 'tree' ? 1 : 0) + (u.rng >= 2 && isHigh(B, u.c, u.r) ? HIGH.RANGE : 0); }
@@ -722,6 +739,7 @@ function kill(B, u, killer) {
     if (hasAug(B, killer, 'soulfeed')) { killer.atkPct += 15; const add = Math.floor(killer.maxhp * 10 / 100); killer.maxhp += add; killer.hp += add; B.ev.push({ k: 'aug', id: killer.id, a: 'soulfeed' }); }
     if (hasAug(B, killer, 'carnival')) for (const a of B.units) if (a.alive && a.owner === ko) { heal(B, a, Math.floor(a.maxhp * 5 / 100)); a.mana += 10; }
   }
+  if (u.linkTo >= 0) { const p = B.units[u.linkTo]; if (p && p.alive) { p.buffs.push({ s: 'atk', v: DUO_CFG.AVENGE_ATK, u: B.t + DUO_CFG.AVENGE_TICKS }); heal(B, p, Math.floor(p.maxhp * DUO_CFG.AVENGE_HEAL / 100)); B.ev.push({ k: 'avenge', id: p.id, from: u.id }); } } // 連攜夥伴倒下：報仇
   if (B.grid[idx(u.c, u.r)] === u.id) B.grid[idx(u.c, u.r)] = -1;
   B.ev.push({ k: 'die', id: u.id, key: u.key, team: u.team, by: killer ? killer.id : -1 });
   if (u.key === 'minibee' && killer && killer.alive) damage(B, u, killer, 60, 'true', {});
@@ -1335,6 +1353,16 @@ function battleCommand(B, owner, type) {
     if (type === 'hold') { heal(B, u, Math.floor(u.maxhp * 10 / 100)); u.shield += Math.floor(u.maxhp * 15 / 100); }
   }
   B.ev.push({ k: 'cmd', owner, type });
+  // 擊掌合擊：隊友剛下過指令（COMBO_WINDOW 內）→ 全隊再加成一次（每場每隊一次）
+  const team = B.ownerTeam ? B.ownerTeam[owner] : undefined;
+  if (team !== undefined && !B.duoDone[team]) {
+    const mate = (B.cmdLog || []).find(c => c.owner !== owner && B.ownerTeam[c.owner] === team && B.t - c.t <= DUO_CFG.COMBO_WINDOW);
+    if (mate) {
+      B.duoDone[team] = true;
+      for (const u of B.units) if (u.alive && u.team === team) { u.buffs.push({ s: 'as', v: DUO_CFG.COMBO_AS, u: B.t + DUO_CFG.COMBO_TICKS }); u.buffs.push({ s: 'atk', v: DUO_CFG.COMBO_ATK, u: B.t + DUO_CFG.COMBO_TICKS }); }
+      B.ev.push({ k: 'duo', team, a: mate.owner, b: owner });
+    }
+  }
   (B.cmdLog = B.cmdLog || []).push({ t: B.t, owner, type }); // 連線時讓其他玩家在同一個 tick 重現
   return true;
 }
@@ -1580,7 +1608,10 @@ function act(G, pid, a) {
     case 'cmd': {
       if (!G.rules.commands || G.phase !== 'combat') return 'bad';
       const bt = G.battles.find(b => b.teams.includes(P.team)); if (!bt) return 'bad';
-      return battleCommand(bt.B, pid, a.type) ? 'ok' : 'cmd_used';
+      if (!battleCommand(bt.B, pid, a.type)) return 'cmd_used';
+      // 電腦隊友還沒下指令：跟上你的指令，湊擊掌合擊
+      const M = teammate(G, pid); if (M && M.ai && G.aiCmd && G.aiCmd[M.id] && G.aiCmd[M.id].t > bt.B.t + DUO_CFG.AI_REPLY) G.aiCmd[M.id] = { t: bt.B.t + DUO_CFG.AI_REPLY, type: G.aiCmd[M.id].type };
+      return 'ok';
     }
     case 'aitoggle': { P.ai = !P.ai; if (P.ai) { P.ready = true; if (G.phase === 'prep') aiPrep(G, pid); } else P.ready = false; return 'ok'; }
     case 'surrender': { if (G.teams[P.team].out) return 'bad'; G.teams[P.team].hp = 0; G.surrendered = P.team; eliminate(G); return 'ok'; }
@@ -1781,6 +1812,8 @@ function startCombat(G) {
   G.phase = 'combat'; G.acc = 0;
   // AI 戰鬥指令時間點
   G.aiCmd = {}; for (const P of G.players) if (P.ai && G.rules.commands) G.aiCmd[P.id] = { t: 120 + G.rng(200), type: ['charge', 'rally', 'hold'][G.rng(3)] };
+  // 雙人默契：同隊兩個都是電腦時，第二個在第一個之後 1～2 秒跟上（電腦隊也會擊掌合擊）
+  for (const T of G.teams) { const ps = G.players.filter(P => P.team === T.id && P.ai && G.aiCmd[P.id]); if (ps.length === 2) G.aiCmd[ps[1].id].t = G.aiCmd[ps[0].id].t + 15 + G.rng(25); }
 }
 function combatDone(G) { return G.battles.every(b => b.B.over); }
 // 對戰配對：2 隊就是 0 對 1；4 隊每回合隨機配對、盡量不連續打同一隊；剩奇數隊時有一隊打「幽靈」（別隊的複製，輸贏不影響對方）
@@ -1993,6 +2026,7 @@ const AI_CFG = {
   LEVEL_AT: { 2: 3, 4: 4, 6: 5, 10: 6, 14: 7, 19: 8, 25: 9 }, // 第幾回合起想要升到幾級（普通難度）
   SAVE: 50,                // 血量健康時存到多少金（吃滿利息）
   ROLL_HP: 40,             // 團隊血量低於這個就開始刷新找牌
+  LINK_PULL: 0.9,          // 雙人連攜：電腦擺棋子時，站到隊友棋子旁邊的吸引力（1＝相當於前後差一排）
 };
 // 電腦強度（練習時在「選擇模式」切換；只影響對手，電腦隊友固定普通）
 // lvl：升級目標加減｜rollKeep：刷新時至少留多少金｜rollLv：到幾級開始固定刷新
@@ -2177,7 +2211,11 @@ function aiPlace(G, pid) {
       const sideBias = f => role === 'assassin' ? -Math.abs(f.c - (CFG.COLS - 1) / 2) * 0.35 : role === 'carry' ? centerScore(f) * 0.25 : centerScore(f) * 0.15;
       // 輸出躲在坦克後面：同一欄前方有隊友比較好
       const covered = f => { if (role !== 'carry') return 0; for (const k in G.board) { const u = G.board[k]; if (G.players[u.owner].team !== P.team) continue; const [c, r] = cellRC(+k), [lc, lr] = toLocal(SIDE(P.team), c, r); if (Math.abs(lc - f.c) <= 1 && lr > f.r) return -0.6; } return 0; };
-      const cand = free.slice().sort((a, b) => (Math.abs(a.r - wantRow) + tScore(a) + sideBias(a) + covered(a)) - (Math.abs(b.r - wantRow) + tScore(b) + sideBias(b) + covered(b)) || a.c - b.c);
+      // 雙人連攜：站到隊友棋子旁邊（那隻隊友棋子旁邊還沒有我的棋子時才算），開戰就會連上
+      const mateCells = []; for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid && G.players[u.owner].team === P.team && ANIMALS[u.key]) mateCells.push(cellRC(+k)); }
+      const linkPull = f => { if (!mateCells.length) return 0; const [fc, fr] = cellRC(f.k); for (const [mc, mr] of mateCells) if (hexD(fc, fr, mc, mr) === 1) { let taken = false; for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid) continue; const [uc, ur] = cellRC(+k); if (hexD(uc, ur, mc, mr) === 1) { taken = true; break; } } if (!taken) return -AI_CFG.LINK_PULL; } return 0; };
+      const sc = f => Math.abs(f.r - wantRow) + tScore(f) + sideBias(f) + covered(f) + linkPull(f);
+      const cand = free.slice().sort((a, b) => sc(a) - sc(b) || a.c - b.c);
       spot = cand[0];
     }
     if (!spot) break;
@@ -2386,7 +2424,7 @@ function rollNeutrals(G, units) {
 
 const SV = {
   ORIGINS: ['https://willy110611-collab.github.io', 'https://zoochess.pages.dev', 'http://localhost:8123', 'http://127.0.0.1:8123'], // 網站網址（Cloudflare Pages 的預覽網址 *.zoochess.pages.dev 也允許）
-  VERSION: '0.13.35',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
+  VERSION: '0.14.0',    // 打包時自動填入（跟網站版本一致），一鍵更新用來確認伺服器已部署新版
   TICK_MS: 100,          // 伺服器遊戲迴圈
   SNAP_MS: 250,          // 多久檢查一次要不要送畫面
   SNAP_KEEPALIVE_MS: 2000, // 畫面沒變時，最久多久還是送一次（校正倒數計時）

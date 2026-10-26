@@ -289,7 +289,7 @@ body:has(#lobby:not([hidden])) #sheet { display: none !important; }
 #banner.show { animation: ban 1.6s cubic-bezier(.2,.9,.3,1.2) forwards; }
 #banner .b1 { font-family: var(--f-display); font-size: clamp(30px, 8vw, 46px); color: #fff6e0; -webkit-text-stroke: 6px rgba(70,30,15,.85); paint-order: stroke fill; letter-spacing: .04em; }
 #banner .b2 { font-size: 14px; font-weight: 900; color: #fff3dc; text-shadow: 0 2px 0 rgba(70,30,15,.7); }
-#banner.win .b1 { color: #ffe27a; } #banner.lose .b1 { color: #ff9a7a; }
+#banner.win .b1 { color: #ffe27a; } #banner.lose .b1 { color: #ff9a7a; } #banner.duo .b1 { color: #ffd25a; font-size: clamp(36px, 10vw, 56px); } /* 擊掌合擊 */
 @keyframes ban { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } 25% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
 #cutin { position: absolute; left: 0; right: 0; top: 30%; height: 96px; pointer-events: none; display: none; }
 #cutin.show { display: block; }
@@ -1201,6 +1201,10 @@ const COMMANDS = {
   rally:   { name: '集結', desc: '你的棋子受到傷害 −25%，持續 4 秒' },
   hold:    { name: '堅守', desc: '你的棋子回復 10% 生命並獲得 15% 護盾' },
 };
+// ===== 雙人默契（v0.14，只有一隊兩個人時才有）=====
+// 連攜：開場時你的棋子緊鄰隊友的棋子 → 兩隻連成一組（每隻最多一組），兩隻都活著攻速 +LINK_AS%；其中一隻倒下，另一隻「報仇」攻擊 +AVENGE_ATK%、回 AVENGE_HEAL% 生命
+// 擊掌合擊：隊友下戰鬥指令後 COMBO_WINDOW tick（20 tick＝1 秒）內你也下指令 → 全隊攻速 +COMBO_AS%、攻擊 +COMBO_ATK%，持續 COMBO_TICKS；電腦隊友會在 AI_REPLY tick 後跟上你的指令
+const DUO_CFG = { LINK_AS: 10, AVENGE_ATK: 30, AVENGE_TICKS: 80, AVENGE_HEAL: 15, COMBO_WINDOW: 60, COMBO_AS: 20, COMBO_ATK: 20, COMBO_TICKS: 80, AI_REPLY: 20 };
 // ===== 開局傳送門（全場投票）=====
 const PORTALS = [
   { id: 'goldseason', name: '金幣雨季', desc: '每回合基本收入 +1' },
@@ -1326,6 +1330,7 @@ function createBattle(input) {
   if (B.flags.eternalnight) B.night = true;
   augStart(B);
   findCombos(B);
+  findLinks(B);
   return B;
 }
 
@@ -1339,7 +1344,7 @@ function spawn(B, key, star, owner, team, c, r, items, summon) {
     buffs: [], dots: [], target: -1, nextAtk: 0, mvFrom: null, busy: 0, stun: 0, invuln: 0, blind: 0,
     tauntBy: -1, tauntUntil: 0, stealth: false, firstHit: false, castCount: 0, items: items.slice(),
     lifesteal: key === 'bat' ? 20 : 0, sameHits: 0, lastTgt: -1, asleep: false, slept: 0,
-    ccImmune: 0, fang: false, honeypot: false, skillAmp: false, toxicUntil: 0, dmgDone: 0, waterShieldPct: 0,
+    ccImmune: 0, fang: false, honeypot: false, skillAmp: false, toxicUntil: 0, dmgDone: 0, waterShieldPct: 0, linkTo: -1,
   };
   for (const it of items) {
     const d = MATS[it] || ITEMS[it] || EMBLEMS[it]; if (!d) continue;
@@ -1427,6 +1432,17 @@ function applyTraits(B) {
   }
 }
 
+// 雙人連攜：開場時緊鄰隊友棋子的配成一組（照 id 順序、每隻最多一組，雙方手機算出來一樣）
+function findLinks(B) {
+  B.links = []; B.ownerTeam = {}; B.duoDone = {};
+  for (const u of B.units) if (u.owner >= 0 && B.ownerTeam[u.owner] === undefined) B.ownerTeam[u.owner] = u.team;
+  const ok = u => u.alive && !u.summon && !u.neutral && u.owner >= 0 && ANIMALS[u.key];
+  for (const u of B.units) {
+    if (!ok(u) || u.linkTo >= 0) continue;
+    let best = null; for (const v of B.units) if (ok(v) && v.linkTo < 0 && v.team === u.team && v.owner !== u.owner && dist(u, v) === 1 && (!best || v.id < best.id)) best = v;
+    if (best) { u.linkTo = best.id; best.linkTo = u.id; B.links.push([u.id, best.id]); }
+  }
+}
 function findCombos(B) {
   for (const cb of COMBOS) for (const team of [0, 1]) {
     const as = B.units.filter(u => u.team === team && u.key === cb.a);
@@ -1468,6 +1484,7 @@ function effInterval(B, u) {
   if (u.galeStacks) p += u.galeStacks * 3;
   if (B.weather === 'heat') p += 15 + (hasTrait(u, 'savanna') ? 10 : 0);
   if (onTile(B, u, 'burn')) p += BURN_AS;
+  if (u.linkTo >= 0 && B.units[u.linkTo].alive) p += DUO_CFG.LINK_AS; // 雙人連攜
   return Math.max(5, Math.floor(u.ai * 100 / p));
 }
 function effRange(B, u) { return u.rng + (u.rng >= 2 && terrainAt(B, u.c, u.r) === 'tree' ? 1 : 0) + (u.rng >= 2 && isHigh(B, u.c, u.r) ? HIGH.RANGE : 0); }
@@ -1570,6 +1587,7 @@ function kill(B, u, killer) {
     if (hasAug(B, killer, 'soulfeed')) { killer.atkPct += 15; const add = Math.floor(killer.maxhp * 10 / 100); killer.maxhp += add; killer.hp += add; B.ev.push({ k: 'aug', id: killer.id, a: 'soulfeed' }); }
     if (hasAug(B, killer, 'carnival')) for (const a of B.units) if (a.alive && a.owner === ko) { heal(B, a, Math.floor(a.maxhp * 5 / 100)); a.mana += 10; }
   }
+  if (u.linkTo >= 0) { const p = B.units[u.linkTo]; if (p && p.alive) { p.buffs.push({ s: 'atk', v: DUO_CFG.AVENGE_ATK, u: B.t + DUO_CFG.AVENGE_TICKS }); heal(B, p, Math.floor(p.maxhp * DUO_CFG.AVENGE_HEAL / 100)); B.ev.push({ k: 'avenge', id: p.id, from: u.id }); } } // 連攜夥伴倒下：報仇
   if (B.grid[idx(u.c, u.r)] === u.id) B.grid[idx(u.c, u.r)] = -1;
   B.ev.push({ k: 'die', id: u.id, key: u.key, team: u.team, by: killer ? killer.id : -1 });
   if (u.key === 'minibee' && killer && killer.alive) damage(B, u, killer, 60, 'true', {});
@@ -2183,6 +2201,16 @@ function battleCommand(B, owner, type) {
     if (type === 'hold') { heal(B, u, Math.floor(u.maxhp * 10 / 100)); u.shield += Math.floor(u.maxhp * 15 / 100); }
   }
   B.ev.push({ k: 'cmd', owner, type });
+  // 擊掌合擊：隊友剛下過指令（COMBO_WINDOW 內）→ 全隊再加成一次（每場每隊一次）
+  const team = B.ownerTeam ? B.ownerTeam[owner] : undefined;
+  if (team !== undefined && !B.duoDone[team]) {
+    const mate = (B.cmdLog || []).find(c => c.owner !== owner && B.ownerTeam[c.owner] === team && B.t - c.t <= DUO_CFG.COMBO_WINDOW);
+    if (mate) {
+      B.duoDone[team] = true;
+      for (const u of B.units) if (u.alive && u.team === team) { u.buffs.push({ s: 'as', v: DUO_CFG.COMBO_AS, u: B.t + DUO_CFG.COMBO_TICKS }); u.buffs.push({ s: 'atk', v: DUO_CFG.COMBO_ATK, u: B.t + DUO_CFG.COMBO_TICKS }); }
+      B.ev.push({ k: 'duo', team, a: mate.owner, b: owner });
+    }
+  }
   (B.cmdLog = B.cmdLog || []).push({ t: B.t, owner, type }); // 連線時讓其他玩家在同一個 tick 重現
   return true;
 }
@@ -2428,7 +2456,10 @@ function act(G, pid, a) {
     case 'cmd': {
       if (!G.rules.commands || G.phase !== 'combat') return 'bad';
       const bt = G.battles.find(b => b.teams.includes(P.team)); if (!bt) return 'bad';
-      return battleCommand(bt.B, pid, a.type) ? 'ok' : 'cmd_used';
+      if (!battleCommand(bt.B, pid, a.type)) return 'cmd_used';
+      // 電腦隊友還沒下指令：跟上你的指令，湊擊掌合擊
+      const M = teammate(G, pid); if (M && M.ai && G.aiCmd && G.aiCmd[M.id] && G.aiCmd[M.id].t > bt.B.t + DUO_CFG.AI_REPLY) G.aiCmd[M.id] = { t: bt.B.t + DUO_CFG.AI_REPLY, type: G.aiCmd[M.id].type };
+      return 'ok';
     }
     case 'aitoggle': { P.ai = !P.ai; if (P.ai) { P.ready = true; if (G.phase === 'prep') aiPrep(G, pid); } else P.ready = false; return 'ok'; }
     case 'surrender': { if (G.teams[P.team].out) return 'bad'; G.teams[P.team].hp = 0; G.surrendered = P.team; eliminate(G); return 'ok'; }
@@ -2629,6 +2660,8 @@ function startCombat(G) {
   G.phase = 'combat'; G.acc = 0;
   // AI 戰鬥指令時間點
   G.aiCmd = {}; for (const P of G.players) if (P.ai && G.rules.commands) G.aiCmd[P.id] = { t: 120 + G.rng(200), type: ['charge', 'rally', 'hold'][G.rng(3)] };
+  // 雙人默契：同隊兩個都是電腦時，第二個在第一個之後 1～2 秒跟上（電腦隊也會擊掌合擊）
+  for (const T of G.teams) { const ps = G.players.filter(P => P.team === T.id && P.ai && G.aiCmd[P.id]); if (ps.length === 2) G.aiCmd[ps[1].id].t = G.aiCmd[ps[0].id].t + 15 + G.rng(25); }
 }
 function combatDone(G) { return G.battles.every(b => b.B.over); }
 // 對戰配對：2 隊就是 0 對 1；4 隊每回合隨機配對、盡量不連續打同一隊；剩奇數隊時有一隊打「幽靈」（別隊的複製，輸贏不影響對方）
@@ -2841,6 +2874,7 @@ const AI_CFG = {
   LEVEL_AT: { 2: 3, 4: 4, 6: 5, 10: 6, 14: 7, 19: 8, 25: 9 }, // 第幾回合起想要升到幾級（普通難度）
   SAVE: 50,                // 血量健康時存到多少金（吃滿利息）
   ROLL_HP: 40,             // 團隊血量低於這個就開始刷新找牌
+  LINK_PULL: 0.9,          // 雙人連攜：電腦擺棋子時，站到隊友棋子旁邊的吸引力（1＝相當於前後差一排）
 };
 // 電腦強度（練習時在「選擇模式」切換；只影響對手，電腦隊友固定普通）
 // lvl：升級目標加減｜rollKeep：刷新時至少留多少金｜rollLv：到幾級開始固定刷新
@@ -3025,7 +3059,11 @@ function aiPlace(G, pid) {
       const sideBias = f => role === 'assassin' ? -Math.abs(f.c - (CFG.COLS - 1) / 2) * 0.35 : role === 'carry' ? centerScore(f) * 0.25 : centerScore(f) * 0.15;
       // 輸出躲在坦克後面：同一欄前方有隊友比較好
       const covered = f => { if (role !== 'carry') return 0; for (const k in G.board) { const u = G.board[k]; if (G.players[u.owner].team !== P.team) continue; const [c, r] = cellRC(+k), [lc, lr] = toLocal(SIDE(P.team), c, r); if (Math.abs(lc - f.c) <= 1 && lr > f.r) return -0.6; } return 0; };
-      const cand = free.slice().sort((a, b) => (Math.abs(a.r - wantRow) + tScore(a) + sideBias(a) + covered(a)) - (Math.abs(b.r - wantRow) + tScore(b) + sideBias(b) + covered(b)) || a.c - b.c);
+      // 雙人連攜：站到隊友棋子旁邊（那隻隊友棋子旁邊還沒有我的棋子時才算），開戰就會連上
+      const mateCells = []; for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid && G.players[u.owner].team === P.team && ANIMALS[u.key]) mateCells.push(cellRC(+k)); }
+      const linkPull = f => { if (!mateCells.length) return 0; const [fc, fr] = cellRC(f.k); for (const [mc, mr] of mateCells) if (hexD(fc, fr, mc, mr) === 1) { let taken = false; for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid) continue; const [uc, ur] = cellRC(+k); if (hexD(uc, ur, mc, mr) === 1) { taken = true; break; } } if (!taken) return -AI_CFG.LINK_PULL; } return 0; };
+      const sc = f => Math.abs(f.r - wantRow) + tScore(f) + sideBias(f) + covered(f) + linkPull(f);
+      const cand = free.slice().sort((a, b) => sc(a) - sc(b) || a.c - b.c);
       spot = cand[0];
     }
     if (!spot) break;
@@ -5151,6 +5189,7 @@ function s3Frame(dt, ctx) {
   for (const o of S3.hlObjs || []) if (o.material.emissive) o.material.emissive.setHex(o.userData.hl).multiplyScalar(br);
   // 特效
   s3FxFrame(dt, t);
+  s3Links(S3.linkPairs || []);
   S3.renderer.render(S3.scene, S3.cam);
   S3.calls = S3.renderer.info.render.calls;
 }
@@ -5302,6 +5341,20 @@ function s3FxFrame(dt, t) {
     return true;
   });
   S3.fx = keep.concat(S3.fx);
+}
+// 雙人連攜：連成一組的兩隻腳下一塊共用的金色光圈（橢圓形把兩隻包起來，會輕輕閃）。可調：COL 顏色、W 寬度、PAD 兩端多出來的長度、OP 透明度
+const LINK_FX = { COL: 0xffb81f, W: 0.5, PAD: 0.55, OP: 0.5 };
+function s3Links(pairs) {
+  const L = S3.linkObjs || (S3.linkObjs = []);
+  while (L.length < pairs.length) { const m = new THREE.Mesh(GEO.disc, new THREE.MeshBasicMaterial({ color: LINK_FX.COL, transparent: true, opacity: LINK_FX.OP, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.renderOrder = 1; S3.scene.add(m); L.push(m); }
+  const pulse = 0.7 + 0.3 * Math.sin(nowS() * 5);
+  L.forEach((m, i) => {
+    const pr = pairs[i], a = pr && posOf(pr[0], 0), b = pr && posOf(pr[1], 0);
+    if (!a || !b) { m.visible = false; return; }
+    const d = Math.hypot(b.x - a.x, b.z - a.z); m.visible = d > 0.05 && d < 3;
+    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2; m.position.set(mx, groundH(mx, mz) + 0.05, mz); // 貼在地面上方一點（不跟著飛行單位飄起來）
+    m.rotation.set(-Math.PI / 2, 0, -Math.atan2(b.z - a.z, b.x - a.x)); m.scale.set(d / 2 + LINK_FX.PAD, LINK_FX.W, 1); m.material.opacity = LINK_FX.OP * pulse;
+  });
 }
 const posOf = (k, h) => { const v = S3.V[k]; if (!v) return null; const p = v.pos.clone().add(V3(0, (h === undefined ? 0.45 : h) * (v.scale || 1) + (v.R.fly || 0) * 0.6 + groundH(v.pos.x, v.pos.z), 0)); if (v.airOff) p.add(v.airOff); return p; };
 function slash(texName, at, o) { o = o || {}; return sprite(texName, at, { scale: o.scale || 0.7, scale1: (o.scale || 0.7) * 1.25, life: o.life || 0.28, rot: o.rot || 0, color: o.color, add: false, delay: o.delay, fadeIn: 0.15 }); }
@@ -6138,11 +6191,18 @@ function prepList() {
   if (pve) pveOf(G.round).forEach(([key, c, r], i) => { const [gc, gr] = toGlobal(1 - vt === 1 ? 1 : 0, c, r); const [vc, vr] = [CFG.COLS - 1 - c, CFG.ROWS - 1 - r]; const [x, z] = cellWorld(vc, vr); const st = unitStats({ key, star: key === 'kingboar' ? BOSS_CFG.STAR : PVE_STAR[G.round] || 3, items: [] }); list.push({ k: 'pw' + i, key, star: PVE_STAR[G.round] || 3, enemy: true, x, z, hp: st.hp, maxhp: st.hp }); });
   return list;
 }
+// 雙人連攜預覽：準備階段我方緊鄰隊友的棋子（跟 engine.js findLinks 同規則），開戰會連成一組
+function prepLinkPairs(vt) {
+  const us = []; for (const k in G.board) { const u = G.board[k], P = G.players[u.owner]; if (P && P.team === vt && ANIMALS[u.key]) { const [c, r] = cellRC(+k); us.push({ u, c, r, l: null }); } }
+  us.sort((a, b) => a.u.uid - b.u.uid); const out = [];
+  for (const a of us) { if (a.l) continue; let best = null; for (const b of us) if (!b.l && b !== a && b.u.owner !== a.u.owner && hexD(a.c, a.r, b.c, b.r) === 1 && (!best || b.u.uid < best.u.uid)) best = b; if (best) { a.l = best; best.l = a; out.push(['u' + a.u.uid, 'u' + best.u.uid]); } }
+  return out;
+}
 function renderPrep() {
   s3SetArena(G.arena); $('stage').dataset.arena = G.arena;
   const sc = scoutTeam();
   s3SetTerrain(G.terrain, sc >= 0 ? SIDE(sc) : mySide(), null, G.height || {});
-  s3Sync(prepList(), 'prep');
+  s3Sync(prepList(), 'prep'); S3.linkPairs = sc >= 0 ? [] : prepLinkPairs(myTeam());
   renderDock(); renderTraits(); renderSheet(); if (sc >= 0) s3Highlight([]); else highlightSel();
   renderScoutBar(); $('stage').classList.toggle('scouting', sc >= 0);
 }
@@ -6649,6 +6709,7 @@ function renderWatchBar() {
 const kOf = u => u.uid ? 'u' + u.uid : 'b' + u.id;
 function bWorld(c, r) { const [vc, vr] = vview(c, r, cv.vt); return cellWorld(vc, vr); }
 function combatSync() {
+  S3.linkPairs = (cv.B.links || []).filter(([a, b]) => cv.B.units[a].alive && cv.B.units[b].alive).map(([a, b]) => [kOf(cv.B.units[a]), kOf(cv.B.units[b])]); // 雙人連攜光帶
   const B = cv.B, frac = REPLAY ? Math.min(1, REPLAY.acc / CFG.TICK_MS) : B.over ? 1 /* 打完就停在最後位置，避免別的戰場還在打時棋子前後抖 */ : (G.phase === 'combat' || (NET.role === 'client' && G.phase === 'result' && !B.over)) ? Math.min(1, G.acc / CFG.TICK_MS) : 1, list = [];
   for (const u of B.units) {
     let c = u.c, r = u.r, lift = 0, moving = false, moveP = null, jumpP = null, mp = null;
@@ -6934,7 +6995,7 @@ if (/zoodebug/.test(location.search)) {
   window.__zdbg = {
     step(n, ms) { fake = Math.max(fake, performance.now()); for (let i = 0; i < (n || 1); i++) { fake += ms || 33; try { loopBody(fake); } catch (e) { console.error(e); } } },
     shot() { this.step(1); return new Promise(r => S3.renderer.domElement.toBlob(r, 'image/png')); },
-    G: () => G, S3,
+    G: () => G, S3, act: a => { const r = actMe(a); renderPrep(); return r; },
   };
 }
 function loopBody(now) {
@@ -6996,7 +7057,7 @@ function showDex(tab) {
   if (tab === 'items') body = Object.keys(MATS).map(k => `<div class="plain">${iconItem(k)}<div><b>${MATS[k].name}</b>　${Object.entries(MATS[k].stat).map(([s, v]) => ({ atk: '攻擊', hp: '生命', as: '攻速%', arm: '護甲', mr: '魔抗', sm: '起始能量' }[s] + ' +' + v)).join('')}</div></div>`).join('') + Object.keys(ITEMS).map(k => `<div class="plain">${iconItem(k)}<div><b>${ITEMS[k].name}</b>　${ITEMS[k].from.map(m => MATS[m].name).join('＋')}<br>${ITEMS[k].desc}</div></div>`).join('');
   if (tab === 'augs') body = [1, 2, 3].map(tr => `<div class="plain"><div><b>${AUG_TIER_NAME[tr]}</b>（第 ${CFG.AUG_ROUNDS.join('、')} 回合三選一，銀／金／彩 依回合機率出現）</div></div>` + AUGMENTS.filter(x => x.tier === tr).map(x => `<div class="plain">${augIcon(x.id)}<div><b>${x.name}</b>　${x.desc}</div></div>`).join('')).join('');
   if (tab === 'arena') body = Object.keys(ARENAS).map(a => `<div class="plain"><div><b>${ARENAS[a].name}</b>　地形：${Object.keys(ARENAS[a].weights).sort((x, y) => ARENAS[a].weights[y] - ARENAS[a].weights[x]).map(t => TERRAIN_SKIN[a][t]).join('、')}（越前面越常見）</div></div>`).join('') + Object.keys(TERRAIN).map(t => `<div class="plain"><div><b>${TERRAIN[t].name}類</b>　${TERRAIN[t].desc}</div></div>`).join('') + `<div class="plain"><div><b>高台</b>（${Object.keys(ARENAS).map(a => TERRAIN_SKIN[a].high).join('、')}）　遠程射程 +${HIGH.RANGE}；從低處打上高台的普攻有 ${HIGH.MISS}% 落空；爬坡移動變慢</div></div>` + '<div class="plain"><div>每個階段換一個場地，地形與高台雙方對稱。</div></div>';
-  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（${CFG.COLS}×${CFG.ROWS_HALF} 格）與 ${CFG.TEAM_HP} 點團隊血量。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用（每隻動物：${Object.entries(CFG.POOL).map(([c, n]) => `${c} 費 ${n} 張`).join('、')}），被買光的就不會出現在商店。<br>環境羈絆（森林、草原、水域、天空）湊到最高階＝「生態圈」：超強效果、戰場換裝、羈絆圖示變彩色。<br>海克斯、傳送門、奇遇的選擇都跟著準備倒數，時間到自動選第一個。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
+  if (tab === 'rules') body = `<div class="plain"><div>兩隊各兩人，同隊共用我方半場（${CFG.COLS}×${CFG.ROWS_HALF} 格）與 ${CFG.TEAM_HP} 點團隊血量。<br><b>雙人默契</b>：開場時你的棋子緊鄰隊友的棋子，兩隻會連攜（金色光帶），攻速 +${DUO_CFG.LINK_AS}%，其中一隻倒下另一隻會報仇（攻擊 +${DUO_CFG.AVENGE_ATK}%）。隊友下戰鬥指令後 3 秒內你也下指令 → 擊掌合擊，全隊攻速與攻擊 +${DUO_CFG.COMBO_AS}%。<br>準備 ${CFG.PREP_SEC} 秒 → 戰鬥最長 35 秒（30 秒後加時）。<br>輸掉回合扣血：${CFG.DMG_BASE} ＋ 敵方存活星數 × ${CFG.DMG_STAR_PCT}% ＋（階段−1）× ${CFG.DMG_STAGE}。<br>商店每回合 ${CFG.SHOP_SIZE} 張，刷新 ${CFG.REROLL_COST} 金，可鎖定。等級 1～${CFG.MAX_LEVEL}，人口＝等級，等級越高越容易出 4、5 費。<br>經驗：每回合自動 +${CFG.XP_ROUND}；購買經驗 $${CFG.XP_COST}（+${CFG.XP_BUY} XP）。升級所需：${Object.entries(CFG.XP_NEED).map(([l, n]) => `Lv.${l}→${+l + 1}：${n}`).join('、')}。<br>第 ${CFG.AUG_ROUNDS.join('、')} 回合可選海克斯增幅。<br>收入依階段 ${CFG.INCOME_BY_STAGE.slice(1, 4).join('／')}… 金＋利息（每 10 金 +1，最多 +5）＋連勝敗；贏了再 +1。<br>三隻同星自動升星。卡池全場共用（每隻動物：${Object.entries(CFG.POOL).map(([c, n]) => `${c} 費 ${n} 張`).join('、')}），被買光的就不會出現在商店。<br>環境羈絆（森林、草原、水域、天空）湊到最高階＝「生態圈」：超強效果、戰場換裝、羈絆圖示變彩色。<br>海克斯、傳送門、奇遇的選擇都跟著準備倒數，時間到自動選第一個。</div></div><div class="plain"><div>操作：拖曳棋子到格子或備戰席；拖到商店出售。拖裝備到棋子身上。點一下看資訊。</div></div>`;
   $('panel').innerHTML = `<button class="x" id="dexX" aria-label="關閉">✕</button><h2>圖鑑</h2><div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div><div class="dex">${body}</div>`;
   $('overlay').hidden = false;
   $('dexX').onclick = () => { $('overlay').hidden = true; };
@@ -7011,7 +7072,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.13.35'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.14.0'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
@@ -7172,7 +7233,13 @@ function featuresEvent(B, ev) {
     case 'die': sfx('death', 60); break;
     case 'combo': sfx('combo'); break;
     case 'zone': if (ev.kind === 'meteor') sfx('boom'); else if (ev.kind === 'water') sfx('splash'); break;
-    case 'cmd': { const P = G.players[ev.owner]; sfx('cmd'); if (ev.owner === ME || (P && P.team === myTeam())) banner(`${P.name}：${COMMANDS[ev.type].name}！`, COMMANDS[ev.type].desc); for (const u of B.units) if (u.alive && u.owner === ev.owner) { const p = posOf(kOf(u), 0.3); if (p) burst(p, 5, { tex: 'spark', color: ev.type === 'charge' ? 0xff8a5a : ev.type === 'rally' ? 0x8ab8ff : 0x9be07a, scale: 0.13, speed: 0.6, up: 2, g: 0, add: true }); } break; }
+    case 'cmd': { const P = G.players[ev.owner]; sfx('cmd'); if (ev.owner === ME || (P && P.team === myTeam())) { const hint = ev.owner !== ME && B.cmdUsed && !B.cmdUsed[ME] && B.duoDone && !B.duoDone[P.team]; banner(`${P.name}：${COMMANDS[ev.type].name}！`, hint ? '3 秒內你也下指令 → 擊掌合擊！' : COMMANDS[ev.type].desc); } for (const u of B.units) if (u.alive && u.owner === ev.owner) { const p = posOf(kOf(u), 0.3); if (p) burst(p, 5, { tex: 'spark', color: ev.type === 'charge' ? 0xff8a5a : ev.type === 'rally' ? 0x8ab8ff : 0x9be07a, scale: 0.13, speed: 0.6, up: 2, g: 0, add: true }); } break; }
+    case 'duo': { // 擊掌合擊：兩位隊友 3 秒內都下了指令
+      const A = G.players[ev.a], Bp = G.players[ev.b]; sfx('combo');
+      const mine = B.units.find(u => u.owner === ME); if (mine && mine.team === ev.team) banner('擊掌合擊！', `${A ? A.name : ''} ✋ ${Bp ? Bp.name : ''}　全隊攻速與攻擊 +${DUO_CFG.COMBO_AS}%`, 'duo');
+      for (const u of B.units) if (u.alive && u.team === ev.team) { const p = posOf(kOf(u), 0.5); if (p) { burst(p, 8, { tex: 'star', color: 0xffd25a, scale: 0.14, speed: 1.2, up: 2.2, g: -1, add: true }); sprite('ring', p, { scale: 0.2, scale1: 1.1, life: 0.45, color: 0xffe08a, add: true }); } }
+      S3.shake = Math.max(S3.shake, 0.12); break; }
+    case 'avenge': { const u = B.units[ev.id]; if (u) { s3Num(kOf(u), '報仇！', 'skill', 0, 15); const p = posOf(kOf(u), 0.5); if (p) burst(p, 8, { tex: 'spark', color: 0xff5a4a, scale: 0.13, speed: 1.4, up: 1.6, g: 0, add: true }); } break; }
     case 'aug': sfx('zap', 120); break;
     case 'night': sfx('howl'); break;
   }

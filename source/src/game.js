@@ -239,7 +239,10 @@ function act(G, pid, a) {
     case 'cmd': {
       if (!G.rules.commands || G.phase !== 'combat') return 'bad';
       const bt = G.battles.find(b => b.teams.includes(P.team)); if (!bt) return 'bad';
-      return battleCommand(bt.B, pid, a.type) ? 'ok' : 'cmd_used';
+      if (!battleCommand(bt.B, pid, a.type)) return 'cmd_used';
+      // 電腦隊友還沒下指令：跟上你的指令，湊擊掌合擊
+      const M = teammate(G, pid); if (M && M.ai && G.aiCmd && G.aiCmd[M.id] && G.aiCmd[M.id].t > bt.B.t + DUO_CFG.AI_REPLY) G.aiCmd[M.id] = { t: bt.B.t + DUO_CFG.AI_REPLY, type: G.aiCmd[M.id].type };
+      return 'ok';
     }
     case 'aitoggle': { P.ai = !P.ai; if (P.ai) { P.ready = true; if (G.phase === 'prep') aiPrep(G, pid); } else P.ready = false; return 'ok'; }
     case 'surrender': { if (G.teams[P.team].out) return 'bad'; G.teams[P.team].hp = 0; G.surrendered = P.team; eliminate(G); return 'ok'; }
@@ -440,6 +443,8 @@ function startCombat(G) {
   G.phase = 'combat'; G.acc = 0;
   // AI 戰鬥指令時間點
   G.aiCmd = {}; for (const P of G.players) if (P.ai && G.rules.commands) G.aiCmd[P.id] = { t: 120 + G.rng(200), type: ['charge', 'rally', 'hold'][G.rng(3)] };
+  // 雙人默契：同隊兩個都是電腦時，第二個在第一個之後 1～2 秒跟上（電腦隊也會擊掌合擊）
+  for (const T of G.teams) { const ps = G.players.filter(P => P.team === T.id && P.ai && G.aiCmd[P.id]); if (ps.length === 2) G.aiCmd[ps[1].id].t = G.aiCmd[ps[0].id].t + 15 + G.rng(25); }
 }
 function combatDone(G) { return G.battles.every(b => b.B.over); }
 // 對戰配對：2 隊就是 0 對 1；4 隊每回合隨機配對、盡量不連續打同一隊；剩奇數隊時有一隊打「幽靈」（別隊的複製，輸贏不影響對方）
@@ -652,6 +657,7 @@ const AI_CFG = {
   LEVEL_AT: { 2: 3, 4: 4, 6: 5, 10: 6, 14: 7, 19: 8, 25: 9 }, // 第幾回合起想要升到幾級（普通難度）
   SAVE: 50,                // 血量健康時存到多少金（吃滿利息）
   ROLL_HP: 40,             // 團隊血量低於這個就開始刷新找牌
+  LINK_PULL: 0.9,          // 雙人連攜：電腦擺棋子時，站到隊友棋子旁邊的吸引力（1＝相當於前後差一排）
 };
 // 電腦強度（練習時在「選擇模式」切換；只影響對手，電腦隊友固定普通）
 // lvl：升級目標加減｜rollKeep：刷新時至少留多少金｜rollLv：到幾級開始固定刷新
@@ -836,7 +842,11 @@ function aiPlace(G, pid) {
       const sideBias = f => role === 'assassin' ? -Math.abs(f.c - (CFG.COLS - 1) / 2) * 0.35 : role === 'carry' ? centerScore(f) * 0.25 : centerScore(f) * 0.15;
       // 輸出躲在坦克後面：同一欄前方有隊友比較好
       const covered = f => { if (role !== 'carry') return 0; for (const k in G.board) { const u = G.board[k]; if (G.players[u.owner].team !== P.team) continue; const [c, r] = cellRC(+k), [lc, lr] = toLocal(SIDE(P.team), c, r); if (Math.abs(lc - f.c) <= 1 && lr > f.r) return -0.6; } return 0; };
-      const cand = free.slice().sort((a, b) => (Math.abs(a.r - wantRow) + tScore(a) + sideBias(a) + covered(a)) - (Math.abs(b.r - wantRow) + tScore(b) + sideBias(b) + covered(b)) || a.c - b.c);
+      // 雙人連攜：站到隊友棋子旁邊（那隻隊友棋子旁邊還沒有我的棋子時才算），開戰就會連上
+      const mateCells = []; for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid && G.players[u.owner].team === P.team && ANIMALS[u.key]) mateCells.push(cellRC(+k)); }
+      const linkPull = f => { if (!mateCells.length) return 0; const [fc, fr] = cellRC(f.k); for (const [mc, mr] of mateCells) if (hexD(fc, fr, mc, mr) === 1) { let taken = false; for (const k in G.board) { const u = G.board[k]; if (u.owner !== pid) continue; const [uc, ur] = cellRC(+k); if (hexD(uc, ur, mc, mr) === 1) { taken = true; break; } } if (!taken) return -AI_CFG.LINK_PULL; } return 0; };
+      const sc = f => Math.abs(f.r - wantRow) + tScore(f) + sideBias(f) + covered(f) + linkPull(f);
+      const cand = free.slice().sort((a, b) => sc(a) - sc(b) || a.c - b.c);
       spot = cand[0];
     }
     if (!spot) break;

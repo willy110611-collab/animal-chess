@@ -352,6 +352,10 @@ const COMMANDS = {
   rally:   { name: '集結', desc: '你的棋子受到傷害 −25%，持續 4 秒' },
   hold:    { name: '堅守', desc: '你的棋子回復 10% 生命並獲得 15% 護盾' },
 };
+// ===== 雙人默契（v0.14，只有一隊兩個人時才有）=====
+// 連攜：開場時你的棋子緊鄰隊友的棋子 → 兩隻連成一組（每隻最多一組），兩隻都活著攻速 +LINK_AS%；其中一隻倒下，另一隻「報仇」攻擊 +AVENGE_ATK%、回 AVENGE_HEAL% 生命
+// 擊掌合擊：隊友下戰鬥指令後 COMBO_WINDOW tick（20 tick＝1 秒）內你也下指令 → 全隊攻速 +COMBO_AS%、攻擊 +COMBO_ATK%，持續 COMBO_TICKS；電腦隊友會在 AI_REPLY tick 後跟上你的指令
+const DUO_CFG = { LINK_AS: 10, AVENGE_ATK: 30, AVENGE_TICKS: 80, AVENGE_HEAL: 15, COMBO_WINDOW: 60, COMBO_AS: 20, COMBO_ATK: 20, COMBO_TICKS: 80, AI_REPLY: 20 };
 // ===== 開局傳送門（全場投票）=====
 const PORTALS = [
   { id: 'goldseason', name: '金幣雨季', desc: '每回合基本收入 +1' },

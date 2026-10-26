@@ -78,6 +78,7 @@ function createBattle(input) {
   if (B.flags.eternalnight) B.night = true;
   augStart(B);
   findCombos(B);
+  findLinks(B);
   return B;
 }
 
@@ -91,7 +92,7 @@ function spawn(B, key, star, owner, team, c, r, items, summon) {
     buffs: [], dots: [], target: -1, nextAtk: 0, mvFrom: null, busy: 0, stun: 0, invuln: 0, blind: 0,
     tauntBy: -1, tauntUntil: 0, stealth: false, firstHit: false, castCount: 0, items: items.slice(),
     lifesteal: key === 'bat' ? 20 : 0, sameHits: 0, lastTgt: -1, asleep: false, slept: 0,
-    ccImmune: 0, fang: false, honeypot: false, skillAmp: false, toxicUntil: 0, dmgDone: 0, waterShieldPct: 0,
+    ccImmune: 0, fang: false, honeypot: false, skillAmp: false, toxicUntil: 0, dmgDone: 0, waterShieldPct: 0, linkTo: -1,
   };
   for (const it of items) {
     const d = MATS[it] || ITEMS[it] || EMBLEMS[it]; if (!d) continue;
@@ -179,6 +180,17 @@ function applyTraits(B) {
   }
 }
 
+// 雙人連攜：開場時緊鄰隊友棋子的配成一組（照 id 順序、每隻最多一組，雙方手機算出來一樣）
+function findLinks(B) {
+  B.links = []; B.ownerTeam = {}; B.duoDone = {};
+  for (const u of B.units) if (u.owner >= 0 && B.ownerTeam[u.owner] === undefined) B.ownerTeam[u.owner] = u.team;
+  const ok = u => u.alive && !u.summon && !u.neutral && u.owner >= 0 && ANIMALS[u.key];
+  for (const u of B.units) {
+    if (!ok(u) || u.linkTo >= 0) continue;
+    let best = null; for (const v of B.units) if (ok(v) && v.linkTo < 0 && v.team === u.team && v.owner !== u.owner && dist(u, v) === 1 && (!best || v.id < best.id)) best = v;
+    if (best) { u.linkTo = best.id; best.linkTo = u.id; B.links.push([u.id, best.id]); }
+  }
+}
 function findCombos(B) {
   for (const cb of COMBOS) for (const team of [0, 1]) {
     const as = B.units.filter(u => u.team === team && u.key === cb.a);
@@ -220,6 +232,7 @@ function effInterval(B, u) {
   if (u.galeStacks) p += u.galeStacks * 3;
   if (B.weather === 'heat') p += 15 + (hasTrait(u, 'savanna') ? 10 : 0);
   if (onTile(B, u, 'burn')) p += BURN_AS;
+  if (u.linkTo >= 0 && B.units[u.linkTo].alive) p += DUO_CFG.LINK_AS; // 雙人連攜
   return Math.max(5, Math.floor(u.ai * 100 / p));
 }
 function effRange(B, u) { return u.rng + (u.rng >= 2 && terrainAt(B, u.c, u.r) === 'tree' ? 1 : 0) + (u.rng >= 2 && isHigh(B, u.c, u.r) ? HIGH.RANGE : 0); }
@@ -322,6 +335,7 @@ function kill(B, u, killer) {
     if (hasAug(B, killer, 'soulfeed')) { killer.atkPct += 15; const add = Math.floor(killer.maxhp * 10 / 100); killer.maxhp += add; killer.hp += add; B.ev.push({ k: 'aug', id: killer.id, a: 'soulfeed' }); }
     if (hasAug(B, killer, 'carnival')) for (const a of B.units) if (a.alive && a.owner === ko) { heal(B, a, Math.floor(a.maxhp * 5 / 100)); a.mana += 10; }
   }
+  if (u.linkTo >= 0) { const p = B.units[u.linkTo]; if (p && p.alive) { p.buffs.push({ s: 'atk', v: DUO_CFG.AVENGE_ATK, u: B.t + DUO_CFG.AVENGE_TICKS }); heal(B, p, Math.floor(p.maxhp * DUO_CFG.AVENGE_HEAL / 100)); B.ev.push({ k: 'avenge', id: p.id, from: u.id }); } } // 連攜夥伴倒下：報仇
   if (B.grid[idx(u.c, u.r)] === u.id) B.grid[idx(u.c, u.r)] = -1;
   B.ev.push({ k: 'die', id: u.id, key: u.key, team: u.team, by: killer ? killer.id : -1 });
   if (u.key === 'minibee' && killer && killer.alive) damage(B, u, killer, 60, 'true', {});
@@ -935,6 +949,16 @@ function battleCommand(B, owner, type) {
     if (type === 'hold') { heal(B, u, Math.floor(u.maxhp * 10 / 100)); u.shield += Math.floor(u.maxhp * 15 / 100); }
   }
   B.ev.push({ k: 'cmd', owner, type });
+  // 擊掌合擊：隊友剛下過指令（COMBO_WINDOW 內）→ 全隊再加成一次（每場每隊一次）
+  const team = B.ownerTeam ? B.ownerTeam[owner] : undefined;
+  if (team !== undefined && !B.duoDone[team]) {
+    const mate = (B.cmdLog || []).find(c => c.owner !== owner && B.ownerTeam[c.owner] === team && B.t - c.t <= DUO_CFG.COMBO_WINDOW);
+    if (mate) {
+      B.duoDone[team] = true;
+      for (const u of B.units) if (u.alive && u.team === team) { u.buffs.push({ s: 'as', v: DUO_CFG.COMBO_AS, u: B.t + DUO_CFG.COMBO_TICKS }); u.buffs.push({ s: 'atk', v: DUO_CFG.COMBO_ATK, u: B.t + DUO_CFG.COMBO_TICKS }); }
+      B.ev.push({ k: 'duo', team, a: mate.owner, b: owner });
+    }
+  }
   (B.cmdLog = B.cmdLog || []).push({ t: B.t, owner, type }); // 連線時讓其他玩家在同一個 tick 重現
   return true;
 }
