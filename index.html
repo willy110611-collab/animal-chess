@@ -3278,6 +3278,8 @@ function geos() {
   GEO.torus = new THREE.TorusGeometry(1, 0.22, 10, 28);
   GEO.box = new THREE.BoxGeometry(1, 1, 1);
   GEO.cap = new THREE.CapsuleGeometry(0.5, 1, 6, 12);
+  GEO.band = new THREE.TorusGeometry(1, 0.09, 6, 28);
+  GEO.ringLo = new THREE.TorusGeometry(1, 0.2, 5, 18); GEO.bandLo = new THREE.TorusGeometry(1, 0.09, 4, 22); GEO.coneLo = new THREE.ConeGeometry(1, 1, 7); GEO.cylLo = new THREE.CylinderGeometry(1, 1, 1, 10); GEO.capLo = new THREE.CapsuleGeometry(0.5, 1, 2, 6); // 裝備用低面數
   GEO.smile = new THREE.TorusGeometry(1, 0.2, 8, 20, Math.PI); // v0.14 半圓：嘴巴微笑
   return GEO;
 }
@@ -3983,6 +3985,49 @@ Object.assign(BUILD, {
     R.headTop = 1.08;
   },
 });
+// ===== 戰士裝備：頭上一件看第一個羈絆、脖子一件看第二個羈絆；王者改成皇冠＋紅披風 =====
+// ON 開關；FIX 逐隻微調 { y 頭飾上下, z 頭飾前後, s 頭飾大小, ny 脖子上下, nz 脖子前後, ns 脖子大小, noHead / noNeck 不戴, head 換頭飾種類, crownOnTorso 皇冠戴在身體球上（頭跟身體分開動的） }
+const GEAR_CFG = { ON: true, FIX: {
+  frog: { e: [-0.08, 0.34, 0.24, 0.3, -0.02], band: 0.55 }, // 青蛙的頭就是身體上半
+  shark: { noHead: true }, whale: { crownOnTorso: true }, giraffe: { ny: -0.33 }, flamingo: { ny: -0.33, ns: 0.8 }, // 鯊魚頭跟身體連在一起，頭飾不好看，只戴披風
+} };
+function addGear(R) {
+  const A = ANIMALS[R.key]; if (!GEAR_CFG.ON || !A || !A.traits || !A.traits.length || !R.head || !R.body) return;
+  const F = GEAR_CFG.FIX[R.key] || {}, M = R.M, hr = R.headR || 0.28, h = R.head;
+  const LO = new Map([[GEO.sph, GEO.sphLo], [GEO.torus, GEO.ringLo], [GEO.band, GEO.bandLo], [GEO.cone, GEO.coneLo], [GEO.cyl, GEO.cylLo], [GEO.cap, GEO.capLo]]); // 裝備都用低面數（小東西看不出差別）
+  const add = (p, g, col, pos, sc, rot) => { const big = g === GEO.sph && Math.max(...[].concat(sc)) > 0.15; const m = mesh(big ? g : LO.get(g) || g, M(col), pos, sc, rot); p.add(m); return m; };
+  // 頭形：用頭底下最大的那顆球當橢圓（不算耳朵、鬃毛），裝備貼著它擺
+  let main = null, best = 0; for (const c of h.children) if (c.isMesh && c.visible && c.geometry === GEO.sph) { const v = c.scale.x * c.scale.y * c.scale.z; if (v > best) { best = v; main = c; } }
+  const E = F.e || (main ? [main.position.y, main.scale.x, main.scale.y, main.scale.z, main.position.z] : [hr * 0.4, hr * 0.75, hr * 0.6, hr * 0.75, 0]); // e：自訂頭形 [中心高, 寬, 高, 深, 前後]
+  const s = F.s || 1, cy = E[0] + (F.y || 0), oz = E[4] + (F.z || 0), rx = E[1] * s, ry = E[2] * s, rz = E[3] * s, top = cy + ry;
+  const band = (col, k0) => { const k = F.band || k0; return add(h, GEO.band, col, [0, cy + ry * k, oz], [rx * Math.sqrt(1 - k * k) * 1.03, rz * Math.sqrt(1 - k * k) * 1.03, 0.5], [Math.PI / 2 - 0.12, 0, 0]); }; // k：在頭的高度比例（0＝正中、0.5＝偏上），band 逐隻改
+  const C = { red: '#d8402c', blue: '#2f7fd0', brown: '#8a5a32', steel: '#9aa4ae', gold: '#f2c14e', bone: '#fff6e0', leaf: '#7cc84f', leaf2: '#5fae3e', night: '#1e1820', cape: '#5a2a7a', royal: '#c0283a' };
+  const head = {
+    forest: () => { for (let i = 0; i < 5; i++) { const a = (i - 2) * 0.45; add(h, GEO.sph, i % 2 ? C.leaf2 : C.leaf, [Math.sin(a) * rx * 0.6, top - 0.02, Math.cos(a) * rz * 0.3 - 0.02 + oz], [0.045 * s, 0.02 * s, 0.11 * s], [0.9, a, 0]); } add(h, GEO.sph, '#e8423a', [0, top + 0.02, 0.05 + oz], 0.03 * s); },
+    savanna: () => { band(C.red, 0.3); const fz = rz * 0.9 + oz; for (const k of [-1, 1]) for (let j = 0; j < 2; j++) add(h, GEO.cap, C.bone, [k * rx * (0.55 + j * 0.14), cy - ry * 0.05, fz * 0.92], [0.012, 0.07, 0.012], [0.3, 0, k * 0.35]); },
+    water: () => { band(C.blue, 0.3); add(h, GEO.sph, C.blue, [0, cy + ry * 0.3, -rz * 0.98 + oz], [0.06, 0.05, 0.05]); for (const k of [-1, 1]) add(h, GEO.sph, C.blue, [k * 0.05, cy + ry * 0.12, -rz * 1.02 + oz], [0.03, 0.07, 0.02], [0.4, 0, k * 0.6]); },
+    sky: () => { band('#6a4a2a', 0.35); const gy = cy + ry * 0.45, gz = rz * Math.sqrt(1 - 0.45 * 0.45) * 0.97 + oz; for (const k of [-1, 1]) { add(h, GEO.cyl, '#8a6a3a', [k * rx * 0.3, gy, gz], [0.08, 0.06, 0.08], [1.0, 0, 0]); add(h, GEO.cyl, '#9fe0ff', [k * rx * 0.3, gy + 0.02, gz + 0.025], [0.062, 0.03, 0.062], [1.0, 0, 0]); } },
+    night: () => { add(h, GEO.sph, C.night, [0, cy + ry * 0.12, oz], [rx * 1.02, ry * 0.2, rz * 0.9]); for (const k of [-1, 1]) add(h, GEO.sph, C.night, [k * rx * 1.02, cy + ry * 0.12, -rz * 0.3 + oz], [0.03, 0.025, 0.08], [0, k * 0.6, 0]); },
+    armor: () => { add(h, GEO.sph, C.steel, [0, cy + ry * 0.35, -rz * 0.05 + oz], [rx * 1.04, ry * 0.75, rz * 1.02]); add(h, GEO.cone, '#c8d0d8', [0, cy + ry * 1.12, oz], [0.04, 0.12, 0.04]); },
+    pack: () => { band(C.brown, 0.3); add(h, GEO.cone, C.bone, [rx * 0.62, cy + ry * 0.45, rz * 0.62 + oz], [0.025, 0.08, 0.025], [0.3, 0, -0.6]); },
+    king: () => { const g = new THREE.Group(), T = F.crownOnTorso && R.torso; if (T) { const ts = T.scale; g.position.set(0, 0.97, F.z || 0); g.scale.set(s / ts.x, s / ts.y, s / ts.z); T.add(g); } else { g.position.set(0, Math.max(top, R.headTop ? R.headTop - (h.position.y || 0) : 0) - 0.03, oz); g.scale.setScalar(s); h.add(g); } add(g, GEO.cyl, C.gold, [0, 0, 0], [0.12, 0.05, 0.12]); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; add(g, GEO.cone, C.gold, [Math.cos(a) * 0.1, 0.06, Math.sin(a) * 0.1], [0.03, 0.08, 0.03]); } add(g, GEO.sph, C.royal, [0, 0.03, 0.12], 0.025); },
+  };
+  const ns = F.ns || 1, ny = (h.position.y || 0.5) - 0.03 + (F.ny || 0), nz = F.nz || 0, b = R.body, rr = 0.2 * ns;
+  const ring = (col, th, tilt) => add(b, GEO.torus, col, [0, ny, 0.02 + nz], [rr, rr, th], [Math.PI / 2 - (tilt || 0.2), 0, 0]);
+  const neck = {
+    pack: () => { ring('#6a4022', 0.1); for (let i = 0; i < 5; i++) { const a = (i - 2) * 0.45; add(b, GEO.cone, C.bone, [Math.sin(a) * rr * 0.95, ny - 0.04, Math.cos(a) * rr * 0.95 + nz], [0.022, 0.06, 0.022], [Math.PI, 0, 0]); } },
+    armor: () => { for (const k of [-1, 1]) add(b, GEO.sph, C.steel, [k * rr * 1.1, ny - 0.06, nz], [0.11 * ns, 0.06 * ns, 0.11 * ns], [0, 0, k * 0.4]); },
+    night: () => { add(b, GEO.sph, C.cape, [0, ny - 0.18, -0.16 * ns + nz], [0.24 * ns, 0.24 * ns, 0.06], [0.2, 0, 0]); ring(C.cape, 0.1, 0); },
+    forest: () => { ring('#4f9a36', 0.12, 0.15); add(b, GEO.sph, C.leaf, [0.08, ny - 0.03, rr + nz], [0.05, 0.02, 0.08], [0.5, 0.4, 0]); },
+    savanna: () => { ring('#a8742a', 0.08); for (let i = 0; i < 3; i++) add(b, GEO.cap, C.bone, [(i - 1) * 0.08, ny - 0.05, rr + nz], [0.018, 0.06, 0.018], [0, 0, Math.PI / 2]); },
+    water: () => { ring('#e8d8b8', 0.08); for (let i = 0; i < 3; i++) add(b, GEO.cone, '#f4a8b8', [(i - 1) * 0.08, ny - 0.04, rr + nz], [0.03, 0.05, 0.02], [Math.PI, 0, 0]); },
+    sky: () => { ring('#e8423a', 0.14, 0.15); add(b, GEO.sph, '#e8423a', [0.12, ny - 0.08, -rr + nz], [0.05, 0.12, 0.03], [0.3, 0, -0.6]); },
+    king: () => { add(b, GEO.sph, C.royal, [0, ny - 0.2, -0.18 * ns + nz], [0.26 * ns, 0.26 * ns, 0.06], [0.15, 0, 0]); ring('#fbf6ec', 0.16, 0); },
+  };
+  const tr = A.traits, isKing = tr.includes('king'), t0 = tr[0], t1 = tr[1] || tr[0];
+  if (!F.noHead) (head[F.head || (isKing ? 'king' : t0)] || (() => {}))();
+  if (!F.noNeck) (neck[isKing ? 'king' : t1] || neck[t0] || (() => {}))();
+}
 function buildAnimal(key) {
   geos();
   const R = { key, M: Mats(), root: new THREE.Group(), fly: 0 };
@@ -3991,6 +4036,7 @@ function buildAnimal(key) {
   for (const k of ['armL', 'armR', 'legL', 'legR', 'head', 'body', 'tail', 'earL', 'earR', 'wingL', 'wingR', 'jaw', 'jawU', 'mane', 'spikes', 'torso', 'mouth', 'horn', 'beak', 'fan', 'blow']) if (R[k]) saveBase(R[k]);
   R.root.traverse(o => { if (o.isMesh) { o.castShadow = false; o.userData.unit = true; } });
   if (key === 'minibee') R.root.scale.setScalar(0.55);
+  addGear(R);
   mergeRig(R);
   R.groups = []; R.root.traverse(o => { if (o.userData.b) R.groups.push(o); });
   return R;
@@ -6058,7 +6104,7 @@ const goldSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy=
 
 // ---- 3D 小頭像（商店卡、圖鑑、資訊卡）----
 // 頭像：第一次開啟時用 3D 模型畫出來（分批，不卡住畫面），畫好後存在本機，之後開遊戲直接讀
-const PORT_VER = 'p6-' + Object.keys(ANIMALS).length; // 模型外觀有改時把 p1 改成 p2，舊快取就會重畫
+const PORT_VER = 'p7-' + Object.keys(ANIMALS).length; // 模型外觀有改時把 p1 改成 p2，舊快取就會重畫
 // 立繪取景：PAD＝卡牌全身留邊（越大角色越小），HEAD_PAD＝圓形頭像留邊
 const PORT_CFG = { PAD: 1.12, HEAD_PAD: 1.3 };
 // 隊伍頭像（血量圓圈）可選的角色：設定 → 頭像。第一個是預設；電腦／其他隊伍依序輪流用
@@ -7072,7 +7118,7 @@ function boot() {
   const parade = ['hedgehog', 'redpanda', 'lion', 'koala', 'owl'];
   $('parade').innerHTML = parade.map((k, i) => pimg(k, i === 2 ? 'big' : '')).join('');
   makePortraits(parade, () => splashFinish());
-  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.14.1'; // 版本號只留在原始碼，不顯示給玩家
+  $('loadNote').textContent = ''; $('loadNote').dataset.v = '0.14.2'; // 版本號只留在原始碼，不顯示給玩家
   s3Init($('stage'), $('cv'), $('ov')); LD.set(50, '召集動物');
   const stage = $('stage');
   stage.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; onDown(e); });
