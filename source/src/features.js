@@ -106,7 +106,7 @@ function featuresPhase(ph) {
 function featuresFrame(dt) {
   if (!G) return;
   const now = performance.now();
-  recordMatch(); tutFrame();
+  recordMatch(); tutFrame(); duoTipFrame();
   // 選擇視窗：傳送門、選秀、隊長抉擇
   const P = G.players[ME];
   if (G.portalVote && !P.vote) showPortal();
@@ -535,6 +535,36 @@ function avatarFrame(dt) {
   }
 }
 
+// ---- 雙人默契小提示：第一次玩 2v2 時各跳一次（準備階段教連攜、第一場戰鬥教擊掌合擊），看過記在本機 zoo_duotip ----
+const DUO_TIP = [
+  { title: '雙人默契①　連攜', text: '把你的動物放在<b>隊友的動物旁邊</b>，開戰時兩隻會連成一組（腳下金色光圈）：攻速 +10%，其中一隻倒下，另一隻會<b>報仇</b>！' },
+  { title: '雙人默契②　擊掌合擊', text: '隊友下指令後 <b>3 秒內</b>你也按一個指令 → 全隊攻速、攻擊 +20%！你先按的話，電腦隊友也會跟上。' },
+];
+let duoTipT = 0;
+function duoTipSeen() { try { return +(localStorage.getItem('zoo_duotip') || 0); } catch (e) { return 2; } }
+function duoTipFrame() {
+  if (!G || G.tutorial || REPLAY || G.td || $('game').hidden) return;
+  const seen = duoTipSeen(); if (seen >= 2) return;
+  if (G.players.filter(P => P.team === myTeam()).length !== 2) return; // 只有一隊兩個人時
+  const tut = $('tut'); if ((tut && !tut.hidden) || !$('overlay').hidden || G.portalVote || G.draft) { duoTipT = 0; return; } // 別的視窗開著、傳送門投票或選秀時先等
+  duoTipT += 1; if (duoTipT < 45) return; // 畫面穩定一下再跳（約 0.7 秒）
+  if (seen === 0 && G.phase === 'prep') {
+    let rect = null; const pr = (S3.linkPairs || [])[0]; // 有連攜的就框那兩隻，沒有就框整個棋盤
+    if (pr) { const pts = pr.map(k => screenOf(k)).filter(Boolean); if (pts.length === 2) { const x0 = Math.min(pts[0][0], pts[1][0]), x1 = Math.max(pts[0][0], pts[1][0]), y0 = Math.min(pts[0][1], pts[1][1]), y1 = Math.max(pts[0][1], pts[1][1]); rect = { left: x0 - 34, top: y0 - 40, width: x1 - x0 + 68, height: y1 - y0 + 66 }; } }
+    showDuoTip(0, rect || $('stage').getBoundingClientRect());
+  } else if (seen === 1 && G.phase === 'combat' && G.rules.commands && $('cmdbar') && !$('cmdbar').hidden) showDuoTip(1, $('cmdbar').getBoundingClientRect());
+}
+function screenOf(k) { const p = posOf(k, 0.4); if (!p) return null; const v = p.clone().project(S3.cam), r = S3.renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }
+function showDuoTip(i, r) {
+  try { localStorage.setItem('zoo_duotip', String(i + 1)); } catch (e) {}
+  let o = $('tut'); if (!o) { o = document.createElement('div'); o.id = 'tut'; o.className = 'tut'; document.body.appendChild(o); }
+  const T = DUO_TIP[i], below = r.top + r.height / 2 < window.innerHeight / 2;
+  o.hidden = false;
+  o.innerHTML = `<div class="tut-hole" style="left:${r.left - 6}px;top:${r.top - 6}px;width:${r.width + 12}px;height:${r.height + 12}px"></div>
+    <div class="tut-box" style="${below ? `top:${Math.min(window.innerHeight - 190, r.top + r.height + 16)}px` : `top:${Math.max(10, r.top - 190)}px`}"><h3 class="tut-h">${T.title}</h3><p>${T.text}</p><div><span>${i + 1} / ${DUO_TIP.length}</span><button class="btn primary" id="tutNext">知道了</button></div></div>`;
+  sfx('chime');
+  $('tutNext').onclick = () => { o.hidden = true; };
+}
 // ---- 新手教學 ----
 const TUT = [
   ['#shop', '這是商店。點卡片買動物，花 2 金可以刷新，鎖頭可以保留下一回合。長按卡片可以對隊友標記「我要這隻」。'],
